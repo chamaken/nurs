@@ -1,0 +1,57 @@
+{
+    "consumer": [
+	{
+	    "version": "@VERSION@",
+	    "name": "PY_NFCTST_LOG",
+	    "config": [
+		{ "name": "path",
+		  "type": "NURS_CONFIG_T_STRING"},
+		{ "name": "module",
+		  "type": "NURS_CONFIG_T_STRING"},
+		{ "name": "logfile",
+		  "type": "NURS_CONFIG_T_STRING"}
+	    ],
+	    "input" : [
+		{ "name"	: "nfct.stats.searched",
+		  "type" 	: "NURS_KEY_T_UINT32",
+		  "flags" 	: ["NURS_IKEY_F_REQUIRED"] },
+		{ "name"	: "nfct.stats.found",
+		  "type"	: "NURS_KEY_T_UINT32",
+		  "flags"	: ["NURS_IKEY_F_REQUIRED"] },
+		{ "name"	: "nfct.stats.new",
+		  "type"	: "NURS_KEY_T_UINT32",
+		  "flags"	: ["NURS_IKEY_F_REQUIRED"] },
+		{ "name"	: "nfct.stats.invalid",
+		  "type"	: "NURS_KEY_T_UINT32",
+		  "flags" 	: ["NURS_IKEY_F_REQUIRED"] },
+		{ "name"	: "nfct.stats.ignore",
+		  "type"	: "NURS_KEY_T_UINT32",
+		  "flags" 	: ["NURS_IKEY_F_REQUIRED"] },
+		{ "name"	: "nfct.stats.delete",
+		  "type"	: "NURS_KEY_T_UINT32",
+		  "flags"	: ["NURS_IKEY_F_REQUIRED"] },
+		{ "name"	: "nfct.stats.delete_list",
+		  "type"	: "NURS_KEY_T_UINT32",
+		  "flags"	: ["NURS_IKEY_F_REQUIRED"] },
+		{ "name"	: "nfct.stats.insert",
+		  "type"	: "NURS_KEY_T_UINT32",
+		  "flags"	: ["NURS_IKEY_F_REQUIRED"] },
+		{ "name"	: "nfct.stats.insert_failed",
+		  "type"	: "NURS_KEY_T_UINT32",
+		  "flags"	: ["NURS_IKEY_F_REQUIRED"] },
+		{ "name"	: "nfct.stats.drop",
+		  "type" 	: "NURS_KEY_T_UINT32",
+		  "flags" 	: ["NURS_IKEY_F_REQUIRED"] },
+		{ "name"	: "nfct.stats.early_drop",
+		  "type"	: "NURS_KEY_T_UINT32",
+		  "flags"	: ["NURS_IKEY_F_REQUIRED"] },
+		{ "name"	: "nfct.stats.error",
+		  "type"	: "NURS_KEY_T_UINT32",
+		  "flags"	: ["NURS_IKEY_F_REQUIRED"] },
+		{ "name"	: "nfct.stats.search_restart",
+		  "type"	: "NURS_KEY_T_UINT32",
+		  "flags" 	: ["NURS_IKEY_F_REQUIRED"] }
+	    ]
+	}
+    ]
+}

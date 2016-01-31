@@ -1,0 +1,30 @@
+# example configuration for nursd. run at this dir as
+# ../../src/nursd -l info nursd2.conf
+
+[global]
+
+# log: file, level and stuff
+# log	= "@cwd@/nursd.log, info, sync, verbose"
+
+# plugin:
+# 1. load the plugins _first_ from the global section
+# 2. options for each plugin in seperate section below
+plugin	= "@pkglibdir@/nurs_producer_TICK.so"
+plugin	= "@cwd@/producer.gso"
+plugin	= "@cwd@/consumer.gso"
+
+# stack
+# each element represented id:name, separated by ,
+stack	= "tick:TICK, go_consumer:GO_TICK_CONSUMER"
+stack	= "tickgo:GO_TICK_PRODUCER, go_consumer:GO_TICK_CONSUMER"
+
+# number of workers
+workers	= 8
+
+# number of iosets per stack
+iosets	= 8
+
+# each pluginstance settings
+
+[go_consumer]
+config-string = "sample go string"

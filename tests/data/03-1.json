@@ -1,0 +1,49 @@
+{
+    "version"     : "",
+    "name"        : "",
+    "context_size": 32,
+    "config"      : [
+	{
+            "name"   : "config_0",
+            "type"   : "NURS_CONFIG_T_INTEGER",
+            "flags"  : ["NURS_CONFIG_F_MANDATORY"]
+	},
+	{
+            "name"   : "config_1",
+            "type"   : "NURS_CONFIG_T_INTEGER",
+            "value"  : 111
+	},
+	{
+            "name"   : "config_2",
+            "type"   : "NURS_CONFIG_T_STRING",
+            "flags"  : ["NURS_CONFIG_F_MANDATORY"]
+	},
+	{
+            "name"   : "config_3",
+            "type"   : "NURS_CONFIG_T_CALLBACK",
+            "value"  : "config_parser"
+	}
+    ],
+    "output"      : [
+	{
+            "name"      : "output.0",
+            "type"      : "NURS_KEY_T_BOOL",
+            "flags"     : ["NURS_OKEY_F_ACTIVE", "NURS_OKEY_F_DESTRUCT"],
+            "len"       : 32,
+            "ipfix_vendor"  : "IPFIX_VENDOR_NETFILTER",
+            "ipfix_field_id": "IPFIX_octetDeltaCount",
+            "cim_name"  : "cim.0",
+            "destructor": ""
+	},
+	{
+            "name"      : "output.0",
+            "type"      : "NURS_KEY_T_BOOL",
+            "flags"     : ["NURS_OKEY_F_ACTIVE", "NURS_OKEY_F_DESTRUCT"],
+            "len"       : 32,
+            "ipfix_vendor"  : "IPFIX_VENDOR_NETFILTER",
+            "ipfix_field_id": "IPFIX_octetDeltaCount",
+            "cim_name"  : "cim.0",
+            "destructor": ""
+	}
+    ],
+}

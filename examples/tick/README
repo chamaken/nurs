@@ -1,0 +1,9 @@
+Go and python may not co-exist since go module sometime yields
+core, seems when they receive SIGCHLD.
+
+In addition, nursd can not finalize normally since... go runtime
+creates threads and that threads update their signal mask. Main nurs
+thread match with that threads to win signals... I think.
+
+I think, this is aliviated by sending signal tid, not tgid. see
+contrib/tgkill.c

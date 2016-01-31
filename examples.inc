@@ -1,0 +1,20 @@
+edit = sed -e \
+	"s,@pkglibdir\@,${pkglibdir},g; \
+	 s,@cwd@,`pwd`,g; \
+	 s,@pynurs@,${abs_top_srcdir}/examples/python,g; \
+	 s,@gonurs@,${abs_top_srcdir}/examples/go,g; \
+	 s,@VERSION\@,@VERSION@,g"
+
+SUFFIXES = .conf .conf.in .json .json.in
+
+.conf.in.conf: Makefile
+	@ $(edit) $< > $@
+
+.json.in.json: Makefile
+	@ $(edit) $< > $@
+
+.go.gso:
+	go build -buildmode=c-shared -o $@ $<
+
+clean-local:
+	-rm -rf core *.conf *.json *.log *.gso *.h

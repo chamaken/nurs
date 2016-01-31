@@ -1,0 +1,39 @@
+{
+    "consumer": [
+	{
+	    "version": "@VERSION@",
+	    "name": "PY_NFLOG_LOG",
+	    "config": [
+		{ "name": "path",
+		  "type": "NURS_CONFIG_T_STRING"},
+		{ "name": "module",
+		  "type": "NURS_CONFIG_T_STRING"},
+		{ "name": "logfile",
+		  "type": "NURS_CONFIG_T_STRING"}
+	    ],
+	    "input" : [
+		{ "name"        : "oob.hook",
+		  "type"        : "NURS_KEY_T_UINT8",
+		  "flags"       : ["NURS_IKEY_F_REQUIRED"] },
+		{ "name"	: "oob.family",
+		  "type"	: "NURS_KEY_T_UINT8",
+		  "flags"	: ["NURS_IKEY_F_REQUIRED"] },
+		{ "name"	: "oob.protocol",
+		  "type"	: "NURS_KEY_T_UINT16",
+		  "flags"	: ["NURS_IKEY_F_REQUIRED"] },
+		{ "name"	: "nflog.attrs",
+		  "type"	: "NURS_KEY_T_EMBED",
+		  "flags"	: ["NURS_IKEY_F_REQUIRED"] },
+		{ "name"	: "oob.seq.global",
+		  "type"	: "NURS_KEY_T_UINT32",
+		  "flags"	: ["NURS_IKEY_F_OPTIONAL"] },
+		{ "name"	: "oob.seq.local",
+		  "type"	: "NURS_KEY_T_UINT32",
+		  "flags"	: ["NURS_IKEY_F_OPTIONAL"] },
+		{ "name"	: "oob.prefix",
+		  "type"	: "NURS_KEY_T_STRING",
+		  "flags"	: ["NURS_IKEY_F_OPTIONAL"] }
+	    ]
+	}
+    ]
+}

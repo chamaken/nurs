@@ -1,0 +1,13 @@
+{
+    "version": "@VERSION@",
+    "name": "GO_TICK_PRODUCER",
+    "output" : [
+	{ "name": "counter",
+	  "type": "NURS_KEY_T_UINT64",
+	  "flags": ["NURS_OKEY_F_ACTIVE"] }
+    ],
+    "organize":		"tickOrganize",
+    "disorganize":	"tickDisorganize",
+    "start":		"tickStart",
+    "stop":		"tickStop"
+}

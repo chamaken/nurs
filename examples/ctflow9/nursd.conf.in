@@ -1,0 +1,65 @@
+# example configuration for nursd. run at this dir as
+# ../../src/nursd -d -p nursd.pid -f nursd.log -l info nursd.conf
+
+[global]
+
+# log: file, level and stuff
+# log	= "@cwd@/nursd.log, info, sync"
+
+# number of workers
+workers	= 8
+
+# number of iosets per stack
+iosets	= 12
+
+# plugin:
+# 1. load the plugins _first_ from the global section
+# 2. options for each plugin in seperate section below
+plugin	= "@pkglibdir@/nurs_producer_NFCT2.so"
+plugin	= "@pkglibdir@/nurs_filter_TIMECONV.so"
+plugin	= "@pkglibdir@/nurs_filter_PACKICMP.so"
+plugin	= "@pkglibdir@/nurs_filter_MARKIF.so"
+plugin	= "@pkglibdir@/nurs_coveter_NFLOW9.so"
+plugin	= "@pkglibdir@/nurs_coveter_IPFIX.so"
+# plugin	= "@pkglibdir@/nurs/nurs_PYTHON.so"
+
+# stack
+# each element represented id:name, separated by ,
+stack	= "nfct2:NFCT2, timeconv:TIMECONV, packicmp:PACKICMP, markif:MARKIF, nflow9:NFLOW9"
+# stack	= "nfct2:NFCT2, timeconv:PY_TIMECONV, packicmp:PY_PACKICMP, markif:PY_MARKIF, nflow9:NFLOW9"
+# stack	= "nfct2:NFCT2, timeconv:TIMECONV, markif:MARKIF, ipfix:IPFIX"
+
+# each pluginstance settings
+
+[nfct2]
+active_timeout = 4
+event_buffer_size = 217088
+event_buffer_maxsize = 1085440
+mark_filter = "0x1000/0x1000"
+
+[timeconv]
+# path = "@pynurs@/filter"
+# module = "timeconv"
+
+# [packicmp]
+# path = "@pynurs/filter"
+# module = "packicmp"
+
+[markif]
+# path = "@pynurs/filter"
+# module = "markif"
+mask_ingress = "0xf00 >> 8"
+mask_egress = "0xf0 >> 4"
+mask_flow = 0x1
+
+[nflow9]
+dest = udp://192.168.1.1:9995
+domain_id = 1
+nth_template = 16
+corksets_max = 8
+
+[ipfix]
+dest = file://@cwd@/ipfix.yaf
+domain_id = 1
+nth_template = 16
+corksets_max = 8

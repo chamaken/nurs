@@ -1,0 +1,59 @@
+{
+    "filter": [
+	{
+	    "version": "0.1",
+	    "name": "PY_TIMECONV",
+	    "config": [
+		{ "name": "path",
+		  "type": "NURS_CONFIG_T_STRING"},
+		{ "name": "module",
+		  "type": "NURS_CONFIG_T_STRING",
+		  "flags": "NURS_CONFIG_F_MANDATORY"},
+		{ "name": "logfile",
+		  "type": "NURS_CONFIG_T_STRING"},
+		{ "name": "usec64",
+		  "type": "NURS_CONFIG_T_BOOLEAN",
+		  "boolean": true },
+		{ "name": "uptime",
+		  "type": "NURS_CONFIG_T_BOOLEAN",
+		  "boolean": true }
+	    ],
+	    "input" : [
+		{ "name": "flow.start.sec",
+		  "type": "NURS_KEY_T_UINT32",
+		  "flags": ["NURS_IKEY_F_OPTIONAL"] },
+		{ "name": "flow.start.usec",
+		  "type": "NURS_KEY_T_UINT32",
+		  "flags": ["NURS_IKEY_F_OPTIONAL"] },
+		{ "name": "flow.end.sec",
+		  "type": "NURS_KEY_T_UINT32",
+		  "flags": ["NURS_IKEY_F_OPTIONAL"] },
+		{ "name": "flow.end.usec",
+		  "type": "NURS_KEY_T_UINT32",
+		  "flags": ["NURS_IKEY_F_OPTIONAL"] },
+	    ],
+	    "output" : [
+		{ "name": "flow.start.useconds",
+		  "type": "NURS_KEY_T_UINT64",
+		  "flags": ["NURS_OKEY_F_OPTIONAL"],
+		  "ipfix_vendor": "IPFIX_VENDOR_IETF",
+		  "ipfix_field": "IPFIX_flowStartMicroSeconds" },
+		{ "name": "flow.end.useconds",
+		  "type": "NURS_KEY_T_UINT64",
+		    "flags": ["NURS_OKEY_F_OPTIONAL"],
+		  "ipfix_vendor": "IPFIX_VENDOR_IETF",
+		  "ipfix_field": "IPFIX_flowEndMicroSeconds" },
+		{ "name": "flow.start.uptime",
+		  "type": "NURS_KEY_T_UINT32",
+		  "flags": ["NURS_OKEY_F_OPTIONAL"],
+		  "ipfix_vendor": "IPFIX_VENDOR_IETF",
+		  "ipfix_field": "IPFIX_flowStartSysUpTime" },
+		{ "name": "flow.end.uptime",
+		  "type": "NURS_KEY_T_UINT32",
+		  "flags": ["NURS_OKEY_F_OPTIONAL"],
+		  "ipfix_vendor": "IPFIX_VENDOR_IETF",
+		  "ipfix_field": "IPFIX_flowEndSysUpTime" },
+	    ]
+	}
+    ]
+}

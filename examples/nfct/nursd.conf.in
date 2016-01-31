@@ -1,0 +1,45 @@
+# example configuration for nursd
+# NURS_PYSON=@pynurs@/producer/nfct_event.json:@pynurs@/consumer/nfct_log.json ../../src/nursd -f nursd.log -v -l info nursd.conf
+
+[global]
+
+# log: file, level and stuff
+# log	= "@cwd@/nursd.log, info, sync"
+
+# number of workers
+workers	= 8
+
+# number of iosets per stack
+iosets	= 12
+
+# plugin:
+# 1. load the plugins _first_ from the global section
+# 2. options for each plugin in seperate section below
+plugin	= "@pkglibdir@/nurs_PYTHON.so"
+plugin	= "@pkglibdir@/nurs_producer_NFCT.so"
+
+# stack
+# each element represented id:name, separated by ,
+stack	= "nfct:NFCT, log1:PY_NFCT_LOG"
+stack	= "pyevent:PY_NFCT, log2:PY_NFCT_LOG"
+
+[nfct]
+# If pollinterval is not set, NFCT plugin will work in event mode
+# enable reliable flow-based logging (may drop packets)# pollinterval = 10
+reliable = true
+hash_enable = false
+
+[pyevent]
+path = "@pynurs@/producer"
+module = "nfct_event"
+logfile = "@cwd@/pyevent.log"
+
+[log1]
+path = "@pynurs@/consumer"
+module = "nfct_log"
+logfile = "@cwd@/py1.log"
+
+[log2]
+path = "@pynurs@/consumer"
+module = "nfct_log"
+logfile = "@cwd@/py2.log"

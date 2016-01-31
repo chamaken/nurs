@@ -1,0 +1,48 @@
+# example configuration for nursd
+# GOGC=off NURS_PYSON=@pynurs@/producer/nfct_event.json:@pynurs@/consumer/nfct_log.json ../../src/nursd -f nursd.log -v -l info nursd.conf
+
+[global]
+
+# log: file, level and stuff
+# log	= "@cwd@/nursd.log, info, sync"
+
+# number of workers
+workers	= 8
+
+# number of iosets per stack
+iosets	= 12
+
+# plugin:
+# 1. load the plugins _first_ from the global section
+# 2. options for each plugin in seperate section below
+plugin	= "@pkglibdir@/nurs_PYTHON.so"
+plugin	= "@gonurs@/producer/nfct_event.gso"
+plugin	= "@gonurs@/consumer/nfct_log.gso"
+
+# stack
+# each element represented id:name, separated by ,
+stack	= "event1:PY_NFCT, log1:PY_NFCT_LOG"
+stack	= "event2:GO_NFCT, log2:PY_NFCT_LOG"
+#stack	= "event1:PY_NFCT, log3:GO_NFCT_LOG"
+stack	= "event2:GO_NFCT, log4:GO_NFCT_LOG"
+
+[event1]
+path = "@pynurs@/producer"
+module = "nfct_event"
+logfile = "@cwd@/producer.log"
+
+[log1]
+path = "@pynurs@/consumer"
+module = "nfct_log"
+logfile = "@cwd@/consumer1.log"
+
+[log2]
+path = "@pynurs@/consumer"
+module = "nfct_log"
+logfile = "@cwd@/consumer2.log"
+
+[log3]
+logfile = "@cwd@/consumer3.log"
+
+[log4]
+logfile = "@cwd@/consumer4.log"

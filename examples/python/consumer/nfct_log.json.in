@@ -1,0 +1,51 @@
+{
+    "consumer": [
+	{
+	    "version": "@VERSION@",
+	    "name": "PY_NFCT_LOG",
+	    "config": [
+		{ "name": "path",
+		  "type": "NURS_CONFIG_T_STRING"},
+		{ "name": "module",
+		  "type": "NURS_CONFIG_T_STRING"},
+		{ "name": "logfile",
+		  "type": "NURS_CONFIG_T_STRING"}
+	    ],
+	    "input" : [
+		{ "name"        : "ct.event",
+		  "type"        : "NURS_KEY_T_UINT32",
+		  "flags"       : ["NURS_IKEY_F_REQUIRED"] },
+		{ "name"	: "oob.family",
+		  "type"	: "NURS_KEY_T_UINT8",
+		  "flags"	: ["NURS_IKEY_F_REQUIRED"] },
+		{ "name"	: "orig.ip.protocol",
+		  "type"	: "NURS_KEY_T_UINT8",
+		  "flags"	: ["NURS_IKEY_F_REQUIRED"] },
+		{ "name"	: "orig.raw.pktlen.delta",
+		  "type"	: "NURS_KEY_T_UINT64",
+		  "flags"	: ["NURS_IKEY_F_OPTIONAL"] },
+		{ "name"	: "orig.raw.pktcount.delta",
+		  "type"	: "NURS_KEY_T_UINT64",
+		  "flags"	: ["NURS_IKEY_F_OPTIONAL"] },
+		{ "name"	: "reply.raw.pktlen.delta",
+		  "type"	: "NURS_KEY_T_UINT64",
+		  "flags"	: ["NURS_IKEY_F_OPTIONAL"] },
+		{ "name"	: "reply.raw.pktcount.delta",
+		  "type"	: "NURS_KEY_T_UINT64",
+		  "flags"	: ["NURS_IKEY_F_OPTIONAL"] },
+		{ "name"	: "orig.ip.saddr",
+		  "type" 	: "NURS_KEY_T_INADDR",
+		  "flags" 	: ["NURS_IKEY_F_OPTIONAL"] },
+		{ "name"	: "orig.ip.daddr",
+		  "type"	: "NURS_KEY_T_INADDR",
+		  "flags"	: ["NURS_IKEY_F_OPTIONAL"] },
+		{ "name"	: "orig.ip6.saddr",
+		  "type" 	: "NURS_KEY_T_IN6ADDR",
+		  "flags" 	: ["NURS_IKEY_F_OPTIONAL"] },
+		{ "name"	: "orig.ip6.daddr",
+		  "type"	: "NURS_KEY_T_IN6ADDR",
+		  "flags"	: ["NURS_IKEY_F_OPTIONAL"] }
+	    ]
+	}
+    ]
+}

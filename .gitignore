@@ -1,0 +1,34 @@
+# global
+*.la
+*.lo
+*.o
+.deps/
+.libs/
+Makefile
+Makefile.in
+
+# this dir
+/nursd.conf
+
+# build system
+/m4
+/aclocal.m4
+/autom4te.cache/
+/build-aux/
+/config.*
+/configure
+/libtool
+/stamp-h1
+TAGS
+cscope.*
+
+# tests
+/tests/testsuite*
+!/tests/testsute.at
+/tests/package.m4
+/tests/atconfig
+/tests/atlocal
+
+# misc
+tmp/
+__pycache__/

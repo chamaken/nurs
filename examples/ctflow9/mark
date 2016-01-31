@@ -1,0 +1,38 @@
+# nursd.conf
+# [nfct2]
+# ...
+# mark_filter="0x1000/0x1000"
+#
+# [markif]
+# mask_ingress="0xf00 >> 8"
+# mask_egress="0xf0 >> 4"
+# mask_flow=0x1
+#
+#
+# nfct2 get only conntrack marked 0x1000/0x1000
+#
+# 0000 0000 0000 0000 0000 0000 0000 0000
+#                        ^                      conntrack target
+#                          ^^^^			input interface
+#                               ^^^^		output interface
+#                                       ^	0: ingress, 1: egress
+# here is 3 networks
+#
+#   net			ifindex
+#   10.96.254.128/25	2 		internal
+#   192.168.0.0/16	3		internal
+#   other		1		external
+#
+# and ignore traffic from/to 192.168.0.0/16
+#
+iptables -t nat -F
+iptables -t nat -A PREROUTING  -s 10.96.254.128/25        -j CONNMARK --set-mark 0x1200/0xff01
+iptables -t nat -A PREROUTING  -s 192.168.0.0/16          -j CONNMARK --set-mark 0x0300/0xff01
+# no input ifindex, mark input ifindex 1 and external
+iptables -t nat -A PREROUTING  -m connmark --mark 0/0xf00 -j CONNMARK --set-mark 0x1101/0xff01
+
+iptables -t nat -A PREROUTING  -d 10.96.254.128/25        -j CONNMARK --set-mark 0x020/0x0f0
+# exclude from conntrack target
+iptables -t nat -A PREROUTING  -d 192.168.0.0/16          -j CONNMARK --set-mark 0x0030/0x00f0
+# no output ifindex, mark output ifindex 1
+iptables -t nat -A PREROUTING  -m connmark --mark 0/0x0f0 -j CONNMARK --set-mark 0x010/0x0f0

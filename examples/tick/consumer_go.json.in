@@ -1,0 +1,15 @@
+{
+    "version": "@VERSION@",
+    "name": "GO_TICK_CONSUMER",
+    "config": [
+	{ "name": "config-string",
+	  "type": "NURS_CONFIG_T_STRING"}
+    ],
+    "input" : [
+	{ "name": "counter",
+	  "type": "NURS_KEY_T_UINT64",
+	  "flags": ["NURS_IKEY_F_REQUIRED"] }
+    ],
+    "organize":	"tickOrganize",
+    "interp":	"tickInterp"
+}

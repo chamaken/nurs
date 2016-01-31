@@ -1,0 +1,21 @@
+{
+    "consumer": [
+	{
+	    "version": "@VERSION@",
+	    "name": "PY_TICK_CONSUMER",
+	    "config": [
+		{ "name": "path",
+		  "type": "NURS_CONFIG_T_STRING"},
+		{ "name": "module",
+		  "type": "NURS_CONFIG_T_STRING"},
+		{ "name": "config-string",
+		  "type": "NURS_CONFIG_T_STRING"}
+	    ],
+	    "input" : [
+		{ "name": "counter",
+		  "type": "NURS_KEY_T_UINT64",
+		  "flags": ["NURS_IKEY_F_REQUIRED"] }
+	    ]
+	}
+    ]
+}

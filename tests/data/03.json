@@ -1,0 +1,295 @@
+{
+    "producer": [
+	{
+	    "version": "0.1",
+	    "name": "producer1",
+	    "context_size": 0,
+	    "config" : [
+		{
+		    "name": "producer1.config1",
+		    "type": "NURS_CONFIG_T_INTEGER",
+		    "flags": ["NURS_CONFIG_F_NONE"]
+		},
+		{
+		    "name": "producer1.config2",
+		    "type": "NURS_CONFIG_T_INTEGER",
+		    "flags": ["NURS_CONFIG_F_NONE"]
+		},
+	    ],
+	    "output": [
+		{
+		    "name": "producer1.output1",
+		    "type": "NURS_KEY_T_EMBED",
+		    "flags": ["NURS_OKEY_F_ACTIVE"],
+		    "len": 32,
+		    "ipfix_vendor": "IPFIX_VENDOR_IETF",
+		    "ipfix_field_id": "",
+		    "cim_name", "",
+		    "destructor": ""
+		},
+		{
+		    "name": "producer1.output2",
+		    "type": "NURS_KEY_T_INT8",
+		    "flags": ["NURS_OKEY_F_OPTIONAL"],
+		    "len": 0,
+		    "ipfix_vendor": "IPFIX_VENDOR_NETFILTER",
+		    "ipfix_field_id": "",
+		    "cim_name", "",
+		    "destructor": ""
+		}
+	    ],
+	    "organize": "producer_organize"
+	},
+	{
+	    "version": "producer2",
+	    "name": "",
+	    "context_size": 0,
+	    "config" : [
+		{
+		    "name": "producer2.config1",
+		    "type": "NURS_CONFIG_T_BOOLEAN",
+		    "flags": ["NURS_CONFIG_F_NONE"]
+		},
+		{
+		    "name": "producer2.config2",
+		    "type": "NURS_CONFIG_T_BOOLEAN",
+		    "flags": ["NURS_CONFIG_F_NONE"]
+		},
+	    ],
+	    "output": [
+		{
+		    "name": "producer2.output1",
+		    "type": "NURS_KEY_T_INT16",
+		    "flags": ["NURS_OKEY_F_ACTIVE"],
+		    "len": 0,
+		    "ipfix_vendor": "IPFIX_VENDOR_REVERSE",
+		    "ipfix_field_id": "",
+		    "cim_name", "",
+		    "destructor": ""
+		},
+		{
+		    "name": "producer2.output2",
+		    "type": "NURS_KEY_T_INT32",
+		    "flags": ["NURS_OKEY_F_OPTIONAL"],
+		    "len": 0,
+		    "ipfix_vendor": "IPFIX_VENDOR_IETF",
+		    "ipfix_field_id": "",
+		    "cim_name", "",
+		    "destructor": ""
+		}
+	    ],
+	    "organize": "producer_organize"
+	}
+    ],
+
+    "filter": [
+	{
+	    "version": "0.1",
+	    "name": "filter1",
+	    "context_size": 0,
+	    "config" : [
+		{
+		    "name": "filter1.config1",
+		    "type": "NURS_CONFIG_T_STRING",
+		    "flags": ["NURS_CONFIG_F_MANDATORY"]
+		},
+		{
+		    "name": "filter1.config2",
+		    "type": "NURS_CONFIG_T_STRING",
+		    "flags": ["NURS_CONFIG_F_MANDATORY"]
+		},
+	    ],
+	    "input": [
+		{
+		    "name": "filter1.input1",
+		    "type": "NURS_KEY_T_INT64",
+		    "flags": ["NURS_IKEY_F_REQUIRED"]
+		},
+		{
+		    "name": "filter1.input2",
+		    "type": "NURS_KEY_T_UINT8",
+		    "flags": ["NURS_IKEY_F_OPTIONAL"]
+		}
+	    ],
+	    "output": [
+		{
+		    "name": "filter1.output1",
+		    "type": "NURS_KEY_T_POINTER",
+		    "flags": ["NURS_OKEY_F_DESTRUCT"],
+		    "len": 0,
+		    "ipfix_vendor": "",
+		    "ipfix_field_id": "",
+		    "cim_name", "",
+		    "destructor": "filter1_output1_destruct"
+		},
+		{
+		    "name": "filter1.output2",
+		    "type": "NURS_KEY_T_UINT16",
+		    "flags": ["NURS_OKEY_F_OPTIONAL"],
+		    "len": 0,
+		    "ipfix_vendor": "",
+		    "ipfix_field_id": "",
+		    "cim_name", "",
+		    "destructor": ""
+		}
+	    ],
+	    "interp": "filter_interp"
+	},
+	{
+	    "version": "0.1",
+	    "name": "filter2",
+	    "context_size": 0,
+	    "config" : [
+		{
+		    "name": "filter2.config1",
+		    "type": "NURS_CONFIG_T_CALLBACK",
+		    "flags": ["NURS_CONFIG_F_MULTI"],
+		    "parser": "filter2_parser1"
+		},
+		{
+		    "name": "filter2.config2",
+		    "type": "NURS_CONFIG_T_CALLBACK",
+		    "flags": ["NURS_CONFIG_F_MULTI"],
+		    "parser": "filter2_parser2"
+		},
+	    ],
+	    "input": [
+		{
+		    "name": "filter2.input1",
+		    "type": "NURS_KEY_T_UINT64",
+		    "flags": ["NURS_IKEY_F_REQUIRED"]
+		},
+		{
+		    "name": "filter2.input2",
+		    "type": "NURS_KEY_T_INADDR",
+		    "flags": ["NURS_IKEY_F_OPTIONAL"]
+		}
+	    ],
+	    "output": [
+		{
+		    "name": "filter2.output1",
+		    "type": "NURS_KEY_T_POINTER",
+		    "flags": ["NURS_OKEY_F_ACTIVE", "NURS_OKEY_F_FREE"],
+		    "len": 0,
+		    "ipfix_vendor": "",
+		    "ipfix_field_id": "",
+		    "cim_name", "",
+		    "destructor": ""
+		},
+		{
+		    "name": "filter2.output2",
+		    "type": "NURS_KEY_T_STRING",
+		    "flags": ["NURS_OKEY_F_FREE"],
+		    "len": 0,
+		    "ipfix_vendor": "",
+		    "ipfix_field_id": "",
+		    "cim_name", "",
+		    "destructor": ""
+		}
+	    ],
+	    "interp": "filter_interp"
+	}
+    ],
+    "consumer": [
+	{
+	    "version": "0.1",
+	    "name": "consumer1",
+	    "context_size": 0,
+	    "config" : [
+		{
+		    "name": "consumer1.config1",
+		    "type": "NURS_CONFIG_T_INTEGER",
+		    "flags": ["NURS_CONFIG_F_MANDATORY", "NURS_CONFIG_F_MULTI"]
+		},
+		{
+		    "name": "consumer1.config2",
+		    "type": "NURS_CONFIG_T_INTEGER",
+		    "flags": ["NURS_CONFIG_F_MANDATORY", "NURS_CONFIG_F_MULTI"]
+		},
+	    ],
+	    "input": [
+		{
+		    "name": "consumer1.input1",
+		    "type": "NURS_KEY_T_IN6ADDR",
+		    "flags": ["NURS_IKEY_F_REQUIRED"]
+		},
+		{
+		    "name": "consumer1.input2",
+		    "type": "NURS_KEY_T_UINT32",
+		    "flags": ["NURS_IKEY_F_OPTIONAL"]
+		}
+	    ],
+	    "interp": "filter_interp"
+	},
+	{
+	    "version": "0.1",
+	    "name": "consumer2",
+	    "context_size": 0,
+	    "config" : [
+		{
+		    "name": "consumer2.config1",
+		    "type": "NURS_CONFIG_T_BOOLEAN",
+		    "flags": ["NURS_CONFIG_F_NONE", "NURS_CONFIG_F_MANDATORY"]
+		},
+		{
+		    "name": "consumer2.config2",
+		    "type": "NURS_CONFIG_T_BOOLEAN",
+		    "flags": ["NURS_CONFIG_F_NONE", "NURS_CONFIG_F_MANDATORY"]
+		},
+	    ],
+	    "input": [
+		{
+		    "name": "consumer2.input1",
+		    "type": "NURS_KEY_T_BOOL",
+		    "flags": ["NURS_IKEY_F_REQUIRED"]
+		},
+		{
+		    "name": "consumer2.input2",
+		    "type": "NURS_KEY_T_BOOL",
+		    "flags": ["NURS_IKEY_F_OPTIONAL"]
+		}
+	    ],
+	    "interp": "consumer_interp"
+	}
+    ],
+    "coveter": [
+	{
+	    "version": "0.1",
+	    "name": "coveter1",
+	    "context_size": 0,
+	    "config" : [
+		{
+		    "name": "coveter1.config1",
+		    "type": "NURS_CONFIG_T_STRING",
+		    "flags": ["NURS_CONFIG_F_NONE", "NURS_CONFIG_F_MULTI"]
+		},
+		{
+		    "name": "coveter1.config2",
+		    "type": "NURS_CONFIG_T_STRING",
+		    "flags": ["NURS_CONFIG_F_NONE", "NURS_CONFIG_F_MULTI"]
+		},
+	    ],
+	    "interp": "coveter_interp"
+	},
+	{
+	    "version": "0.1",
+	    "name": "covter2",
+	    "context_size": 0,
+	    "config" : [
+		{
+		    "name": "covter2.config1",
+		    "type": "NURS_CONFIG_T_CALLBACK",
+		    "flags": ["NURS_CONFIG_F_NONE", "NURS_CONFIG_F_MULTI", "NURS_CONFIG_F_MANDATORY"],
+		    "parser": "coveter2_parser1"
+		},
+		{
+		    "name": "coveter2.config2",
+		    "type": "NURS_CONFIG_T_CALLBACK",
+		    "flags": ["NURS_CONFIG_F_NONE", "NURS_CONFIG_F_MULTI", "NURS_CONFIG_F_MANDATORY"],
+		    "parser": "coveter2_parser2"
+		},
+	    ],
+	    "interp": "coveter_interp"
+	}
+    ]
+}

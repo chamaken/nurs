@@ -1,0 +1,34 @@
+# example configuration for nursd
+# https://home.regit.org/2012/07/flow-accounting-with-netfilter-and-ulogd2/
+# NURS_PYSON=@pynurs@/consumer/nfacct_log.json ../../src/nursd -f nursd.log -v -l info nursd.conf
+
+[global]
+
+# log: file, level and stuff
+# log	= "@cwd@/nursd.log, info, sync"
+
+# number of workers
+workers	= 8
+
+# number of iosets per stack
+iosets	= 12
+
+# plugin:
+# 1. load the plugins _first_ from the global section
+# 2. options for each plugin in seperate section below
+plugin	= "@pkglibdir@/nurs_producer_NFACCT.so"
+plugin	= "@pkglibdir@/nurs_PYTHON.so"
+
+# stack
+# each element represented id:name, separated by ,
+stack	= "nfacct:NFACCT, log:PY_NFACCT_LOG"
+
+[nfacct]
+pollinterval = 4
+zerocounter = on
+timestamp = on
+
+[log]
+path = "@pynurs@/consumer"
+module = "nfacct_log"
+logfile = "@cwd@/py.log"

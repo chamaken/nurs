@@ -1,0 +1,58 @@
+# NURS_PYSON=@pynurs@/consumer/nfq_repeat.json ../../src/nursd -v -f nursd.log -l info nursd.conf
+# iptables -I INPUT -p icmp --icmp-type echo-request -m mark --mark 0 -j NFQUEUE --queue-balance 1:4
+
+[global]
+
+# log: file, level and stuff
+# log	= "@cwd@/nursd.log, info, sync"
+
+# number of workers
+workers	= 8
+
+# number of iosets per stack
+iosets	= 8
+
+# plugin:
+# 1. load the plugins _first_ from the global section
+# 2. options for each plugin in seperate section below
+plugin  = "@pkglibdir@/nurs_producer_MTNFQ.so"
+plugin	= "@pkglibdir@/nurs_PYTHON.so"
+
+# stack
+# each element represented id:name, separated by ,
+stack	= "mtnfq1:MTNFQ, repeat1:PY_NFQ_REPEAT"
+stack	= "mtnfq2:MTNFQ, repeat2:PY_NFQ_REPEAT"
+stack	= "mtnfq3:MTNFQ, repeat3:PY_NFQ_REPEAT"
+stack	= "mtnfq4:MTNFQ, repeat4:PY_NFQ_REPEAT"
+
+[mtnfq1]
+queue_num	= 1
+
+[mtnfq2]
+queue_num	= 2
+
+[mtnfq3]
+queue_num	= 3
+
+[mtnfq4]
+queue_num	= 4
+
+[repeat1]
+path = "@pynurs@/consumer"
+module = "nfq_repeat"
+logfile = "@cwd@/nfq_repeat1.log"
+
+[repeat2]
+path = "@pynurs@/consumer"
+module = "nfq_repeat"
+logfile = "@cwd@/nfq_repeat2.log"
+
+[repeat3]
+path = "@pynurs@/consumer"
+module = "nfq_repeat"
+logfile = "@cwd@/nfq_repeat3.log"
+
+[repeat4]
+path = "@pynurs@/consumer"
+module = "nfq_repeat"
+logfile = "@cwd@/nfq_repeat4.log"

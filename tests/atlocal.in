@@ -1,0 +1,7 @@
+my_testdir="@abs_top_builddir@/tests"
+my_datadir="@abs_top_builddir@/tests/data"
+VALGRIND="valgrind \
+	--suppressions=/usr/lib/valgrind/debian.supp \
+	--leak-check=full \
+	--show-leak-kinds=all \
+	--error-exitcode=1"

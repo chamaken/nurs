@@ -1,0 +1,27 @@
+{
+    "consumer": [
+	{
+	    "version": "@VERSION@",
+	    "name": "PY_NFQ_ACCEPT",
+	    "config": [
+		{ "name": "path",
+		  "type": "NURS_CONFIG_T_STRING"},
+		{ "name": "module",
+		  "type": "NURS_CONFIG_T_STRING"},
+		{ "name": "logfile",
+		  "type": "NURS_CONFIG_T_STRING"}
+	    ],
+	    "input" : [
+		{ "name"	: "oob.family",
+		  "type"	: "NURS_KEY_T_UINT8",
+		  "flags"	: ["NURS_IKEY_F_REQUIRED"] },
+		{ "name"	: "nfq.res_id",
+		  "type"	: "NURS_KEY_T_UINT16",
+		  "flags"	: ["NURS_IKEY_F_REQUIRED"] },
+		{ "name"	: "nfq.attrs",
+		  "type"	: "NURS_KEY_T_EMBED",
+		  "flags"	: ["NURS_IKEY_F_REQUIRED"] }
+	    ]
+	}
+    ]
+}
