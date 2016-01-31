@@ -20,6 +20,7 @@ import "C"
 
 import (
 	"net"
+	"syscall"
 	"unsafe"
 
 	nfct "github.com/chamaken/cgolmnfct"
@@ -48,7 +49,7 @@ var (
 	idx_nfct uint16
 )
 
-func dataCb(nlh *mnl.Nlmsghdr, data interface{}) (int, error) {
+func dataCb(nlh *mnl.Nlmsghdr, data interface{}) (int, syscall.Errno) {
 	producer := data.(*nurs.Producer)
 	mtype := "UNKNOWN"
 
@@ -66,19 +67,19 @@ func dataCb(nlh *mnl.Nlmsghdr, data interface{}) (int, error) {
 	output, err := producer.GetOutput()
 	if err != nil {
 		nurs.Log(nurs.ERROR, "failed to get output\n")
-		return mnl.MNL_CB_ERROR, err
+		return mnl.MNL_CB_ERROR, err.(syscall.Errno)
 	}
 
 	ct, err := nfct.NewConntrack()
 	if err != nil {
 		nurs.Log(nurs.ERROR, "failed to create new conntrack\n")
-		return mnl.MNL_CB_ERROR, err
+		return mnl.MNL_CB_ERROR, err.(syscall.Errno)
 	}
 	if _, err := ct.NlmsgParse(nlh); err != nil {
 		nurs.Log(nurs.ERROR, "failed to parse nfct nlmsg\n");
 		ct.Destroy()
 		producer.PutOutput(output)
-		return mnl.MNL_CB_ERROR, err
+		return mnl.MNL_CB_ERROR, err.(syscall.Errno)
 	}
 
 	l3proto, _ := ct.AttrU8(nfct.ATTR_L3PROTO)
@@ -133,10 +134,10 @@ func dataCb(nlh *mnl.Nlmsghdr, data interface{}) (int, error) {
 
 	if _, err = producer.Propagate(output); err != nil {
 		nurs.Log(nurs.ERROR, "failed to propagate: %s\n", err)
-		return mnl.MNL_CB_ERROR, err
+		return mnl.MNL_CB_ERROR, err.(syscall.Errno)
 	}
 
-	return mnl.MNL_CB_OK, nil
+	return mnl.MNL_CB_OK, 0
 }
 
 func fdCb(fd int, when nurs.FdEvent, data interface{}) nurs.ReturnType {
