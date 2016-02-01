@@ -24,6 +24,10 @@ AC_PROG_INSTALL
 AC_DISABLE_STATIC
 AC_PROG_LIBTOOL
 
+AC_CHECK_PROG(enable_go, [go], ["yes"], ["no"])
+AC_SUBST(HAVE_GO)
+AM_CONDITIONAL([HAVE_GO], [test "x$enable_go" = "xyes"])
+
 AC_CHECK_PROG(DOCBOOK2X_MAN, [docbook2x-man], [docbook2x-man], [no])
 AC_CHECK_PROG(DOCBOOK2MAN, [docbook2man], [docbook2man], [no])
 AC_CHECK_PROG(DB2X_DOCBOOK2MAN, [db2x_docbook2man], [db2x_docbook2man], [no])
@@ -203,9 +207,6 @@ AS_IF([test "x$enable_python" = "xyes"], [
     ], enable_python="no")
 ])
 AM_CONDITIONAL([HAVE_PYTHON], [test "x$enable_python" = "xyes"])
-
-AS_IF([which go > /dev/null 2>&1], [enable_go="yes"], [enable_go="no"])
-AM_CONDITIONAL([HAVE_GO], [test "x$enable_go" = "xyes"])
 
 AC_DEFUN([REPLACE],
      [sed -e "s|$2|$3|g" $1 >  ${1%.in}])

@@ -72,9 +72,6 @@ To disable go extension examples, run configure without go in PATH env.
 TODO
 ====
 
-* go - use AC_PROG_CHECK
-  and docmentation. see nftables doc dir and configure.ac
-  
 * docmentation, can be cite from ulogd2
 
 * needs more tests
