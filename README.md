@@ -7,27 +7,28 @@ ulogd2 is userspace logging daemon for netfilter/iptables
 
 prerequisites
 =============
-
-* libmnl (http://www.netfilter.org/projects/libmnl/)
+* libmnl (http://www.netfilter.org/projects/libmnl/)  
+  current git (2015-10-03) is better,  
+  since go and python binding implements mnl_socket_open2()
 * libjansson (http://www.digip.org/jansson/)
 * liburcu2 (http://liburcu.org/)  
   atomic operation only, can it be replaced by GCC builtins? 
 
 optional
 --------
-
+* mmaped netlink available kernel (>= 4.3 is better)
 * libnetfilter-acct (http://www.netfilter.org/projects/libnetfilter_acct/)
-* libnetfilter-log (http://www.netfilter.org/projects/libnetfilter_log/)
+* libnetfilter-log (http://www.netfilter.org/projects/libnetfilter_log/)  
+  require recent nflo_nlmsg_parse()
 * libnetfilter-queue (http://www.netfilter.org/projects/libnetfilter_queue/)
 * libnetfilter-conntrack (http://www.netfilter.org/projects/libnetfilter_conntrack/)
 * libnftnl (http://www.netfilter.org/projects/libnftnl/)
-* python3 (I use debian jessie which has 3.4)
+* python3 (I use debian jessie which has 3.4)  
   - cpylmnl (https://github.com/chamaken/cpylmnl)
   
 
 installation
 ============
-
 ```
 $ ./autogen.sh
 $ ./configure
@@ -38,19 +39,15 @@ $ make
 
 sample
 ======
-
 python required. cd examples/tick after install
-
 ```
 NURS_PYSON=consumer_py.json ../../src/nursd nursd1.conf
 ```
-
 head *.conf file under examples directory.
 
 
 Go
 ==
-
 It's my fault, lack of knowledge, I've met runtime errors.  
 a few of them seems related to:
 
@@ -73,44 +70,31 @@ TODO
 ====
 
 * docmentation, can be cite from ulogd2
-
 * needs more tests
-
 * put / propagate for output may cause trouble.
   add borrowing flag for duplicate calling?
-
 * input key which has VALID flag will not check at runtime.  
   should check at propagate / interp?
-
 * resolve plugin symbols not only from self, but also from global.
-
 * try to implement rust binding.
-
-* (seems to be) useful packet library for nflog and nfq.
-  - https://github.com/phaethon/scapy
-  - https://github.com/google/gopacket
-  - https://github.com/libpnet/libpnet
 
 
 memo
 ====
 
 * input / output key size aligned 4
-
 * start callback is needed only for producer?
-
 * switch / case statements for struct nurs_plugin.type seems nasty things?
-
 * filter / consumer which input is all optional may receive no input.
-
 * ioset depends on producer which has stack(s).  
   owner of iosets is producer, not stack
-
 * python nurs functions can be called in only callback,  
   can not be called from thread asynchnoursly created in python.
-
 * signal callback must be called when all workers stop.
-
+* (seems to be) useful packet library for nflog and nfq packet payload.
+  - https://github.com/phaethon/scapy
+  - https://github.com/google/gopacket
+  - https://github.com/libpnet/libpnet
 * struct nurs_ioset
 <pre>
 stack = "src, f1, f2, ...
