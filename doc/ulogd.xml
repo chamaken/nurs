@@ -1,0 +1,1122 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN"
+"http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd">
+
+<refentry xmlns:xi="http://www.w3.org/2001/XInclude">
+  <refentryinfo>
+    <author>
+      <firstname>Harald</firstname>
+      <surname>Welte</surname>
+      <email>laforge@netfilter.org</email>
+    </author>
+    <author>
+      <firstname>Eric</firstname>
+      <surname>Leblond</surname>
+      <email>eric@regit.org</email>
+    </author>
+    <copyright>
+      <year>2000-2006</year>
+      <holder>Harald Welte</holder>
+    </copyright>
+    <copyright>
+      <year>2008-2012</year>
+      <holder>Pablo Neira Ayuso</holder>
+    </copyright>
+    <copyright>
+      <year>2008-2013</year>
+      <holder>Eric Leblond</holder>
+    </copyright>
+  </refentryinfo>
+
+  <refmeta>
+    <refentrytitle>ulogd</refentrytitle>
+    <manvolnum>8</manvolnum>
+  </refmeta>
+
+  <refnamediv>
+    <refname>ulogd</refname>
+    <refpurpose>
+      the Netfilter Userspace Logging Daemon
+    </refpurpose>
+  </refnamediv>
+
+  <refsynopsisdiv>
+    <cmdsynopsis>
+      <command>ulogd</command>
+      <arg choice="opt">
+	<option>-h / --help</option>
+      </arg>
+      <arg choice="opt">
+	<option>-V / --version</option>
+      </arg>
+      <arg choice="opt">
+	<option>-d / --daemon</option>
+      </arg>
+      <arg choice="opt">
+	<option>-c / --configfile</option>
+	<replaceable>filename</replaceable>
+      </arg>
+      <arg choice="opt">
+	<option>-i / --info</option>
+	<replaceable>filename</replaceable>
+      </arg>
+    </cmdsynopsis>
+  </refsynopsisdiv>
+
+  <refsect1>
+    <title>Options</title>
+    <para>
+      For a full summary of options, run <command>ulogd --help</command>.
+    </para>
+    <variablelist>
+      <varlistentry>
+	<term><option>-h / --help</option></term>
+	<listitem>
+	  <para>
+	    Print a help message about the commandline options.
+	  </para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+	<term><option>-V / --version</option></term>
+	<listitem>
+	  <para>
+	    Print version information about ulogd.
+	  </para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+	<term><option>-d / --daemon</option></term>
+	<listitem>
+	  <para>
+	    For off into daemon mode.  Unless you are debugging, you will want
+	    to use this most of the time.
+	  </para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+	<term><option>-c / --configfile</option></term>
+	<listitem>
+	  <para>
+	    Using this commandline option, an alternate config file can be used.
+	    This is important if multiple instances of ulogd are to be run on a
+	    single machine.
+	  </para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+	<term><option>-i / --info</option></term>
+	<listitem>
+	  <para>
+	    Display informations about the plugin whom filename is given as
+	    argument.
+	  </para>
+	</listitem>
+      </varlistentry>
+    </variablelist>
+  </refsect1>
+
+  <refsect1>
+    <title>Abstract</title>
+    <para>
+      This is the documentation for <emphasis>ulogd-2.x</emphasis>, the second
+      generation Netfilter Userspace logging daemon.  ulogd makes use of the
+      Linux &gt;= 2.6.14 nfnetlink_log and nfnetlink_conntrack subsystems, but
+      also provides backwards compatibility for Linux &gt;= 2.4.0 ipt_ULOG.
+    </para>
+  </refsect1>
+
+  <refsect1>
+    <title>DESIGN CONCEPT</title>
+    <para>
+      ulogd-2.x wants to provide a flexible, almost universal logging daemon for
+      netfilter logging.  This encompasses both packet-based logging (logging of
+      policy violations) and flow-based logging, e.g. for accounting purpose.
+    </para>
+    <para>
+      ulogd consists of a small core and a number of plugins.  All the real
+      power lies in the plugins, and in the user who configures the interactions
+      between those plugins.
+    </para>
+    <para>
+      By means of the configuration file, the administrator can build any number
+      of Plugin Stacks.  A plugin stack is a series of plugins, starting with an
+      Input plugin, none, one or multiple filter plugins, and one output plugin
+      on top.
+    </para>
+    <refsect2>
+      <title>Input Plugins</title>
+      <para>
+	Input plugins acts data source.  They get data from somewhere outside of
+	ulogd, and convert it into a list of ulogd keys.
+      </para>
+    </refsect2>
+    <refsect2>
+      <title>Filter Plugins</title>
+      <para>
+	Filter plugins interpret and/or filter data that was received from the
+	Input Plugin.  A good example is parsing a raw packet into IPv4 / TCP /
+	... header information.
+      </para>
+    </refsect2>
+    <refsect2>
+      <title>Output Plugins</title>
+      <para>
+	Output plugins describe how and where to put the information gained by
+	the Input Plugin and processed by one or more Filter Plugins.  The
+	easiest way is to build a line per packet and fprint it to a file.  Some
+	people might want to log into a SQL database or want an output
+	conforming to the IETF IPFIX language.
+      </para>
+    </refsect2>
+  </refsect1>
+
+  <refsect1>
+    <title>DETAILS</title>
+    <para>
+      The major clue is providing a framework which is as flexible as possible.
+      Nobody knows what strange network protocols are out there :) But at the
+      same time, logging of a packet filter is often very performance critical.
+      Like all ulogd releases since 0.3.x, the ulogd-2.x core doesn't do any
+      dynamic allocations at runtime.  Yes, obviously, at startup time the
+      config file is parsed, and allocations are made.  But after that,
+      everything is pre-allocated.  As an additional improvement over ulogd-1.x,
+      there are also no hashtable lookups for key resolval.  All input/output
+      keys of plugins within every stack are resolved at config file parsing
+      time, and directly interconnected by pointers.
+    </para>
+  </refsect1>
+
+  <refsect1>
+    <title>INSTALLATION</title>
+    <refsect2>
+      <title>Linux kernel</title>
+      <para>
+	To use the NFCT or NFLOG input plugin, you will need a 2.6.14 or later kernel.
+	For old-style ULOG logging, you need a kernel &gt;= 2.4.18.
+      </para>
+    </refsect2>
+    <refsect2>
+      <title>Userspace libraries</title>
+      <para>
+	If you plan to use NFCT and NFLOG input plugin, you will need to compile
+	libnfnetlink, libnetfilter_conntrack and libnetfilter_log libraries
+	which can be downloaded from <ulink
+	url="http://www.netfilter.org/projects/ulogd/index.html">The
+	netfilter.org "ulogd" project</ulink> A simple './configure; make; make
+	install' will be enough to have library installed on your system.
+      </para>
+    </refsect2>
+    <refsect2>
+      <title>Recompiling the source</title>
+      <para>
+	Download the ulogd package and untar it.
+      </para>
+      <para>
+	If you want to build ulogd with MySQL support, type './configure
+	--with-mysql'. You may also have to specify the path of the mysql
+	libraries using '--with-mysql=path'. To build ulogd without MySQL
+	support, just use './configure'.
+      </para>
+      <para>
+	To compile and install the program, call 'make install'.
+      </para>
+    </refsect2>
+  </refsect1>
+
+  <refsect1>
+    <title>iptables NFLOG target</title>
+    <refsect2>
+      <title>Quick Setup</title>
+      <para>
+	Just add rules using the NFLOG target to your firewalling chain. A
+	very basic example:
+	<screen>
+	  iptables -A FORWARD -j NFLOG --nflog-group 32 --nflog-prefix foo
+	</screen>
+	To increase logging performance, try to use the
+	<screen>
+	  --nflog-qthreshold N
+	</screen>
+	option (where 1 &lt; N &lt;= 50). The number you specify is the amount
+	of packets batched together in one multipart netlink message. If you
+	set this to 20, the kernel schedules ulogd only once every 20
+	packets. All 20 packets are then processed by ulogd. This reduces the
+	number of context switches between kernel and userspace.
+      </para>
+      <para>
+	Of course you can combine the NFLOG target with the different
+	netfilter match modules.  For a more detailed description, have a look
+	at the netfilter HOWTO's, available on the netfilter homepage.
+      </para>
+    </refsect2>
+    <refsect2>
+      <title>NFLOG target reference</title>
+      <variablelist>
+	<varlistentry>
+	  <term><option>--nflog-group N</option></term>
+	  <listitem>
+	    <para>
+	      The number of the netlink multicast group to which NFLOG'ed
+	      packets are sent.  You will have to use the same group number in
+	      the NFLOG target and ulogd in order to make logging work.
+	    </para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term><option>--nflog-range N</option></term>
+	  <listitem>
+	    <para>
+	      Copyrange.  This works like the 'snaplen' parameter of tcpdump.
+	      You can specify a number of bytes up to which the packet is
+	      copied.  If you say '40', you will receive the first fourty
+	      bytes of every packet. Leave it to <emphasis>0</emphasis> to
+	      dump the whole packet.
+	    </para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term><option>--nflog-threshold N</option></term>
+	  <listitem>
+	    <para>
+	      Queue threshold.  If a packet is matched by the iptables rule,
+	      and already N packets are in the queue, the queue is flushed to
+	      userspace.  You can use this to implement a policy like: Use a
+	      big queue in order to gain high performance, but still have
+	      certain packets logged immediately to userspace.
+	    </para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term><option>--nflog-prefix STRING</option></term>
+	  <listitem>
+	    <para>
+	      A string that is associated with every packet logged by this rule.
+	      You can use this option to later tell from which rule the packet
+	      was logged.
+	    </para>
+	  </listitem>
+	</varlistentry>
+      </variablelist>
+    </refsect2>
+  </refsect1>
+
+  <refsect1>
+    <title>configfile syntax reference</title>
+    <para>
+      ulogd is what this is all about, so let's describe it's configuration...
+      All configurable parameters of ulogd are in the configfile, typically
+      located at '/etc/ulogd.conf'. The following configuration parameters are
+      available:
+    </para>
+    <variablelist>
+      <varlistentry>
+	<term>logfile</term>
+	  <listitem>
+	    <para>
+	      The main logfile, where ulogd reports any errors, warnings and
+	      other unexpected conditions. Apart from a regular filename, the
+	      following special values can be used; ``syslog'' to log via the
+	      unix syslog(3) mechanism.  ``stdout'' to log to stdout.
+	    </para>
+	  </listitem>
+      </varlistentry>
+      <varlistentry>
+	<term>loglevel</term>
+	<listitem>
+	  <para>
+	    This specifies, how verbose the logging to logfile is. Currently
+	    defined loglevels are: 1=debug information, 3=informational
+	    messages, 5=noticable exceptional conditions, 7=error conditions,
+	    8=fatal errors, program abort.
+	  </para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+	<term>plugin</term>
+	<listitem>
+	  <para>
+	    This option is followed by a filename of a ulogd plugin, which ulogd
+	    should load upon initialization. This option may appear more than
+	    once.
+	  </para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+	<term>stack</term>
+	<listitem>
+	  <para>
+	    This option is followed by a filename of a ulogd plugin, which ulogd
+	    should load upon initialization. This option may appear more than
+	    once.
+	  </para>
+	</listitem>
+      </varlistentry>
+    </variablelist>
+  </refsect1>
+
+  <refsect1>
+    <title>Signals / Logrotate</title>
+    <para>
+      ulogd understands two kinds of signals:
+    </para>
+    <variablelist>
+      <varlistentry>
+	<term>SIGHUP</term>
+	  <listitem>
+	    <para>
+	      Close and re-open all logfiles.  This is mainly intended for
+	      logrotate scripts.  Also closes and re-opens database connections.
+	    </para>
+	  </listitem>
+      </varlistentry>
+      <varlistentry>
+	<term>SIGUSR1</term>
+	<listitem>
+	  <para>
+	    Reload configuration file.  This is not fully implemented yet.
+	  </para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+	<term>SIGUSR2</term>
+	<listitem>
+	  <para>
+	    Dump the whole conntrack table and flush counters afterwards.  Only
+	    Plugin ulogd_inpflow_NFCT.so uses this signal.
+	  </para>
+	</listitem>
+      </varlistentry>
+    </variablelist>
+  </refsect1>
+
+  <refsect1>
+    <title>Available plugins</title>
+    <para>
+      It is important to understand that ulogd without plugins does nothing.  It
+      will receive packets, and do nothing with them.
+    </para>
+    <para>
+      There are two kinds of plugins, interpreter and output plugins.
+      Interpreter plugins parse the packet, output plugins write the interpreted
+      information to some logfile/database/...
+    </para>
+    <para>
+      You can get information about plugins by running
+      <screen>
+	ulogd -i path/to/plugin/file.so
+      </screen>
+    </para>
+    <refsect2>
+      <title>Input plugins</title>
+      <para>
+	ulogd comes with the following input plugins:
+      </para>
+      <variablelist>
+	<varlistentry>
+	  <term>ulogd_inppkt_NFLOG.so</term>
+	  <listitem>
+	    <para>
+	      This interfaces the new nfnetlink_log interface.  To compile,
+	      you need libnetfilter_log installed in your system.
+	    </para>
+	    <variablelist>
+	      <varlistentry>
+		<term>group</term>
+		<listitem>
+		  <para>
+		    The number of the netlink multicast group to which
+		    NFLOG'ed packets are sent.  You will have to use the same
+		    group number in the NFLOG target (-\-nflog-group) and in
+		    the input plugin.
+		  </para>
+		</listitem>
+	      </varlistentry>
+	      <varlistentry>
+		<term>addressfamily</term>
+		<listitem>
+		  <para>
+		    You will need to specify the value of the protocol if you
+		    are not loging IPv4 packet.  addressfamily is 7 to bridged
+		    packet and 10 for IPv6 packet.
+		  </para>
+		</listitem>
+	      </varlistentry>
+	      <varlistentry>
+		<term>numeric_label</term>
+		<listitem>
+		  <para>
+		    You can use this label to store information relative to
+		    the logging. The administrator can define a convention
+		    which can be used later to differenciate packet. For
+		    example, it can store the severity of the logged event.
+		  </para>
+		</listitem>
+	      </varlistentry>
+	      <varlistentry>
+		<term>netlink_socket_buffer_size</term>
+		<listitem>
+		  <para>
+		    Specify the base socket buffer size. This start value will
+		    be increased if needed up to
+		    netlink_socket_buffer_maxsize.
+		  </para>
+		</listitem>
+	      </varlistentry>
+	      <varlistentry>
+		<term>netlink_socket_buffer_maxsize</term>
+		<listitem>
+		  <para>
+		    Specify the base socket buffer maximum size.
+		  </para>
+		</listitem>
+	      </varlistentry>
+	    </variablelist>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>ulogd_inpflow_NFCT.so</term>
+	  <listitem>
+	    <para>
+	      This interfaces the nfnetlink_conntrack kernel subsystem, and
+	      provides flow-based logging.  To compile, you need
+	      libnetfilter_conntrack installed on your system.
+	    </para>
+	    <variablelist>
+	      <varlistentry>
+		<term>pollinterval</term>
+		<listitem>
+		  <para>
+		    Change connection tracking dump interval.
+		  </para>
+		</listitem>
+	      </varlistentry>
+	      <varlistentry>
+		<term>hash_enable</term>
+		<listitem>
+		<para>
+		  If set to 1 (default) a internal hash will be stored and
+		  only destroy event will reach the output plugin.  It set
+		  to 0, all events are reveived by the output plugin.
+		</para>
+		</listitem>
+	      </varlistentry>
+	      <varlistentry>
+		<term>hash_buckets</term>
+		<listitem>
+		  <para>Size of the internal hash bucket.</para>
+		</listitem>
+	      </varlistentry>
+	      <varlistentry>
+		<term>hash_max_entries</term>
+		<listitem>
+		  <para>
+		    Maximum number of entries in the internal connection hash.
+		  </para>
+		</listitem>
+	      </varlistentry>
+	      <varlistentry>
+		<term>event_mask</term>
+		<para>
+		  Select event received from kernel based on a mask. Event types
+		  are defined as follows:
+		  <itemizedlist>
+		    <listitem>
+		      <para>Creation event: 0x00000001</para>
+		    </listitem>
+		    <listitem>
+		      <para>Update event: 0x00000002</para>
+		    </listitem>
+		    <listitem>
+		      <para>Destroy event: 0x00000004</para>
+		    </listitem>
+		  </itemizedlist>
+		</para>
+	      </varlistentry>
+	      <varlistentry>
+		<term>netlink_socket_buffer_size</term>
+		<para>
+		  Specify the base socket buffer size. This start value will be
+		  increased if needed up to netlink_socket_buffer_maxsize.
+		</para>
+	      </varlistentry>
+	      <varlistentry>
+		<term>netlink_socket_buffer_maxsize</term>
+		<para>Specify the base socket buffer maximum size.</para>
+	      </varlistentry>
+	    </variablelist>
+	  </listitem>
+	</varlistentry>
+      </variablelist>
+    </refsect2>
+    <refsect2>
+      <title>Interpreter plugins</title>
+      <para>ulogd comes with the following interpreter plugins:</para>
+      <variablelist>
+	<varlistentry>
+	  <term>ulogd_raw2packet_BASE.so</term>
+	  <listitem>
+	    <para>
+	      Basic interpreter plugin for nfmark, timestamp, mac address, ip
+	      header, tcp header, udp header, icmp header, ah/esp header... Most
+	      people will want to load this very important plugin.
+	    </para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>ulogd_filter_PWSNIFF.so</term>
+	  <listitem>
+	    <para>
+	      Example interpreter plugin to log plaintext passwords as used with
+	      FTP and POP3. Don't blame me for writing this plugin! The
+	      protocols are inherently insecure, and there are a lot of other
+	      tools for sniffing passwords... it's just an example.
+	    </para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>ulogd_filter_IFINDEX.so</term>
+	  <listitem>
+	    <para>
+	      Filter plugin that provides translation from the numerical ifindex
+	      (e.g. '1') to the network interface name (e.g. 'eth4').
+	    </para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>ulogd_filter_HWHDR.so</term>
+	  <listitem>
+	    <para>
+	      This plugin convert hardware header to string. In the case of
+	      ethernet packet, it basically convert mac address to a string
+	      represetation.
+	    </para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>ulogd_filter_IP2BIN.so</term>
+	  <listitem>
+	    <para>
+	      This plugin convert IP addresses to a binary form usable by
+	      databases like MySQL.
+	    </para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>ulogd_filter_IP2HBIN.so</term>
+	  <listitem>
+	    <para>
+	      This plugin convert IP addresses to a binary form in host order
+	      usable by databases like MySQL.
+	    </para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>ulogd_filter_IP2STR.so</term>
+	  <listitem>
+	    <para>
+	      This plugin convert IP addresses to string.
+	    </para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>ulogd_filter_PRINTFLOW.so</term>
+	  <listitem>
+	    <para>
+	      Convert the keys relative to a flow in a string readable by human.
+	    </para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>ulogd_filter_PRINTPKT.so</term>
+	  <listitem>
+	    <para>
+	      Convert the keys relative to a packet in a string readable by
+	      human. This plugin has to be used to print packet in the format
+	      similar to the LOG target format.
+	    </para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>ulogd_filter_MARK.so</term>
+	  <listitem>
+	    <para>
+	      When this plugin is put in a stack, only messages were the mark
+	      (packet mark or connection mark) matches the given mark/mask will
+	      be logged.
+	    </para>
+	    <variablelist>
+	      <varlistentry>
+		<term>mark</term>
+		<listitem>
+		  <para>
+		    Define the mark which will be used to check packet or flow.
+		  </para>
+		</listitem>
+	      </varlistentry>
+	      <varlistentry>
+		<term>mask</term>
+		<listitem>
+		  <para>
+		    Define the mask which will be used to check packet or flow.
+		  </para>
+		</listitem>
+	      </varlistentry>
+	    </variablelist>
+	  </listitem>
+	</varlistentry>
+      </variablelist>
+    </refsect2>
+    <refsect2>
+      <title>Output plugins</title>
+      <para>ulogd comes with the following output plugins:</para>
+      <variablelist>
+	<varlistentry>
+	  <term>ulogd_output_OPRINT.so</term>
+	  <listitem>
+	    <para>
+	      A very simple output module, dumping all packets in the format
+	      <screen>
+		===>PACKET BOUNDARY
+		key=value
+		key=value
+		...
+		===>PACKET BOUNDARY
+		...
+	      </screen>
+	      to a file.  The only useful application is debugging.
+	    </para>
+	    <para>
+	      The module defines the following configuration directives:
+	      <variablelist>
+		<varlistentry>
+		  <term>dumpfile</term>
+		  <listitem>
+		    <para>
+		      The filename where it should log to. The default is
+		      <emphasis>/var/log/ulogd.pktlog</emphasis>
+		    </para>
+		  </listitem>
+		</varlistentry>
+	      </variablelist>
+	    </para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>ulogd_output_LOGEMU.so</term>
+	  <listitem>
+	    <para>
+	      An output module which tries to emulate the old syslog-based LOG
+	      targed as far as possible. Logging is done to a seperate textfile
+	      instead of syslog, though.
+	    </para>
+	    <para>
+	      The module defines the following configuration directives:
+	      <variablelist>
+		<varlistentry>
+		  <term>file</term>
+		  <listitem>
+		    <para>
+		      The filename where it should log to. The default is
+		      <emphasis>/var/log/ulogd.syslogemu</emphasis>
+		    </para>
+		  </listitem>
+		</varlistentry>
+		<varlistentry>
+		  <term>sync</term>
+		  <listitem>
+		    <para>
+		      Set this to 1 if you want to have your logfile written
+		      synchronously. This may reduce performance, but makes your
+		      log-lines appear immediately. The default is
+		      <emphasis>0</emphasis>
+		    </para>
+		  </listitem>
+		</varlistentry>
+	      </variablelist>
+	    </para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>ulogd_output_MYSQL.so</term>
+	  <listitem>
+	    <para>
+	      An output plugin for logging into a mysql database. This is only
+	      compiled if you have the mysql libraries installed, and the
+	      configure script was able to detect them. (that is: --with-mysql
+	      was specified for ./configure)
+	    </para>
+	    <para>
+	      The plugin automagically runs a procedure with arguments taken
+	      from a the configurable table; It connects to mysql during the
+	      startup phase of ulogd and obtains a list of the columns in the
+	      table. Then it tries to resolve the column names against keys of
+	      interpreter plugins. This way you can easily select which
+	      information you want to log - just by the layout of the table.
+	    </para>
+	    <para>
+	      If, for example, your table contains a field called 'ip_saddr', ulogd will
+	      resolve this against the key 'ip.saddr' and put the ip address as 32bit
+	      unsigned integer into the corresponding argument of table.
+	    </para>
+	    <para>
+	      The file '<emphasis>doc/mysql-ulogd2.sql</emphasis>' contains a
+	      schema for both packet and flow logging.
+	    </para>
+	    <para>
+	      The module defines the following configuration directives:
+	      <variablelist>
+		<varlistentry>
+		  <term>table</term>
+		  <listitem>
+		    <para>
+		      Name of the table which ulogd will use to build arguments
+		      list.
+		    </para>
+		  </listitem>
+		</varlistentry>
+		<varlistentry>
+		  <term>procedure</term>
+		  <listitem>
+		    <para>
+		      Stored procedure that will be run with the argument
+		      specified in the table variable.  Behaviour of the
+		      procedure option can be twitted by using specific name.
+		      If procedure name is:
+		      <itemizedlist>
+			<listitem>
+			  <para>
+			    "INSERT": A classic INSERT SQL query is done in the
+			    table pointed by the "table" variable.
+			  </para>
+			</listitem>
+			<listitem>
+			  <para>
+			    start with "INSERT ": Configuration has to specify
+			    the start of the INSERT query that will be used. For
+			    example, a typical value is "INSERT INTO ulog2".
+			  </para>
+			</listitem>
+			<listitem>
+			  <para>
+			    start with "CALL": the named stored procedure is
+			    executed with the "CALL" MySQL command.
+			  </para>
+			</listitem>
+			<listitem>
+			  <para>
+			    Otherwise the named stored function is executed with
+			    the "SELECT" MySQL command.
+			  </para>
+			</listitem>
+		      </itemizedlist>
+		    </para>
+		  </listitem>
+		</varlistentry>
+		<varlistentry>
+		  <term>db</term>
+		  <listitem>
+		    <para>Name of the mysql database.</para>
+		  </listitem>
+		</varlistentry>
+		<varlistentry>
+		  <term>host</term>
+		  <listitem>
+		    <para>Name of the mysql database host.</para>
+		  </listitem>
+		</varlistentry>
+		<varlistentry>
+		  <term>host</term>
+		  <listitem>
+		    <para>TCP port number of mysql database server.</para>
+		  </listitem>
+		</varlistentry>
+		<varlistentry>
+		  <term>user</term>
+		  <listitem>
+		    <para>Name of the mysql user.</para>
+		  </listitem>
+		</varlistentry>
+		<varlistentry>
+		  <term>pass</term>
+		  <listitem>
+		    <para>Password for mysql.</para>
+		  </listitem>
+		</varlistentry>
+		<varlistentry>
+		  <term>reconnect</term>
+		  <listitem>
+		    <para>
+		      Number of reconnection attempt before declaring the output
+		      plugin as dead.
+		    </para>
+		  </listitem>
+		</varlistentry>
+		<varlistentry>
+		  <term>connect_timeout</term>
+		  <listitem>
+		    <para>Database connection timeout.</para>
+		  </listitem>
+		</varlistentry>
+	      </variablelist>
+	    </para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>ulogd_output_PGSQL.so</term>
+	  <listitem>
+	    <para>
+	      An output plugin for logging into a postgresql database. This is
+	      only compiled if you have the pgsql libraries installed, and the
+	      configure script was able to detect them. (that is: --with-pgsql
+	      was specified for ./configure)
+	    </para>
+	    <para>
+	      The plugin automagically runs a procedure with arguments taken
+	      from a the configurable table; It connects to pgsql during the
+	      startup phase of ulogd and obtains a list of the columns in the
+	      table. Then it tries to resolve the column names against keys of
+	      interpreter plugins. This way you can easily build your own
+	      procedure and select it arguments just by modifying the layout of
+	      the table.
+	    </para>
+	    <para>
+	      If, for example, your table contains a field called 'ip_saddr',
+	      ulogd will resolve this against the key 'ip.saddr' and put the ip
+	      address as 32bit unsigned integer into the table.
+	    </para>
+	    <para>
+	      The file '<emphasis>doc/pgsql-ulogd2.sql</emphasis>' contains a
+	      schema for both packet and flow logging.
+	    </para>
+	    <para>
+	      The module defines the following configuration directives:
+	      <variablelist>
+		<varlistentry>
+		  <term>table</term>
+		  <listitem>
+		    <para>
+		      Name of the table which ulogd will use to build arguments
+		      list.
+		    </para>
+		  </listitem>
+		</varlistentry>
+		<varlistentry>
+		  <term>procedure</term>
+		  <listitem>
+		    <para>
+		      Stored procedure that will be run with the argument
+		      specified in the table variable.
+		    </para>
+		  </listitem>
+		</varlistentry>
+		<varlistentry>
+		  <term>schema</term>
+		  <listitem>
+		    <para>
+		      PGSQL schema to use.
+		    </para>
+		  </listitem>
+		</varlistentry>
+		<varlistentry>
+		  <term>db</term>
+		  <listitem>
+		    <para>Name of the database.</para>
+		  </listitem>
+		</varlistentry>
+		<varlistentry>
+		  <term>host</term>
+		  <listitem>
+		    <para>Name of the pgsql database host.</para>
+		  </listitem>
+		</varlistentry>
+		<varlistentry>
+		  <term>port</term>
+		  <listitem>
+		    <para>TCP port number of database server.</para>
+		  </listitem>
+		</varlistentry>
+		<varlistentry>
+		  <term>user</term>
+		  <listitem>
+		    <para>Name of the sql user.</para>
+		  </listitem>
+		</varlistentry>
+		<varlistentry>
+		  <term>pass</term>
+		  <listitem>
+		    <para>Password for sql user.</para>
+		  </listitem>
+		</varlistentry>
+		<varlistentry>
+		  <term>reconnect</term>
+		  <listitem>
+		    <para>
+		      Number of reconnection attempt before declaring the output
+		      plugin as dead.
+		    </para>
+		  </listitem>
+		</varlistentry>
+		<varlistentry>
+		  <term>connect_timeout</term>
+		  <listitem>
+		    <para>Database connection timeout.</para>
+		  </listitem>
+		</varlistentry>
+	      </variablelist>
+	    </para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>ulogd_output_SQLITE3.so</term>
+	  <listitem>
+	    <para>
+	      An output plugin for logging into a SQLITE v3 database. This is
+	      only compiled if you have the sqlite libraries installed, and the
+	      configure script was able to detect them. (that is: --with-sqlite3
+	      was specified for ./configure)
+	    </para>
+	    <para>
+	      The plugin automagically inserts the data into the configured
+	      table; It opens the sqlite db during the startup phase of ulogd
+	      and obtains a list of the columns in the table. Then it tries to
+	      resolve the column names against keys of interpreter plugins. This
+	      way you can easily select which information you want to log - just
+	      by the layout of the table.
+	    </para>
+	    <para>
+	      If, for example, your table contains a field called 'ip_saddr',
+	      ulogd will resolve this against the key 'ip.saddr' and put the ip
+	      address as 32bit unsigned integer into the table.
+	    </para>
+	    <para>
+	      You may want to have a look at the file
+	      '<emphasis>doc/sqlite3.table</emphasis>' as an example table
+	      including fields to log all keys from ulogd_BASE.so. Just delete
+	      the fields you are not interested in, and create the table. This
+	      file contains two tables, one for packet-based logging and another
+	      for flow-based logging.
+	    </para>
+	    <para>
+	      To create the database file with the tables, you have to invoke
+	      the following command: <emphasis>sqlite3 ulogd.sqlite3db &lt;
+	      sqlite3.table</emphasis>
+	    </para>
+	    <para>
+	      To check that we are logging stuff into it correctly: sqlite3
+	      ulogd.sqlite3db "SELECT * from ulog_ct"
+	    </para>
+	    <para>
+	      The module defines the following configuration directives:
+	      <variablelist>
+		<varlistentry>
+		  <term>table</term>
+		  <listitem>
+		    <para>Name of the table to which ulogd should log.</para>
+		  </listitem>
+		</varlistentry>
+		<varlistentry>
+		  <term>db</term>
+		  <listitem>
+		    <para>Name of the database.</para>
+		  </listitem>
+		</varlistentry>
+	      </variablelist>
+	    </para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>ulogd_output_SYSLOG.so</term>
+	  <listitem>
+	    <para>
+	      An output plugin that really logs via syslogd. Lines will look
+	      exactly like printed with traditional LOG target.
+	    </para>
+	    <para>
+	      The module defines the following configuration directives:
+	      <variablelist>
+		<varlistentry>
+		  <term>facility</term>
+		  <listitem>
+		    <para>
+		      The syslog facility (LOG_DAEMON, LOG_KERN, LOG_LOCAL0
+		      .. LOG_LOCAL7, LOG_USER)
+		    </para>
+		  </listitem>
+		</varlistentry>
+		<varlistentry>
+		  <term>level</term>
+		  <listitem>
+		    <para>
+		      The syslog level (LOG_EMERG, LOG_ALERT, LOG_CRIT, LOG_ERR,
+		      LOG_WARNING, LOG_NOTICE, LOG_INFO, LOG_DEBUG)
+		    </para>
+		  </listitem>
+		</varlistentry>
+	      </variablelist>
+	    </para>
+	  </listitem>
+	</varlistentry>
+      </variablelist>
+    </refsect2>
+  </refsect1>
+
+  <refsect1>
+    <title>QUESTIONS / COMMENTS</title>
+    <para>
+      All comments / questions / ... are appreciated.
+      Just drop a note to netfilter-devel@vger.kernel.org.
+    </para>
+    <para>
+      The preferred method for reporting bugs is the netfilter bugzilla system,
+      available at <ulink
+      url="http://bugzilla.netfilter.org/">http://bugzilla.netfilter.org/</ulink>
+    </para>
+  </refsect1>
+
+  <refsect1>
+    <title>See Also</title>
+    <para>
+      <simplelist type="inline">
+	<member>iptables(8)</member>
+	<member>ip6tables(8)</member>
+	<member>nft(8)</member>
+      </simplelist>
+    </para>
+  </refsect1>
+
+  <refsect1>
+    <title>Authors</title>
+    <para>
+      ulogd was written by Harald Welte.
+    </para>
+  </refsect1>
+
+  <refsect1>
+    <title>Copyright</title>
+    <simplelist>
+      <member>
+	Copyright &copy; 2000-2006 Harald Welte
+	<email>laforge@netfilter.org</email>
+      </member>
+      <member>
+	Copyright &copy; 2008-2012 Pablo Neira Ayuso
+	<email>pablo@netfilter.org</email>
+      </member>
+      <member>
+	Copyright &copy; 2008-2012 Eric Leblond
+	<email>eric@regit.org</email>
+      </member>
+    </simplelist>
+    <para>
+      ulogd is free software; you can redistribute it and/or modify it under the
+      terms of the GNU General Public License version 2 as published by the Free
+      Software Foundation.
+    </para>
+    <para>
+      This documentation is licenced under the terms of the Creative Commons
+      Attribution-ShareAlike 4.0 license, <ulink
+      url="http://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</ulink>.
+    </para>
+  </refsect1>
+</refentry>
