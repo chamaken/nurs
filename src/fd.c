@@ -17,7 +17,9 @@
 #include <string.h>
 #include <sys/epoll.h>
 #include <sys/eventfd.h>
+#include <sys/socket.h>
 #include <sys/timerfd.h>
+#include <sys/types.h>
 #include <time.h>
 #include <unistd.h>
 
@@ -139,7 +141,8 @@ int nfd_loop(void)
 	struct epoll_event events[NURS_FD_MAX_EVENTS];
 	enum nurs_return_t rc;
 	uint16_t flags;
-	int fds, i, ret = 0;
+	int fds, i, err, ret = 0;
+	socklen_t errlen = sizeof(int);
 
 	cancelfd = eventfd(0, 0);
 	if (cancelfd == -1)
@@ -178,8 +181,13 @@ int nfd_loop(void)
 				flags |= NURS_FD_F_WRITE;
 
 			if (events[i].events
-			    & (EPOLLRDHUP | EPOLLPRI | EPOLLERR))
+			    & (EPOLLRDHUP | EPOLLPRI | EPOLLERR)) {
 				flags |= NURS_FD_F_EXCEPT;
+				if (!errno &&
+				    !getsockopt(nfd->fd, SOL_SOCKET, SO_ERROR,
+						&err, &errlen))
+					errno = err;
+			}
 
 			if (flags & nfd->when) {
 				rc = nfd->cb(nfd->fd, flags, nfd->data);
