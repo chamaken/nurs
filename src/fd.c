@@ -84,7 +84,7 @@ EXPORT_SYMBOL(nurs_fd_destroy);
 
 int nurs_fd_register(struct nurs_fd *nfd, nurs_fd_cb_t cb, void *data)
 {
-	struct epoll_event ev;
+	struct epoll_event ev = {0, {0}};
 	int flags;
 
 	/* make FD non blocking */
@@ -98,12 +98,12 @@ int nurs_fd_register(struct nurs_fd *nfd, nurs_fd_cb_t cb, void *data)
 		return -1;
 
 	if (nfd->when & NURS_FD_F_READ)
-		ev.events = EPOLLIN;
+		ev.events |= EPOLLIN;
 	if (nfd->when & NURS_FD_F_WRITE)
-		ev.events = EPOLLOUT;
+		ev.events |= EPOLLOUT;
 	if (nfd->when & NURS_FD_F_EXCEPT) {
 		/* intend to be a fd_set *exceptfds, right? */
-		ev.events = EPOLLRDHUP | EPOLLPRI | EPOLLERR;
+		ev.events |= EPOLLRDHUP | EPOLLPRI | EPOLLERR;
 	}
 
 	nfd->cb = cb;
@@ -116,16 +116,16 @@ EXPORT_SYMBOL(nurs_fd_register);
 
 int nurs_fd_unregister(struct nurs_fd *nfd)
 {
-	struct epoll_event ev;
+	struct epoll_event ev = {0, {0}};
 
 	if (nfd->when & NURS_FD_F_READ)
-		ev.events = EPOLLIN;
+		ev.events |= EPOLLIN;
 
 	if (nfd->when & NURS_FD_F_WRITE)
-		ev.events = EPOLLOUT;
+		ev.events |= EPOLLOUT;
 
 	if (nfd->when & NURS_FD_F_EXCEPT)
-		ev.events = EPOLLRDHUP | EPOLLPRI | EPOLLERR;
+		ev.events |= EPOLLRDHUP | EPOLLPRI | EPOLLERR;
 
 	ev.data.ptr = nfd;
 	return epoll_ctl(epollfd, EPOLL_CTL_DEL, nfd->fd, &ev);
