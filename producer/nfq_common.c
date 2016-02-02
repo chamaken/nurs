@@ -354,8 +354,7 @@ int config_nfq(const struct nurs_producer *producer)
 
 	nlh = nfq_hdr_put(buf, NFQNL_MSG_CONFIG, queue_num);
 	nlh->nlmsg_flags |= NLM_F_ACK;
-	// nfq_nlmsg_cfg_put_cmd(nlh, AF_UNSPEC, NFQNL_CFG_CMD_BIND);
-	nfq_nlmsg_cfg_put_cmd(nlh, AF_INET, NFQNL_CFG_CMD_BIND);
+	nfq_nlmsg_cfg_put_cmd(nlh, AF_UNSPEC, NFQNL_CFG_CMD_BIND);
 	if (mnl_socket_sendto(priv->nl, nlh, nlh->nlmsg_len) < 0) {
 		nurs_log(NURS_ERROR, "mnl_socket_sendto: %s\n",
 			strerror(errno));
@@ -475,7 +474,6 @@ int unbind_nfq(const struct nurs_producer *producer)
 		return NURS_RET_ERROR;
 	}
 	nfq_nlmsg_cfg_put_cmd(nlh, AF_UNSPEC, NFQNL_CFG_CMD_UNBIND);
-	/* nfq_nlmsg_cfg_put_cmd(nlh, AF_INET, NFQNL_CFG_CMD_UNBIND); */
 	if (mnl_socket_sendto(priv->nl, nlh, nlh->nlmsg_len) < 0) {
 		nurs_log(NURS_ERROR, "failed to mnl_socket_sendto: %s\n",
 			strerror(errno));
