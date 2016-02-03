@@ -363,12 +363,12 @@
     <variablelist>
       <varlistentry>
 	<term>SIGHUP</term>
-	  <listitem>
-	    <para>
-	      Close and re-open all logfiles.  This is mainly intended for
-	      logrotate scripts.  Also closes and re-opens database connections.
-	    </para>
-	  </listitem>
+	<listitem>
+	  <para>
+	    Close and re-open all logfiles.  This is mainly intended for
+	    logrotate scripts.  Also closes and re-opens database connections.
+	  </para>
+	</listitem>
       </varlistentry>
       <varlistentry>
 	<term>SIGUSR1</term>
@@ -517,32 +517,38 @@
 	      </varlistentry>
 	      <varlistentry>
 		<term>event_mask</term>
-		<para>
-		  Select event received from kernel based on a mask. Event types
-		  are defined as follows:
-		  <itemizedlist>
-		    <listitem>
-		      <para>Creation event: 0x00000001</para>
-		    </listitem>
-		    <listitem>
-		      <para>Update event: 0x00000002</para>
-		    </listitem>
-		    <listitem>
-		      <para>Destroy event: 0x00000004</para>
-		    </listitem>
-		  </itemizedlist>
-		</para>
+		<listitem>
+		  <para>
+		    Select event received from kernel based on a mask. Event types
+		    are defined as follows:
+		    <itemizedlist>
+		      <listitem>
+			<para>Creation event: 0x00000001</para>
+		      </listitem>
+		      <listitem>
+			<para>Update event: 0x00000002</para>
+		      </listitem>
+		      <listitem>
+			<para>Destroy event: 0x00000004</para>
+		      </listitem>
+		    </itemizedlist>
+		  </para>
+		</listitem>
 	      </varlistentry>
 	      <varlistentry>
 		<term>netlink_socket_buffer_size</term>
-		<para>
-		  Specify the base socket buffer size. This start value will be
-		  increased if needed up to netlink_socket_buffer_maxsize.
-		</para>
+		<listitem>
+		  <para>
+		    Specify the base socket buffer size. This start value will
+		    be increased if needed up to netlink_socket_buffer_maxsize.
+		  </para>
+		</listitem>
 	      </varlistentry>
 	      <varlistentry>
 		<term>netlink_socket_buffer_maxsize</term>
-		<para>Specify the base socket buffer maximum size.</para>
+		<listitem>
+		  <para>Specify the base socket buffer maximum size.</para>
+		</listitem>
 	      </varlistentry>
 	    </variablelist>
 	  </listitem>
