@@ -10,6 +10,7 @@
  * with contributions from fellow hackers such as Pablo Neira Ayuso,
  * Eric Leblond and Pierre Chifflier.
  */
+
 #include <errno.h>
 #include <netinet/in.h>
 #include <stdbool.h>
@@ -17,7 +18,22 @@
 
 #include "internal.h"
 
-/* always success (unless input is valid) */
+/**
+ * \defgroup nurs config
+ * @{
+ * struct nurs_input is defined by struct nurs_input_def and
+ * and struct nurs_output is by struct nurs_output_def in plugin definition.
+ * nurs_input is passed as param in interp callback and nurs_output is same for
+ * filter and consumer, coveter. And also can be acquired by
+ * nurs_get_output() by producer.
+ */
+
+/**
+ * nurs_input_len - obtain input array size
+ * \param input input passed by callback param
+ *
+ * This function returns the size of input.
+ */
 uint16_t nurs_input_len(const struct nurs_input *input)
 {
 	return input->len;
@@ -61,7 +77,14 @@ static uint16_t key_size(const struct nurs_output_key *key)
 	return 0;
 }
 
-/* set errno and returns 0 on error */
+/**
+ * nurs_input_size - obtain input key size
+ * \param input input passed by callback param
+ * \param idx index in nurs_input_def
+ *
+ * This function returns the input key size specified by idx.
+ * On error, it returns 0 and errno is appropriately set.
+ */
 uint16_t nurs_input_size(const struct nurs_input *input, uint16_t idx)
 {
 	if (idx >= input->len) {
@@ -76,7 +99,14 @@ uint16_t nurs_input_size(const struct nurs_input *input, uint16_t idx)
 }
 EXPORT_SYMBOL(nurs_input_size);
 
-/* set errno and returns NULL on error */
+/**
+ * nurs_input_name - obtain input key name
+ * \param input input passed by callback param
+ * \param idx index in nurs_input_def
+ *
+ * This function returns name of the input key specified by idx.
+ * On error, it returns NULL and errno is appropriately set.
+ */
 const char *nurs_input_name(const struct nurs_input *input, uint16_t idx)
 {
 	if (idx >= input->len) {
@@ -91,7 +121,28 @@ const char *nurs_input_name(const struct nurs_input *input, uint16_t idx)
 }
 EXPORT_SYMBOL(nurs_input_name);
 
-/* set errno and returns 0 on error */
+/**
+ * nurs_input_type - obtain input key type
+ * \param input input passed by callback param
+ * \param idx index in nurs_input_def
+ *
+ * This function returns type of the input key specified by idx, either
+ *	NURS_KEY_T_BOOL
+ *	NURS_KEY_T_INT8
+ *	NURS_KEY_T_INT16
+ *	NURS_KEY_T_INT32
+ *	NURS_KEY_T_INT64
+ *	NURS_KEY_T_UINT8
+ *	NURS_KEY_T_UINT16
+ *	NURS_KEY_T_UINT32
+ *	NURS_KEY_T_UINT64
+ *	NURS_KEY_T_INADDR
+ *	NURS_KEY_T_IN6ADDR
+ *	NURS_KEY_T_POINTER
+ *	NURS_KEY_T_STRING
+ *	NURS_KEY_T_EMBED
+ * On error, it returns 0 and errno is appropriately set.
+ */
 uint16_t nurs_input_type(const struct nurs_input *input, uint16_t idx)
 {
 	if (idx >= input->len) {
@@ -106,7 +157,14 @@ uint16_t nurs_input_type(const struct nurs_input *input, uint16_t idx)
 }
 EXPORT_SYMBOL(nurs_input_type);
 
-/* set errno and returns on error */
+/**
+ * nurs_input_index - obtain input key index
+ * \param input input passed by callback param
+ * \param name input key name
+ *
+ * This function returns index of the input key specified by name.
+ * On error, it returns 0 and errno is appropriately set.
+ */
 uint16_t nurs_input_index(const struct nurs_input *input, const char *name)
 {
 	uint16_t i;
@@ -142,7 +200,14 @@ EXPORT_SYMBOL(nurs_input_index);
 	}								\
 	} while (0)
 
-/* set errno and returns false on error */
+/**
+ * nurs_input_bool - obtain bool value from input
+ * \param input input passed by callback param
+ * \param idx input key index
+ *
+ * This function returns boolean value of the input specified by index.
+ * On error, it returns false and errno is appropriately set.
+ */
 bool nurs_input_bool(const struct nurs_input *input, uint16_t idx)
 {
 	check_input_type(NURS_KEY_T_BOOL, false);
@@ -150,7 +215,14 @@ bool nurs_input_bool(const struct nurs_input *input, uint16_t idx)
 }
 EXPORT_SYMBOL(nurs_input_bool);
 
-/* set errno and returns 0 on error */
+/**
+ * nurs_input_u8 - obtain uint8_t value from input
+ * \param input input passed by callback param
+ * \param idx input key index
+ *
+ * This function returns uint8_t value of the input specified by index.
+ * On error, it returns 0 and errno is appropriately set.
+ */
 uint8_t nurs_input_u8(const struct nurs_input *input, uint16_t idx)
 {
 	check_input_type(NURS_KEY_T_UINT8, 0);
@@ -158,7 +230,14 @@ uint8_t nurs_input_u8(const struct nurs_input *input, uint16_t idx)
 }
 EXPORT_SYMBOL(nurs_input_u8);
 
-/* set errno and returns 0 on error */
+/**
+ * nurs_input_u16 - obtain uint16_t value from input
+ * \param input input passed by callback param
+ * \param idx input key index
+ *
+ * This function returns uint16_t value of the input specified by index.
+ * On error, it returns 0 and errno is appropriately set.
+ */
 uint16_t nurs_input_u16(const struct nurs_input *input, uint16_t idx)
 {
 	check_input_type(NURS_KEY_T_UINT16, 0);
@@ -166,7 +245,14 @@ uint16_t nurs_input_u16(const struct nurs_input *input, uint16_t idx)
 }
 EXPORT_SYMBOL(nurs_input_u16);
 
-/* set errno and returns 0 on error */
+/**
+ * nurs_input_u32 - obtain uint32_t value from input
+ * \param input input passed by callback param
+ * \param idx input key index
+ *
+ * This function returns uint32_t value of the input specified by index.
+ * On error, it returns 0 and errno is appropriately set.
+ */
 uint32_t nurs_input_u32(const struct nurs_input *input, uint16_t idx)
 {
 	check_input_type(NURS_KEY_T_UINT32, 0);
@@ -174,7 +260,14 @@ uint32_t nurs_input_u32(const struct nurs_input *input, uint16_t idx)
 }
 EXPORT_SYMBOL(nurs_input_u32);
 
-/* set errno and returns 0 on error */
+/**
+ * nurs_input_u64 - obtain uint64_t value from input
+ * \param input input passed by callback param
+ * \param idx input key index
+ *
+ * This function returns uint64_t value of the input specified by index.
+ * On error, it returns 0 and errno is appropriately set.
+ */
 uint64_t nurs_input_u64(const struct nurs_input *input, uint16_t idx)
 {
 	check_input_type(NURS_KEY_T_UINT64, 0);
@@ -182,7 +275,14 @@ uint64_t nurs_input_u64(const struct nurs_input *input, uint16_t idx)
 }
 EXPORT_SYMBOL(nurs_input_u64);
 
-/* set errno and returns 0 on error */
+/**
+ * nurs_input_in_addr - obtain in_addr_t value from input
+ * \param input input passed by callback param
+ * \param idx input key index
+ *
+ * This function returns in_addr_t (uint32_t) value of the input specified by
+ * index. On error, it returns 0 and errno is appropriately set.
+ */
 in_addr_t nurs_input_in_addr(const struct nurs_input *input, uint16_t idx)
 {
 	check_input_type(NURS_KEY_T_INADDR, 0);
@@ -190,7 +290,14 @@ in_addr_t nurs_input_in_addr(const struct nurs_input *input, uint16_t idx)
 }
 EXPORT_SYMBOL(nurs_input_in_addr);
 
-/* set errno and returns NULL on error */
+/**
+ * nurs_input_in6_addr - obtain pointer to struct in6_addr from input
+ * \param input input passed by callback param
+ * \param idx input key index
+ *
+ * This function returns struct in6_addr pointer of the input specified by
+ * index. On error, it returns NULL and errno is appropriately set.
+ */
 const struct in6_addr *
 nurs_input_in6_addr(const struct nurs_input *input, uint16_t idx)
 {
@@ -200,7 +307,14 @@ nurs_input_in6_addr(const struct nurs_input *input, uint16_t idx)
 }
 EXPORT_SYMBOL(nurs_input_in6_addr);
 
-/* set errno and returns NULL on error */
+/**
+ * nurs_input_pointer - obtain pointer from input
+ * \param input input passed by callback param
+ * \param idx input key index
+ *
+ * This function returns pointer (void *) of the input specified by
+ * index. On error, it returns NULL and errno is appropriately set.
+ */
 const void *nurs_input_pointer(const struct nurs_input *input, uint16_t idx)
 {
 	if (idx >= input->len) {
@@ -222,6 +336,14 @@ const void *nurs_input_pointer(const struct nurs_input *input, uint16_t idx)
 }
 EXPORT_SYMBOL(nurs_input_pointer);
 
+/**
+ * nurs_input_string - obtain string from input
+ * \param input input passed by callback param
+ * \param idx input key index
+ *
+ * This function returns string (char *) of the input specified by
+ * index. On error, it returns NULL and errno is appropriately set.
+ */
 const char *nurs_input_string(const struct nurs_input *input, uint16_t idx)
 {
 	check_input_type(NURS_KEY_T_STRING, NULL);
@@ -230,8 +352,14 @@ const char *nurs_input_string(const struct nurs_input *input, uint16_t idx)
 }
 EXPORT_SYMBOL(nurs_input_string);
 
-
-/* set errno and returns false on error */
+/**
+ * nurs_input_is_valid - check input validity
+ * \param input input passed by callback param
+ * \param idx input key index
+ *
+ * This function returns true if the input specified by index is set or returns
+ * false. On error, it returns false and errno is appropriately set.
+ */
 bool nurs_input_is_valid(const struct nurs_input *input, uint16_t idx)
 {
 	if (idx >= input->len) {
@@ -244,7 +372,15 @@ bool nurs_input_is_valid(const struct nurs_input *input, uint16_t idx)
 }
 EXPORT_SYMBOL(nurs_input_is_valid);
 
-/* set errno and returns false on error */
+/**
+ * nurs_input_is_active - check input key has source output or not.
+ * \param input input passed by callback param
+ * \param idx input key index
+ *
+ * This function returns true if the input specified by index is has source in
+ * the stack or returns false. On error, it returns false and errno is
+ * appropriately set.
+ */
 bool nurs_input_is_active(const struct nurs_input *input, uint16_t idx)
 {
 	if (idx >= input->len) {
@@ -255,7 +391,14 @@ bool nurs_input_is_active(const struct nurs_input *input, uint16_t idx)
 }
 EXPORT_SYMBOL(nurs_input_is_active);
 
-/* set errno and returns UINT32_MAX on error */
+/**
+ * nurs_input_ipfix_vendor - obtain IPFIX vendor code from input
+ * \param input input passed by callback param
+ * \param idx input key index
+ *
+ * This function returns IPFIX vendor code of the input specified by index.  On
+ * error, it returns 0 (caution, IETF code is 0) and errno is appropriately set.
+ */
 uint32_t nurs_input_ipfix_vendor(const struct nurs_input *input, uint16_t idx)
 {
 	check_input(0); /* 0 is reserved for IETF but... */
@@ -263,7 +406,14 @@ uint32_t nurs_input_ipfix_vendor(const struct nurs_input *input, uint16_t idx)
 }
 EXPORT_SYMBOL(nurs_input_ipfix_vendor);
 
-/* set errno and returns 0 on error */
+/**
+ * nurs_input_ipfix_field - obtain IPFIX field id from input
+ * \param input input passed by callback param
+ * \param idx input key index
+ *
+ * This function returns IPFIX field id of the input specified by index.  On
+ * error, it returns 0 and errno is appropriately set.
+ */
 uint16_t nurs_input_ipfix_field(const struct nurs_input *input, uint16_t idx)
 {
 	check_input(0);
@@ -271,7 +421,14 @@ uint16_t nurs_input_ipfix_field(const struct nurs_input *input, uint16_t idx)
 }
 EXPORT_SYMBOL(nurs_input_ipfix_field);
 
-/* set errno and returns NULL on error */
+/**
+ * nurs_input_cim_name - obtain cim name from input
+ * \param input input passed by callback param
+ * \param idx input key index
+ *
+ * This function returns cim name (char *) of the input specified by index.
+ * On error, it returns NULL and errno is appropriately set.
+ */
 const char *nurs_input_cim_name(const struct nurs_input *input, uint16_t idx)
 {
 	check_input(NULL);
@@ -282,13 +439,26 @@ EXPORT_SYMBOL(nurs_input_cim_name);
 #undef check_input_type
 #undef check_input
 
+/**
+ * nurs_output_len - obtain output array size
+ * \param output output passed by callback param or get by nurs_get_output()
+ *
+ * This function returns array size of output.
+ */
 uint16_t nurs_output_len(const struct nurs_output *output)
 {
 	return output->len;
 }
 EXPORT_SYMBOL(nurs_output_len);
 
-/* set errno and return 0 on error */
+/**
+ * nurs_output_type - obtain output key type
+ * \param output output passed by callback param or get by nurs_get_output()
+ * \param idx index in nurs_output_def
+ *
+ * This function returns type of the output key specified by idx, same as
+ * nurs_input_type. On error, it returns 0 and errno is appropriately set.
+ */
 uint16_t nurs_output_type(const struct nurs_output *output, uint16_t idx)
 {
 	if (idx >= output->len) {
@@ -299,7 +469,14 @@ uint16_t nurs_output_type(const struct nurs_output *output, uint16_t idx)
 }
 EXPORT_SYMBOL(nurs_output_type);
 
-/* set errno and return 0 on error */
+/**
+ * nurs_output_index - obtain output key index
+ * \param output output passed by callback param or get by nurs_get_output()
+ * \param name output key name
+ *
+ * This function returns index of the output key specified by name.
+ * On error, it returns 0 and errno is appropriately set.
+ */
 uint16_t nurs_output_index(const struct nurs_output *output, const char *name)
 {
 	uint16_t i;
@@ -314,7 +491,14 @@ uint16_t nurs_output_index(const struct nurs_output *output, const char *name)
 }
 EXPORT_SYMBOL(nurs_output_index);
 
-/* set errno and return 0 on error */
+/**
+ * nurs_output_size - obtain output key size
+ * \param output output passed by callback param or get by nurs_get_output()
+ * \param idx index in nurs_output_def
+ *
+ * This function returns the output key size specified by idx.
+ * On error, it returns 0 and errno is appropriately set.
+ */
 uint16_t nurs_output_size(const struct nurs_output *output, uint16_t idx)
 {
 	if (idx >= output->len) {
@@ -340,7 +524,16 @@ EXPORT_SYMBOL(nurs_output_size);
 	}								\
 	} while (0)
 
-/* set errno and returns -1 on error */
+/**
+ * nurs_output_set_bool - set boolean value to output
+ * \param output output passed by callback param or get by nurs_get_output()
+ * \param idx output key index
+ * \param value value to set
+ *
+ * This function set boolean value to the output specified by index.
+ * On error, it returns -1 and errno is appropriately set, or returns 0 on
+ * success.
+ */
 int nurs_output_set_bool(struct nurs_output *output, uint16_t idx, bool value)
 {
 	check_output_type(NURS_KEY_T_BOOL, -1);
@@ -350,7 +543,16 @@ int nurs_output_set_bool(struct nurs_output *output, uint16_t idx, bool value)
 }
 EXPORT_SYMBOL(nurs_output_set_bool);
 
-/* set errno and returns -1 on error */
+/**
+ * nurs_output_set_u8 - set uint8_t value to output
+ * \param output output passed by callback param or get by nurs_get_output()
+ * \param idx output key index
+ * \param value value to set
+ *
+ * This function set uint8_t value to the output specified by index.
+ * On error, it returns -1 and errno is appropriately set, or returns 0 on
+ * success.
+ */
 int nurs_output_set_u8(struct nurs_output *output, uint16_t idx, uint8_t value)
 {
 	check_output_type(NURS_KEY_T_UINT8, -1);
@@ -360,7 +562,16 @@ int nurs_output_set_u8(struct nurs_output *output, uint16_t idx, uint8_t value)
 }
 EXPORT_SYMBOL(nurs_output_set_u8);
 
-/* set errno and returns -1 on error */
+/**
+ * nurs_output_set_u16 - set uint16_t value to output
+ * \param output output passed by callback param or get by nurs_get_output()
+ * \param idx output key index
+ * \param value value to set
+ *
+ * This function set uint16_t value to the output specified by index.
+ * On error, it returns -1 and errno is appropriately set, or returns 0 on
+ * success.
+ */
 int nurs_output_set_u16(struct nurs_output *output, uint16_t idx, uint16_t value)
 {
 	check_output_type(NURS_KEY_T_UINT16, -1);
@@ -370,7 +581,16 @@ int nurs_output_set_u16(struct nurs_output *output, uint16_t idx, uint16_t value
 }
 EXPORT_SYMBOL(nurs_output_set_u16);
 
-/* set errno and returns -1 on error */
+/**
+ * nurs_output_set_u32 - set uint32_t value to output
+ * \param output output passed by callback param or get by nurs_get_output()
+ * \param idx output key index
+ * \param value value to set
+ *
+ * This function set uint32_t value to the output specified by index.
+ * On error, it returns -1 and errno is appropriately set, or returns 0 on
+ * success.
+ */
 int nurs_output_set_u32(struct nurs_output *output, uint16_t idx, uint32_t value)
 {
 	check_output_type(NURS_KEY_T_UINT32, -1);
@@ -380,7 +600,16 @@ int nurs_output_set_u32(struct nurs_output *output, uint16_t idx, uint32_t value
 }
 EXPORT_SYMBOL(nurs_output_set_u32);
 
-/* set errno and returns -1 on error */
+/**
+ * nurs_output_set_u64 - set uint64_t value to output
+ * \param output output passed by callback param or get by nurs_get_output()
+ * \param idx output key index
+ * \param value value to set
+ *
+ * This function set uint64_t value to the output specified by index.
+ * On error, it returns -1 and errno is appropriately set, or returns 0 on
+ * success.
+ */
 int nurs_output_set_u64(struct nurs_output *output, uint16_t idx, uint64_t value)
 {
 	check_output_type(NURS_KEY_T_UINT64, -1);
@@ -390,7 +619,16 @@ int nurs_output_set_u64(struct nurs_output *output, uint16_t idx, uint64_t value
 }
 EXPORT_SYMBOL(nurs_output_set_u64);
 
-/* set errno and returns -1 on error */
+/**
+ * nurs_output_set_in_addr - set in_addr_t value to output
+ * \param output output passed by callback param or get by nurs_get_output()
+ * \param idx output key index
+ * \param value value to set
+ *
+ * This function set in_addr_t value to the output specified by index.
+ * On error, it returns -1 and errno is appropriately set, or returns 0 on
+ * success.
+ */
 int nurs_output_set_in_addr(struct nurs_output *output,
 			    uint16_t idx, in_addr_t value)
 {
@@ -401,7 +639,16 @@ int nurs_output_set_in_addr(struct nurs_output *output,
 }
 EXPORT_SYMBOL(nurs_output_set_in_addr);
 
-/* set errno and returns -1 on error */
+/**
+ * nurs_output_set_in6_addr - copy struct in6_addr value to output
+ * \param output output passed by callback param or get by nurs_get_output()
+ * \param idx output key index
+ * \param value value to copy
+ *
+ * This function copy struct in6_addr value to the output specified by index.
+ * On error, it returns -1 and errno is appropriately set, or returns 0 on
+ * success.
+ */
 int nurs_output_set_in6_addr(struct nurs_output *output,
 			     uint16_t idx, const struct in6_addr *value)
 {
@@ -412,7 +659,16 @@ int nurs_output_set_in6_addr(struct nurs_output *output,
 }
 EXPORT_SYMBOL(nurs_output_set_in6_addr);
 
-/* set errno and returns -1 on error */
+/**
+ * nurs_output_set_pointer - set pointer value to output
+ * \param output output passed by callback param or get by nurs_get_output()
+ * \param idx output key index
+ * \param value value to set
+ *
+ * This function set pointer (void *) to the output specified by index.
+ * On error, it returns -1 and errno is appropriately set, or returns 0 on
+ * success.
+ */
 int nurs_output_set_pointer(struct nurs_output *output,
 			    uint16_t idx, const void *value)
 {
@@ -423,6 +679,16 @@ int nurs_output_set_pointer(struct nurs_output *output,
 }
 EXPORT_SYMBOL(nurs_output_set_pointer);
 
+/**
+ * nurs_output_set_string - copy string to output
+ * \param output output passed by callback param or get by nurs_get_output()
+ * \param idx output key index
+ * \param value value to copy
+ *
+ * This function copy string (char *) to the output specified by index.
+ * On error, it returns -1 and errno is appropriately set, or returns 0 on
+ * success.
+ */
 int nurs_output_set_string(struct nurs_output *output,
 			   uint16_t idx, const char *value)
 {
@@ -434,7 +700,14 @@ int nurs_output_set_string(struct nurs_output *output,
 }
 EXPORT_SYMBOL(nurs_output_set_string);
 
-/* set errno and returns NULL on error */
+/**
+ * nurs_output_pointer - obtain pointer from output
+ * \param output output passed by callback param or get by nurs_get_output()
+ * \param idx output key index
+ *
+ * This function returns pointer (void *) of the output specified by
+ * index. On error, it returns NULL and errno is appropriately set.
+ */
 void *nurs_output_pointer(const struct nurs_output *output, uint16_t idx)
 {
 	if (idx >= output->len) {
@@ -450,7 +723,15 @@ void *nurs_output_pointer(const struct nurs_output *output, uint16_t idx)
 }
 EXPORT_SYMBOL(nurs_output_pointer);
 
-/* set errno and returns -1 on error */
+/**
+ * nurs_output_set_valid - set valid to output
+ * \param output output passed by callback param or get by nurs_get_output()
+ * \param idx output key index
+ *
+ * This function set valid flag to output specified by index. This may be used
+ * combined with nurs_output_pointer(). On error, it returns NULL and errno is
+ * appropriately set.
+ */
 int nurs_output_set_valid(struct nurs_output *output, uint16_t idx)
 {
 	if (idx >= output->len) {
@@ -468,3 +749,7 @@ int nurs_output_set_valid(struct nurs_output *output, uint16_t idx)
 EXPORT_SYMBOL(nurs_output_set_valid);
 
 #undef set_valid
+
+/**
+ * @}
+ */
