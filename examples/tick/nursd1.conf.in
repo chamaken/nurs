@@ -3,9 +3,6 @@
 
 [global]
 
-# log: file, level and stuff
-# log	= "@cwd@/nursd.log, info, sync, verbose"
-
 # plugin:
 # 1. load the plugins _first_ from the global section
 # 2. options for each plugin in seperate section below

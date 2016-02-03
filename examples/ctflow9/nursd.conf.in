@@ -3,9 +3,6 @@
 
 [global]
 
-# log: file, level and stuff
-# log	= "@cwd@/nursd.log, info, sync"
-
 # number of workers
 workers	= 8
 
@@ -28,6 +25,7 @@ plugin	= "@pkglibdir@/nurs_coveter_IPFIX.so"
 stack	= "nfct2:NFCT2, timeconv:TIMECONV, packicmp:PACKICMP, markif:MARKIF, nflow9:NFLOW9"
 # stack	= "nfct2:NFCT2, timeconv:PY_TIMECONV, packicmp:PY_PACKICMP, markif:PY_MARKIF, nflow9:NFLOW9"
 # stack	= "nfct2:NFCT2, timeconv:TIMECONV, markif:MARKIF, ipfix:IPFIX"
+
 
 # each pluginstance settings
 

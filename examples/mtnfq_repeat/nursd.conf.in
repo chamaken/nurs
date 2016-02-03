@@ -3,9 +3,6 @@
 
 [global]
 
-# log: file, level and stuff
-# log	= "@cwd@/nursd.log, info, sync"
-
 # number of workers
 workers	= 8
 
