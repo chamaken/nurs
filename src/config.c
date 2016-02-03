@@ -21,6 +21,14 @@
 
 #include "internal.h"
 
+/**
+ * \defgroup nurs config
+ * @{
+ * struct nurs_config is defined by struct nurs_config_def in plugin definition
+ * and acquired by nurs_producer_config() or nurs_plugin_config(). index param
+ * specifies the index in struct nurs_config_def.
+ */
+
 static FILE *nurs_config_file;
 
 const char *get_word(const char *line, const char *delim,
@@ -370,7 +378,14 @@ error_free:
 	return NULL;
 }
 
-/* set errno and return 0 on error */
+/**
+ * nurs_config_integer - obtain integer value
+ * \param config config obtained via nurs_(producer|plugin)_config
+ * \param idx    index in nurs_config_def
+ *
+ * This function returns integer described in nurs config file
+ * On error, it returns 0 and errno is appropriately set.
+ */
 int nurs_config_integer(const struct nurs_config *config, uint8_t idx)
 {
 	if (idx >= config->len) {
@@ -385,7 +400,14 @@ int nurs_config_integer(const struct nurs_config *config, uint8_t idx)
 }
 EXPORT_SYMBOL(nurs_config_integer);
 
-/* set errno and return false on error */
+/**
+ * nurs_config_boolean - obtain boolean value
+ * \param config config obtained via nurs_(producer|plugin)_config
+ * \param idx    index in nurs_config_def
+ *
+ * This function returns bool value described in nurs config file
+ * On error, it returns false and errno is appropriately set.
+ */
 bool nurs_config_boolean(const struct nurs_config *config, uint8_t idx)
 {
 	if (idx >= config->len) {
@@ -400,7 +422,14 @@ bool nurs_config_boolean(const struct nurs_config *config, uint8_t idx)
 }
 EXPORT_SYMBOL(nurs_config_boolean);
 
-/* set errno and return NULL on error */
+/**
+ * nurs_config_string - obtain string from config
+ * \param config config obtained via nurs_(producer|plugin)_config
+ * \param idx    index in nurs_config_def
+ *
+ * This function returns string (const char *) described in nurs config file
+ * On error, it returns NULL and errno is appropriately set.
+ */
 const char *nurs_config_string(const struct nurs_config *config, uint8_t idx)
 {
 	if (idx >= config->len) {
@@ -415,14 +444,30 @@ const char *nurs_config_string(const struct nurs_config *config, uint8_t idx)
 }
 EXPORT_SYMBOL(nurs_config_string);
 
-/* always success */
+/**
+ * nurs_config_len - obtain array size of config
+ * \param config config obtained via nurs_(producer|plugin)_config
+ *
+ * This function returns config array size.
+ */
 uint8_t nurs_config_len(const struct nurs_config *config)
 {
 	return config->len;
 }
 EXPORT_SYMBOL(nurs_config_len);
 
-/* set errno and returns 0 on error */
+/**
+ * nurs_config_type - obtain config value type
+ * \param config config obtained via nurs_(producer|plugin)_config
+ * \param idx    index in nurs_config_def
+ *
+ * This function returns config value type integer, where types are either:
+ *	NURS_CONFIG_T_INTEGER
+ *	NURS_CONFIG_T_BOOLEAN
+ *	NURS_CONFIG_T_STRING
+ *	NURS_CONFIG_T_CALLBACK
+ * On error, it returns 0 and errno is appropriately set.
+ */
 uint16_t nurs_config_type(const struct nurs_config *config, uint8_t idx)
 {
 	if (idx >= config->len) {
@@ -433,7 +478,14 @@ uint16_t nurs_config_type(const struct nurs_config *config, uint8_t idx)
 }
 EXPORT_SYMBOL(nurs_config_type);
 
-/* set errno and returns 0 on error */
+/**
+ * nurs_config_index - obtain index by name
+ * \param config config obtained via nurs_(producer|plugin)_config
+ * \param name   name of config key
+ *
+ * This function returns config index specified by name.
+ * On error, it returns 0 and errno is appropriately set.
+ */
 uint8_t nurs_config_index(const struct nurs_config *config, const char *name)
 {
 	uint8_t i;
@@ -446,3 +498,7 @@ uint8_t nurs_config_index(const struct nurs_config *config, const char *name)
 	return 0;
 }
 EXPORT_SYMBOL(nurs_config_index);
+
+/**
+ * @}
+ */
