@@ -28,6 +28,8 @@
 #include <nurs/ring.h>
 #include <nurs/ipfix_protocol.h>
 
+#include "nfnl_common.h"
+
 #ifndef NSEC_PER_SEC
 #define NSEC_PER_SEC    1000000000L
 #endif
@@ -730,20 +732,6 @@ err_init:
 	return -1;
 }
 
-static int set_reliable(struct mnl_socket *nl)
-{
-	int on = 1;
-
-	if (mnl_socket_setsockopt(nl, NETLINK_BROADCAST_SEND_ERROR,
-				  &on, sizeof(int)) == -1)
-		return -1;
-	if (mnl_socket_setsockopt(nl, NETLINK_NO_ENOBUFS,
-				  &on, sizeof(int)) == -1)
-		return -1;
-
-	return 0;
-}
-
 static int open_event_socket(const struct nurs_producer *producer)
 {
 	struct nfct_priv *priv = nurs_producer_context(producer);
@@ -765,8 +753,8 @@ static int open_event_socket(const struct nurs_producer *producer)
 	priv->event_pid = mnl_socket_get_portid(priv->event_nl);
 
 	if (config_reliable(producer)) {
-		if (set_reliable(priv->event_nl)) {
-			nurs_log(NURS_ERROR, "set_reliable: %s\n",
+		if (mnl_socket_set_reliable(priv->event_nl)) {
+			nurs_log(NURS_ERROR, "mnl_socket_set_reliable: %s\n",
 				 strerror(errno));
 			goto error_close;
 		}
@@ -818,7 +806,7 @@ static int open_dump_socket(const struct nurs_producer *producer)
 	priv->dump_pid = mnl_socket_get_portid(priv->dump_nl);
 
 	if (config_reliable(producer)) {
-		if (set_reliable(priv->dump_nl)) {
+		if (mnl_socket_set_reliable(priv->dump_nl)) {
 			nurs_log(NURS_ERROR, "set_reliable: %s\n",
 				 strerror(errno));
 			goto error_unmap;

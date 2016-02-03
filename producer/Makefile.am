@@ -9,7 +9,7 @@ nurs_producer_NFCTST_la_LIBADD  = $(LIBMNL_LIBS) $(top_srcdir)/util/libutil.la
 
 if HAVE_LNFCT2
 pkglib_LTLIBRARIES += nurs_producer_NFCT2.la
-nurs_producer_NFCT2_la_SOURCES = nfct2.c
+nurs_producer_NFCT2_la_SOURCES = nfct2.c nfnl_common.c
 nurs_producer_NFCT2_la_LDFLAGS = -avoid-version -module
 nurs_producer_NFCT2_la_CFLAGS  = ${AM_CFLAGS} ${LIBMNL_CFLAGS} ${LIBNETFILTER_CONNTRACK_CFLAGS}
 nurs_producer_NFCT2_la_LIBADD  = $(LIBMNL_LIBS) $(LIBNETFILTER_CONNTRACK_LIBS) $(top_srcdir)/util/libutil.la
