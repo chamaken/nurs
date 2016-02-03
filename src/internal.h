@@ -376,7 +376,7 @@ struct nurs_timer {
 /*
  * misc
  */
-#define NURS_SYSLOG_FNAME (char *)(-1)
+#define NURS_SYSLOG_FNAME "syslog"
 #define NURS_SYSLOG_FD    (FILE *)(-1)
 
 int log_settle(const char *fname, int level, char *time_format,

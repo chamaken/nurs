@@ -153,7 +153,7 @@ int log_settle(const char *fname, int level, char *time_format,
 	if (!fname || !strlen(fname)) {
 		logf = log_stderr;
 		nurs_logfd = stderr;
-	} else if (fname == NURS_SYSLOG_FNAME) {
+	} else if (!strcasecmp(fname, NURS_SYSLOG_FNAME)) {
 		logf = log_syslog;
 		openlog("nursd", LOG_PID, LOG_DAEMON);
 		nurs_logfd = NURS_SYSLOG_FD;
@@ -342,61 +342,6 @@ int signal_nfd_fini(void)
 	}
 
 	return 0;
-}
-
-int log_config_parser(const char *line)
-{
-	/* filename (or stderr), <(sync|nosync)>, <(verbose|quit)> */
-	char buf[NURS_STRING_LEN], fname[NURS_STRING_LEN] = {0};
-	bool syslog = false, sync = false, verbose = false;
-	int i, level = NURS_NOTICE;
-	FILE *fd = NULL;
-	const char *s;
-	uintptr_t p = (uintptr_t)line
-		+ (strlen(line) > NURS_STRING_LEN
-		   ? NURS_STRING_LEN : strlen(line));
-
-	s = get_word(line, ",", true, fname, (size_t)(p - (uintptr_t)line));
-	if (!*s++)
-		return log_settle(NULL, level, NURS_DEFAULT_TIME_FORMAT,
-				  sync, verbose);
-
-	if (!strcasecmp(fname, "syslog"))
-		syslog = true;
-	else if (fname[0] != '\0' && fname[0] != '/') {
-		nurs_log(NURS_ERROR, "require abs path logfile\n");
-		/* because of daemon(0, 0) in main.c */
-		return -1;
-	}
-
-	s = get_word(s, ",", true, buf, (size_t)(p - (uintptr_t)s));
-	if (!*s++) goto log_settle;
-	if (strlen(buf)) {
-		for (i = NURS_DEBUG; i < NURS_LOGLEVEL_MAX; i++)
-			if (!strcasecmp(buf, nurs_loglevel_string[i])) {
-				level = i;
-				break;
-			}
-		if (i == NURS_LOGLEVEL_MAX) {
-			nurs_log(NURS_ERROR, "invalid log level: %s\n", buf);
-			if (fd) fclose(fd);
-			return -1;
-		}
-	}
-
-	s = get_word(s, ",", true, buf, (size_t)(p - (uintptr_t)s));
-	if (!*s++) goto log_settle;
-	if (strlen(buf) && !strcasecmp(buf, "sync"))
-		sync = true;
-
-	s = get_word(s, ",", true, buf, (size_t)(p - (uintptr_t)s));
-	if (strlen(buf) && !strcasecmp(buf, "verbose"))
-		verbose = true;
-
-log_settle:
-	return log_settle(syslog ? NURS_SYSLOG_FNAME : fname,
-			  level, NURS_DEFAULT_TIME_FORMAT,
-			  sync, verbose);
 }
 
 /* useless minimum environment */

@@ -30,7 +30,6 @@ extern bool nurs_show_pluginfo;			/* plugin.c */
 extern const char *nurs_loglevel_string[];	/* nurs.c */
 
 enum {
-	NURS_CONFIG_LOGFILE,
 	NURS_CONFIG_PLUGIN,
 	NURS_CONFIG_STACK,
 	NURS_CONFIG_WORKERS,
@@ -41,12 +40,6 @@ enum {
 static struct nurs_config_def global_config = {
 	.len		= NURS_CONFIG_MAX,
 	.keys	= {
-		[NURS_CONFIG_LOGFILE]	= {
-			.name	= "log",
-			.type	= NURS_CONFIG_T_CALLBACK,
-			/* file, level, sync, verbose*/
-			.parser	= log_config_parser,	/* ::nurs.c */
-		},
 		[NURS_CONFIG_PLUGIN]	= {
 			.name	= "plugin",
 			.type	= NURS_CONFIG_T_CALLBACK,
@@ -301,7 +294,8 @@ int main(int argc, char *argv[])
 			exit(EXIT_SUCCESS);
 			break;
 		case 'f':
-			if (*optarg == '/') {
+			if (*optarg == '/' ||
+			    !strcasecmp(optarg, NURS_SYSLOG_FNAME)) {
 				snprintf(logfname, PATH_MAX, "%s", optarg);
 				break;
 			}
