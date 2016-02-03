@@ -25,7 +25,7 @@ endif
 
 if HAVE_LNFLOG
 pkglib_LTLIBRARIES += nurs_producer_NFLOG.la
-nurs_producer_NFLOG_la_SOURCES = nflog.c
+nurs_producer_NFLOG_la_SOURCES = nflog.c nfnl_common.c
 nurs_producer_NFLOG_la_LDFLAGS = -avoid-version -module
 nurs_producer_NFLOG_la_CFLAGS  = ${AM_CFLAGS} ${LIBMNL_CFLAGS} ${LIBNETFILTER_LOG_CFLAGS}
 nurs_producer_NFLOG_la_LIBADD  = $(LIBMNL_LIBS) $(LIBNETFILTER_LOG_LIBS) $(top_srcdir)/util/libutil.la

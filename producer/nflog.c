@@ -27,6 +27,8 @@
 #include <nurs/ring.h>
 #include <nurs/ipfix_protocol.h>
 
+#include "nfnl_common.h"
+
 struct nflog_priv {
 	struct mnl_socket	*nl;
 	uint32_t		portid;
@@ -51,6 +53,7 @@ enum {
 	NFLOG_CONFIG_COPY_MODE,		/* NFULNL_COPY_ NONE / META / PACKET */
 	NFLOG_CONFIG_COPY_RANGE,
 	NFLOG_CONFIG_CONNTRACK,
+	NFLOG_CONFIG_RELIABLE,
 	NFLOG_CONFIG_MAX,
 };
 
@@ -127,6 +130,11 @@ static struct nurs_config_def nflog_config = {
 			.type    = NURS_CONFIG_T_BOOLEAN,
 			.boolean = false,
 		},
+		[NFLOG_CONFIG_RELIABLE] = {
+			.name    = "reliable",
+			.type    = NURS_CONFIG_T_BOOLEAN,
+			.boolean = false,
+		},
 	}
 };
 
@@ -145,6 +153,7 @@ static struct nurs_config_def nflog_config = {
 #define copy_mode_ce(x)		nurs_config_string(nurs_producer_config(x), NFLOG_CONFIG_COPY_MODE)
 #define copy_range_ce(x)	(uint32_t)nurs_config_integer(nurs_producer_config(x), NFLOG_CONFIG_COPY_RANGE)
 #define conntrack_ce(x)		nurs_config_boolean(nurs_producer_config(x), NFLOG_CONFIG_CONNTRACK)
+#define reliable_ce(x)		nurs_config_boolean(nurs_producer_config(x), NFLOG_CONFIG_RELIABLE)
 
 enum {
 	NFLOG_OUTPUT_RAW_MAC = 0,
@@ -839,7 +848,6 @@ static enum nurs_return_t
 nflog_organize(const struct nurs_producer *producer)
 {
 	struct nflog_priv *priv = nurs_producer_context(producer);
-	int optval = 1;
 
 	struct nl_mmap_req req = {
 		.nm_block_size	= block_size_ce(producer),
@@ -872,11 +880,13 @@ nflog_organize(const struct nurs_producer *producer)
 	}
 	priv->portid = mnl_socket_get_portid(priv->nl);
 
-	/* ENOBUFS is signalled to userspace when packets were lost
-	 * on kernel side. In most cases, userspace isn't interested
-	 * in this information, so turn it off. */
-	mnl_socket_setsockopt(priv->nl, NETLINK_NO_ENOBUFS,
-			      &optval, sizeof(int));
+	if (reliable_ce(producer)) {
+		if (mnl_socket_set_reliable(priv->nl)) {
+			nurs_log(NURS_ERROR, "mnl_socket_set_reliable: %s\n",
+				 strerror(errno));
+			goto error_unmap;
+		}
+	}
 
 	priv->fd = nurs_fd_create(mnl_socket_get_fd(priv->nl),
 				  NURS_FD_F_READ);
