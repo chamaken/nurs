@@ -135,12 +135,6 @@ struct nurs_output_def nfq_output = {
 	}
 };
 
-void frame_destructor(void *data)
-{
-	struct nl_mmap_hdr *frame = data;
-	frame->nm_status = NL_MMAP_STATUS_UNUSED;
-}
-
 static int nfq_mnl_cb(const struct nlmsghdr *nlh, void *data)
 {
 	struct nfgenmsg *nfg = mnl_nlmsg_get_payload(nlh);

@@ -16,5 +16,6 @@
 #include <libmnl/libmnl.h>
 
 int mnl_socket_set_reliable(struct mnl_socket *nl);
+void frame_destructor(void *data);
 
 #endif

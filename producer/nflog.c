@@ -183,8 +183,6 @@ enum {
 	NFLOG_OUTPUT_MAX,
 };
 
-static void frame_destructor(void *data);
-
 static struct nurs_output_def nflog_output = {
 	.len	= NFLOG_OUTPUT_MAX,
 	.keys	= {
@@ -367,12 +365,6 @@ static struct nurs_output_def nflog_output = {
 		},
 	}
 };
-
-static void frame_destructor(void *data)
-{
-	struct nl_mmap_hdr *frame = data;
-	frame->nm_status = NL_MMAP_STATUS_UNUSED;
-}
 
 static int nflog_cb(const struct nlmsghdr *nlh, void *data)
 {
