@@ -41,12 +41,12 @@ endif
 
 if HAVE_LNFQ
 pkglib_LTLIBRARIES += nurs_producer_NFQ.la
-nurs_producer_NFQ_la_SOURCES = nfq_common.c nfq.c
+nurs_producer_NFQ_la_SOURCES = nfq_common.c nfq.c nfnl_common.c
 nurs_producer_NFQ_la_LDFLAGS = -avoid-version -module
 nurs_producer_NFQ_la_CFLAGS  = ${AM_CFLAGS} ${LIBMNL_CFLAGS} ${LIBNETFILTER_QUEUE_CFLAGS}
 nurs_producer_NFQ_la_LIBADD  = $(LIBMNL_LIBS) $(LIBNETFILTER_QUEUE_LIBS) $(top_srcdir)/util/libutil.la
 pkglib_LTLIBRARIES += nurs_producer_MTNFQ.la
-nurs_producer_MTNFQ_la_SOURCES = nfq_common.c mtnfq.c
+nurs_producer_MTNFQ_la_SOURCES = nfq_common.c mtnfq.c nfnl_common.c
 nurs_producer_MTNFQ_la_LDFLAGS = -avoid-version -module
 nurs_producer_MTNFQ_la_CFLAGS  = ${AM_CFLAGS} ${LIBMNL_CFLAGS} ${LIBNETFILTER_QUEUE_CFLAGS}
 nurs_producer_MTNFQ_la_LIBADD  = $(LIBMNL_LIBS) $(LIBNETFILTER_QUEUE_LIBS) $(top_srcdir)/util/libutil.la

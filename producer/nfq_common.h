@@ -29,6 +29,7 @@ enum {
 	NFQ_CONFIG_GSO,			/* NFQA_CFG_F_GSO */
 	NFQ_CONFIG_UID_GID,		/* NFQA_CFG_F_UID_GID */
 	NFQ_CONFIG_SECCTX,		/* NFQA_CFG_F_SECCTX */
+	NFQ_CONFIG_RELIABLE,
 	NFQ_CONFIG_MAX,
 };
 
@@ -43,6 +44,7 @@ enum {
 #define gso_ce(x)		nurs_config_boolean(nurs_producer_config(x), NFQ_CONFIG_GSO)
 #define uid_gid_ce(x)		nurs_config_boolean(nurs_producer_config(x), NFQ_CONFIG_UID_GID)
 #define secctx_ce(x)		nurs_config_boolean(nurs_producer_config(x), NFQ_CONFIG_SECCTX)
+#define reliable_ce(x)		nurs_config_boolean(nurs_producer_config(x), NFQ_CONFIG_RELIABLE)
 
 enum {
 	NFQ_OUTPUT_NLATTRS,

@@ -20,6 +20,7 @@
 #include <nurs/nurs.h>
 #include <nurs/ring.h>
 
+#include "nfnl_common.h"
 #include "nfq_common.h"
 
 /*
@@ -97,6 +98,10 @@ struct nurs_config_def nfq_config = {
 			.name	 = "secctx",
 			.type	 = NURS_CONFIG_T_BOOLEAN,
 			.boolean = false,
+		},
+		[NFQ_CONFIG_RELIABLE] = {
+			.name	= "reliable",
+			.type	= NURS_CONFIG_T_BOOLEAN,
 		},
 	},
 };
@@ -395,7 +400,6 @@ nfq_common_organize(const struct nurs_producer *producer)
 				  / frame_size_ce(producer)
 				  * block_nr_ce(producer),
 	};
-	int optval = 1;
 
 	priv->nl = mnl_socket_open(NETLINK_NETFILTER);
 	if (!priv->nl) {
@@ -420,11 +424,12 @@ nfq_common_organize(const struct nurs_producer *producer)
 	}
 	priv->portid = mnl_socket_get_portid(priv->nl);
 
-	/* ENOBUFS is signalled to userspace when packets were lost
-	 * on kernel side.  In most cases, userspace isn't interested
-	 * in this information, so turn it off. */
-	mnl_socket_setsockopt(priv->nl, NETLINK_NO_ENOBUFS,
-			      &optval, sizeof(int));
+	if (reliable_ce(producer) &&
+	    mnl_socket_set_reliable(priv->nl)) {
+		nurs_log(NURS_ERROR, "failed to mnl_socket_set_reliable: %s\n",
+			 strerror(errno));
+		goto error_unmap;
+	}
 
 	priv->fd = nurs_fd_create(mnl_socket_get_fd(priv->nl),
 				  NURS_FD_F_READ);
