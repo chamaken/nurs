@@ -27,7 +27,7 @@
 #include "internal.h"
 
 /* main.c */
-static char nurs_logfname[NURS_STRING_LEN] = NURS_DEFAULT_LOGFNAME;
+static char nurs_logfname[NURS_STRING_LEN] = "";
 static FILE *nurs_logfd		= NULL;
 static bool nurs_log_sync	= false;
 static bool nurs_verbose	= false;
@@ -162,6 +162,12 @@ int log_settle(const char *fname, int level, char *time_format,
 		nurs_logfd = fopen(fname, "a");
 		if (!nurs_logfd)
 			return -1;
+		if (strlen(fname) >= NURS_STRING_LEN) {
+			errno = ENAMETOOLONG;
+			return -1;
+		}
+		strncpy(nurs_logfname, fname, NURS_STRING_LEN);
+		nurs_logfname[NURS_STRING_LEN - 1] = '\0';
 	}
 
 	for (i = NURS_DEBUG; i < level; i++)

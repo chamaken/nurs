@@ -1,6 +1,4 @@
-AM_CPPFLAGS = ${regular_CPPFLAGS} -I$(top_srcdir)/include \
-	      -DNURS_CONFIGFILE="\"$(sysconfdir)/nurs.conf\"" \
-	      -DNURS_DEFAULT_LOGFNAME="\"$(localstatedir)/log/nurs.log\""
+AM_CPPFLAGS = ${regular_CPPFLAGS} -I$(top_srcdir)/include
 AM_CFLAGS = ${regular_CFLAGS}
 
 nurs_SOURCES	= internal.h config.c fd.c key.c main.c misc.c worker.c \
