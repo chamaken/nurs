@@ -1,0 +1,26 @@
+AT_INIT
+AT_BANNER([regression tests])
+
+AT_SETUP([config])
+AT_CHECK([$VALGRIND $my_testdir/01_config $my_datadir/01.conf], [], [ignore], [ignore])
+AT_CLEANUP
+
+AT_SETUP([regist plugin])
+AT_CHECK([$my_testdir/02_plugin_regist], [], [ignore], [ignore])
+AT_CLEANUP
+
+AT_SETUP([regist json plugin])
+AT_CHECK([$my_testdir/03_plugin_json], [], [ignore], [ignore])
+AT_CLEANUP
+
+AT_SETUP([get plugin])
+AT_CHECK([$my_testdir/04_plugin_get], [], [ignore], [ignore])
+AT_CLEANUP
+
+AT_SETUP([producer])
+AT_CHECK([$my_testdir/05_producer], [], [ignore], [ignore])
+AT_CLEANUP
+
+AT_SETUP([ioset])
+AT_CHECK([$my_testdir/06_ioset], [], [ignore], [ignore])
+AT_CLEANUP
