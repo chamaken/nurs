@@ -1,5 +1,50 @@
-This is unstable multithreaded re-implementation of ulogd2,  
-nfnetlink userspace receipt suite, nurs.
+I needed to account network traffic and looked for it, I found some libpcap base  
+accounting software. I tried to keep searching, understood linux has kernel  
+space accounting system, named conntrack, not need to account in userspace, and  
+found software named ulogd based on conntrack.  
+
+<!--
+ネットワークトラヒックの集計が必要で、調べてみたところ、いくつか libpcap ベース  
+のソフトウェアがみつかりました。もう少し調べてみると linux ではユーザースペース  
+で集計せずとも、カーネル内で集計している conntrack というものが存在することがわ  
+かり、これを基とした ulogd というソフトウェアがありました。  
+-->
+
+I had thought I need IPFIX but it was Netflow version9 actually. Then I tried to  
+create ulogd patches and post it. I'm not good at English and my lack of  
+knowledge, those patches were not accepted but used it in personal.  
+
+<!--
+当初は IPFIX が必要と思い込んでいたものの、実際は Netflow version 9 を用いること  
+になったので ulogd のパッチをいくつか作り、メーリングリストに送りました。私の技  
+術と英語が拙かったため採用されませんでしたが、内々で使っていました。  
+-->
+
+After that, I found next-generation ulogd trying to be a multithreaded and (rx  
+side) mmaped netlink socket has been implemented in kernel. I tried to use those  
+tech and implement similar to ulogd, that's why this Nfnetlink Userspace Receipt  
+Suite has been made.  
+
+<!--
+その後、次期 ulogd ではマルチスレッド化を目指していることや、netlink の情報を取  
+得するにあたって、より早い mmaped ソケットの存在を知りました。ふまえて ulogd に  
+似たものを自分で実装してみた結果、この Nfnetlink Userspace Receipt Suite が出来  
+た次第です。  
+-->
+
+As described above, I am only using examples/ctflow9 now since I am satisfied  
+with letting conntrack information to handle as Netflow version9. There is less  
+document (patches for doc are welcome too!) and other samples under examples/  
+were just for my interest, has not tested well, but I'm glad if you refer those  
+samples to use this software. Thanks,  
+
+<!--
+上記通り、個人的には conntrack の情報を Netflow version 9 として扱うことができれ
+ば十分なので、実際に使っている方法は examples/ctflow9 の下にあるものだけです。こ
+ちらも前述通り、ドキュメントもありません (ドキュメントのパッチも歓迎です)。
+ctflow9 を除く example 以下は興味本位だけのもので、あまりテストしていませんが、  
+こちらを参考にし ていただければ幸いです。
+-->
 
 ulogd2 is userspace logging daemon for netfilter/iptables  
 (http://www.netfilter.org/projects/ulogd/), see README.ulogd2
@@ -12,20 +57,22 @@ prerequisites
   since go and python binding implements mnl_socket_open2()
 * libjansson (http://www.digip.org/jansson/)
 * liburcu2 (http://liburcu.org/)  
-  atomic operation only, can it be replaced by GCC builtins? 
+  (atomic operation only, it can be replaced by GCC builtins.)
 
 optional
 --------
-* mmaped netlink available kernel (>= 4.3 is better)
+* mmaped netlink available kernel (>= 4.5 is better see:  
+  commit aa3a022094fac7f6e48050e139fa8a5a2e3265ce  
+  commit 1853c949646005b5959c483becde86608f548f24)
 * libnetfilter-acct (http://www.netfilter.org/projects/libnetfilter_acct/)
 * libnetfilter-log (http://www.netfilter.org/projects/libnetfilter_log/)  
-  require recent nflo_nlmsg_parse()
+  require recent nflog_nlmsg_parse()
 * libnetfilter-queue (http://www.netfilter.org/projects/libnetfilter_queue/)
 * libnetfilter-conntrack (http://www.netfilter.org/projects/libnetfilter_conntrack/)
 * libnftnl (http://www.netfilter.org/projects/libnftnl/)
 * python3 (I use debian jessie which has 3.4)  
   - cpylmnl (https://github.com/chamaken/cpylmnl)
-  
+
 
 installation
 ============
@@ -46,10 +93,19 @@ NURS_PYSON=consumer_py.json ../../src/nursd nursd1.conf
 head *.conf file under examples directory.
 
 
+Python
+======
+* python nurs functions can be called in only callback,  
+  can not be called from thread asynchnoursly created in python.
+* can not read input data which is allocated in producer or filter.  
+  Python plugin forks at organize callback, can read only pre-allocated  
+  mmaped area just before organize call back.
+
+
 Go
 ==
 It's my fault, lack of knowledge, I've met runtime errors.  
-a few of them seems related to:
+a few of them seems related to:  
 
 * https://groups.google.com/forum/#!msg/golang-nuts/h9GbvfYv83w/5Ly_jvOr86wJ
 * https://github.com/golang/go/issues/12879
@@ -71,12 +127,13 @@ TODO
 
 * docmentation, can be cite from ulogd2
 * needs more tests
-* put / propagate for output may cause trouble.
+* resolve plugin symbols not only from self, but also from global.
+* try to implement rust binding.
+
+* put / propagate for output may cause trouble.  
   add borrowing flag for duplicate calling?
 * input key which has VALID flag will not check at runtime.  
   should check at propagate / interp?
-* resolve plugin symbols not only from self, but also from global.
-* try to implement rust binding.
 
 
 memo
@@ -88,8 +145,6 @@ memo
 * filter / consumer which input is all optional may receive no input.
 * ioset depends on producer which has stack(s).  
   owner of iosets is producer, not stack
-* python nurs functions can be called in only callback,  
-  can not be called from thread asynchnoursly created in python.
 * signal callback must be called when all workers stop.
 * (seems to be) useful packet library for nflog and nfq packet payload.
   - https://github.com/phaethon/scapy
