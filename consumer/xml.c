@@ -177,27 +177,27 @@ xml_output_nfct(struct xml_priv *priv, const struct nurs_input *inp,
 
 	tmp = snprintf(buf, (size_t)size, "<conntrack>");
 	if (tmp < 0 || tmp >= size)
-		return NURS_RET_ERROR;
+		return -1;
 	size -= tmp; buf += tmp;
 
 	tmp = priv->output_ts(buf, size);
 	if (tmp < 0 || tmp >= size)
-		return NURS_RET_ERROR;
+		return -1;
 	size -= tmp; buf += tmp;
 
 	tmp = nfct_snprintf(buf, (unsigned int)size, ct, 0, NFCT_O_XML,
 			    NFCT_OF_SHOW_LAYER3 | NFCT_OF_ID | NFCT_OF_TIME);
 	if (tmp < 0 || tmp >= size)
-		return NURS_RET_ERROR;
+		return -1;
 	size -= tmp; buf += tmp;
 
 	tmp = snprintf(buf, (size_t)size, "</conntrack>");
 	if (tmp < 0 || tmp >= size)
-		return NURS_RET_ERROR;
+		return -1;
 
-	return NURS_RET_OK;
+	return 0;
 #else
-	return NURS_RET_ERROR;
+	return 1;
 #endif
 }
 
@@ -212,26 +212,26 @@ xml_output_nflog(struct xml_priv *priv, const struct nurs_input *inp,
 
 	tmp = snprintf(buf, (size_t)size, "<nflog>");
 	if (tmp < 0 || tmp >= size)
-		return NURS_RET_ERROR;
+		return -1;
 	size -= tmp; buf += tmp;
 
 	tmp = priv->output_ts(buf, size);
 	if (tmp < 0 || tmp >= size)
-		return NURS_RET_ERROR;
+		return -1;
 	size -= tmp; buf += tmp;
 
 	tmp = nflog_snprintf_xml(buf, (size_t)size, obj, NFLOG_XML_ALL);
 	if (tmp < 0 || tmp >= size)
-		return NURS_RET_ERROR;
+		return -1;
 	size -= tmp; buf += tmp;
 
 	tmp = snprintf(buf, (size_t)size, "</nflog>");
 	if (tmp < 0 || tmp >= size)
-		return NURS_RET_ERROR;
+		return -1;
 
-	return NURS_RET_OK;
+	return 0;
 #else
-	return NURS_RET_ERROR;
+	return 1;
 #endif
 }
 
@@ -246,27 +246,27 @@ xml_output_nfacct(struct xml_priv *priv, const struct nurs_input *inp,
 
 	tmp = snprintf(buf, (size_t)size, "<sum>");
 	if (tmp < 0 || tmp >= size)
-		return NURS_RET_ERROR;
+		return -1;
 	size -= tmp; buf += tmp;
 
 	tmp = priv->output_ts(buf, size);
 	if (tmp < 0 || tmp >= size)
-		return NURS_RET_ERROR;
+		return -1;
 	size -= tmp; buf += tmp;
 
 	tmp = nfacct_snprintf(buf, (size_t)size, obj,
 			      NFACCT_SNPRINTF_T_XML, NFACCT_SNPRINTF_F_TIME);
 	if (tmp < 0 || tmp >= size)
-		return NURS_RET_ERROR;
+		return -1;
 	size -= tmp; buf += tmp;
 
 	tmp = snprintf(buf, (size_t)size, "</sum>");
 	if (tmp < 0 || tmp >= size)
-		return NURS_RET_ERROR;
+		return -1;
 
-	return NURS_RET_OK;
+	return 0;
 #else
-	return NURS_RET_ERROR;
+	return 1;
 #endif
 }
 
@@ -303,12 +303,12 @@ xml_output_nft(struct xml_priv *priv, const struct nurs_input *inp,
 
 	tmp = snprintf(buf, (size_t)size, "<nft>");
 	if (tmp < 0 || tmp >= size)
-		return NURS_RET_ERROR;
+		return -1;
 	size -= tmp; buf += tmp;
 
 	tmp = priv->output_ts(buf, size);
 	if (tmp < 0 || tmp >= size)
-		return NURS_RET_ERROR;
+		return -1;
 	size -= tmp; buf += tmp;
 
 	if (nurs_input_is_valid(inp, XML_INPUT_NFT_TABLE)) {
@@ -357,22 +357,10 @@ xml_output_nft(struct xml_priv *priv, const struct nurs_input *inp,
 			nurs_log(NURS_ERROR, "nftnl_set_elem : %s\n",
 				 strerror(errno));
 	} else if (nurs_input_is_valid(inp, XML_INPUT_NFT_GEN)) {
-		/* not implemented yet
-		 *
-		 * const struct nftnl_gen *t
-		 *	= nurs_input_pointer(inp, XML_INPUT_NFT_GEN);
-		 * struct nftnl_gen *o = (struct nft_gen *)(uintptr_t)t;
-		 * tmp = nftnl_gen_snprintf(buf, (size_t)size, o,
-		 *			    NFTNL_OUTPUT_XML, event2flag(event));
-		 * if (tmp == -1)
-		 *	nurs_log(NURS_ERROR, "nft_gen : %s\n", strerror(errno));
-		 */
-		nurs_log(NURS_ERROR, "nft_get XML output"
-			 " has not implemented yet current 1.0.5\n");
-		return NURS_RET_ERROR;
+		return 1;
 	} else {
 		nurs_log(NURS_ERROR, "unknown nft event: %d\n", event);
-		return NURS_RET_ERROR;
+		return -1;
 	}
 	if (tmp < 0 || tmp >= size)
 		return NURS_RET_ERROR;
@@ -381,11 +369,11 @@ xml_output_nft(struct xml_priv *priv, const struct nurs_input *inp,
 
 	tmp = snprintf(buf, (size_t)size, "</nft>");
 	if (tmp < 0 || tmp >= size)
-		return NURS_RET_ERROR;
+		return -1;
 
-	return NURS_RET_OK;
+	return 0;
 #endif
-	return NURS_RET_ERROR;
+	return 1;
 }
 
 /* may not escape */
@@ -394,7 +382,7 @@ static int xml_interp(const struct nurs_plugin *plugin,
 {
 	struct xml_priv *priv = nurs_plugin_context(plugin);
 	static char buf[4096];
-	int ret = NURS_RET_ERROR;
+	int ret = 1;
 
 	if (nurs_input_is_valid(input, XML_INPUT_NFCT)) {
 		nurs_log(NURS_DEBUG, "output nfct\n");
@@ -412,8 +400,20 @@ static int xml_interp(const struct nurs_plugin *plugin,
 		nurs_log(NURS_DEBUG, "no XMLable input?\n");
 	}
 
-	if (ret != NURS_RET_OK)
-		return ret;
+	/*
+	 * xml_output_<nfnl subsys> returns
+	 * 0 : success
+	 * -1: error
+	 * other: ignore
+	 */
+	switch (ret) {
+	case 0:
+		break;
+	case -1:
+		return NURS_RET_ERROR;
+	default:
+		return NURS_RET_OK;
+	}
 
 	flockfile(priv->of);
 	fprintf(priv->of, "%s\n", buf);
@@ -429,11 +429,11 @@ xml_open_file(const struct nurs_plugin *plugin)
 {
 	struct xml_priv *priv = nurs_plugin_context(plugin);
 
-	if (strncmp(config_filename(plugin), "-", 1) == 0) {
+	if (!strncmp(config_filename(plugin), "-", 1)) {
 		priv->of = stdout;
 	} else {
 		priv->of = fopen(config_filename(plugin), "a");
-		if (priv->of == NULL) {
+		if (!priv->of) {
 			nurs_log(NURS_FATAL, "can't open XML file - %s: %s\n",
 				 config_filename(plugin), strerror(errno));
 			return NURS_RET_ERROR;
@@ -449,7 +449,7 @@ static void xml_print_header(const struct nurs_plugin *plugin)
 
 	fprintf(priv->of, "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n");
 	fprintf(priv->of, "<netfilter>\n");
-	if (config_sync(plugin) != 0)
+	if (config_sync(plugin))
 		fflush(priv->of);
 }
 
