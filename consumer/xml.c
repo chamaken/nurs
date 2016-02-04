@@ -312,58 +312,58 @@ xml_output_nft(struct xml_priv *priv, const struct nurs_input *inp,
 	size -= tmp; buf += tmp;
 
 	if (nurs_input_is_valid(inp, XML_INPUT_NFT_TABLE)) {
-		const struct nft_table *t
+		const struct nftnl_table *t
 			= nurs_input_pointer(inp, XML_INPUT_NFT_TABLE);
-		struct nft_table *o = (struct nft_table *)(uintptr_t)t;
-		tmp = nft_table_snprintf(buf, (size_t)size, o, NFT_OUTPUT_XML,
-					 event2flag(event));
+		struct nftnl_table *o = (struct nftnl_table *)(uintptr_t)t;
+		tmp = nftnl_table_snprintf(buf, (size_t)size, o,
+					   NFTNL_OUTPUT_XML, event2flag(event));
 		if (tmp == -1)
-			nurs_log(NURS_ERROR, "nft_table : %s\n",
+			nurs_log(NURS_ERROR, "nftnl_table : %s\n",
 				 strerror(errno));
 	} else if (nurs_input_is_valid(inp, XML_INPUT_NFT_RULE)) {
-		const struct nft_rule *t
+		const struct nftnl_rule *t
 			= nurs_input_pointer(inp, XML_INPUT_NFT_RULE);
-		struct nft_rule *o = (struct nft_rule *)(uintptr_t)t;
-		tmp = nft_rule_snprintf(buf, (size_t)size, o, NFT_OUTPUT_XML,
-					event2flag(event));
+		struct nftnl_rule *o = (struct nftnl_rule *)(uintptr_t)t;
+		tmp = nftnl_rule_snprintf(buf, (size_t)size, o,
+					  NFTNL_OUTPUT_XML, event2flag(event));
 		if (tmp == -1)
-			nurs_log(NURS_ERROR, "nft_rule : %s\n",
+			nurs_log(NURS_ERROR, "nftnl_rule : %s\n",
 				 strerror(errno));
 	} else if (nurs_input_is_valid(inp, XML_INPUT_NFT_CHAIN)) {
-		const struct nft_chain *t
+		const struct nftnl_chain *t
 			= nurs_input_pointer(inp, XML_INPUT_NFT_CHAIN);
-		struct nft_chain *o = (struct nft_chain *)(uintptr_t)t;
-		tmp = nft_chain_snprintf(buf, (size_t)size, o, NFT_OUTPUT_XML,
-					 event2flag(event));
+		struct nftnl_chain *o = (struct nftnl_chain *)(uintptr_t)t;
+		tmp = nftnl_chain_snprintf(buf, (size_t)size, o,
+					   NFTNL_OUTPUT_XML, event2flag(event));
 		if (tmp == -1)
-			nurs_log(NURS_ERROR, "nft_chain : %s\n",
+			nurs_log(NURS_ERROR, "nftnl_chain : %s\n",
 				 strerror(errno));
 	} else if (nurs_input_is_valid(inp, XML_INPUT_NFT_SET)) {
-		const struct nft_set *t
+		const struct nftnl_set *t
 			= nurs_input_pointer(inp, XML_INPUT_NFT_SET);
-		struct nft_set *o = (struct nft_set *)(uintptr_t)t;
-		tmp = nft_set_snprintf(buf, (size_t)size, o, NFT_OUTPUT_XML,
-				       event2flag(event));
+		struct nftnl_set *o = (struct nftnl_set *)(uintptr_t)t;
+		tmp = nftnl_set_snprintf(buf, (size_t)size, o,
+					 NFTNL_OUTPUT_XML, event2flag(event));
 		if (tmp == -1)
-			nurs_log(NURS_ERROR, "nft_set : %s\n",
+			nurs_log(NURS_ERROR, "nftnl_set : %s\n",
 				 strerror(errno));
 	} else if (nurs_input_is_valid(inp, XML_INPUT_NFT_SET_ELEM)) {
-		const struct nft_set *t
+		const struct nftnl_set *t
 			= nurs_input_pointer(inp, XML_INPUT_NFT_SET_ELEM);
-		struct nft_set *o = (struct nft_set *)(uintptr_t)t;
-		tmp = nft_set_snprintf(buf, (size_t)size, o, NFT_OUTPUT_XML,
-				       event2flag(event));
+		struct nftnl_set *o = (struct nftnl_set *)(uintptr_t)t;
+		tmp = nftnl_set_snprintf(buf, (size_t)size, o,
+					 NFTNL_OUTPUT_XML, event2flag(event));
 		if (tmp == -1)
-			nurs_log(NURS_ERROR, "nft_set_elem : %s\n",
+			nurs_log(NURS_ERROR, "nftnl_set_elem : %s\n",
 				 strerror(errno));
 	} else if (nurs_input_is_valid(inp, XML_INPUT_NFT_GEN)) {
 		/* not implemented yet
 		 *
-		 * const struct nft_gen *t
+		 * const struct nftnl_gen *t
 		 *	= nurs_input_pointer(inp, XML_INPUT_NFT_GEN);
-		 * struct nft_gen *o = (struct nft_gen *)(uintptr_t)t;
-		 * tmp = nft_gen_snprintf(buf, (size_t)size, o, NFT_OUTPUT_XML,
-		 * 		       event2flag(event));
+		 * struct nftnl_gen *o = (struct nft_gen *)(uintptr_t)t;
+		 * tmp = nftnl_gen_snprintf(buf, (size_t)size, o,
+		 *			    NFTNL_OUTPUT_XML, event2flag(event));
 		 * if (tmp == -1)
 		 *	nurs_log(NURS_ERROR, "nft_gen : %s\n", strerror(errno));
 		 */
