@@ -32,3 +32,6 @@ cscope.*
 # misc
 tmp/
 __pycache__/
+
+# doc
+/doc/*.8

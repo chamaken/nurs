@@ -1,0 +1,887 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN"
+"http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd">
+
+<refentry xmlns:xi="http://www.w3.org/2001/XInclude">
+  <refentryinfo>
+    <author>
+      <firstname>Harald</firstname>
+      <surname>Welte</surname>
+      <email>laforge@netfilter.org</email>
+    </author>
+    <author>
+      <firstname>Eric</firstname>
+      <surname>Leblond</surname>
+      <email>eric@regit.org</email>
+    </author>
+    <copyright>
+      <year>2000-2006</year>
+      <holder>Harald Welte</holder>
+    </copyright>
+    <copyright>
+      <year>2008-2012</year>
+      <holder>Pablo Neira Ayuso</holder>
+    </copyright>
+    <copyright>
+      <year>2008-2013</year>
+      <holder>Eric Leblond</holder>
+    </copyright>
+    <copyright>
+      <year>2016</year>
+      <holder>Ken-ichirou MATSUZAWA</holder>
+    </copyright>
+  </refentryinfo>
+
+  <refmeta>
+    <refentrytitle>nursd</refentrytitle>
+    <manvolnum>8</manvolnum>
+  </refmeta>
+
+  <refnamediv>
+    <refname>nursd</refname>
+    <refpurpose>
+      NFNetlink Userspace Receipt Suite Daemon, is a unstable
+      re-implementaion of ulogd2.
+    </refpurpose>
+  </refnamediv>
+
+  <refsynopsisdiv>
+    <cmdsynopsis>
+      <command>nursd</command>
+      <arg choice="opt">
+	<option>-h / --help</option>
+      </arg>
+      <arg choice="opt">
+	<option>-V / --version</option>
+      </arg>
+      <arg choice="opt">
+	<option>-d / --daemon</option>
+      </arg>
+      <arg choice="opt">
+	<option>-c / --configfile</option>
+	<replaceable>filename</replaceable>
+      </arg>
+      <arg choice="opt">
+	<option>-i / --info</option>
+	<replaceable>filename</replaceable>
+      </arg>
+      <arg choice="opt">
+	<option>-f / --logfile</option>
+	<replaceable>filename</replaceable>
+      </arg>
+      <arg choice="opt">
+	<option>-l / --loglevel</option>
+	<replaceable>loglevel</replaceable>
+      </arg>
+      <arg choice='req'>
+	<replaceable>config filename</replaceable>
+      </arg>
+    </cmdsynopsis>
+  </refsynopsisdiv>
+
+  <refsect1>
+    <title>Options</title>
+    <para>
+      For a full summary of options, run <command>nursd --help</command>.
+    </para>
+    <variablelist>
+      <varlistentry>
+	<term><option>-h / --help</option></term>
+	<listitem>
+	  <para>
+	    Print a help message about the commandline options.
+	  </para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+	<term><option>-V / --version</option></term>
+	<listitem>
+	  <para>
+	    Print version information about ulogd.
+	  </para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+	<term><option>-d / --daemon</option></term>
+	<listitem>
+	  <para>
+	    For off into daemon mode.  Unless you are debugging, you will want
+	    to use this most of the time.
+	  </para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+	<term><option>-i / --info</option></term>
+	<listitem>
+	  <para>
+	    Display informations about the plugin whom filename is given as
+	    argument.
+	  </para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+	<term><option>-f / --logfile</option></term>
+	<listitem>
+	  <para>
+	    specify log filename. name ``syslog'' is reserved for syslog.
+	    default is stderr.
+	  </para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+	<term><option>-l / --loglevel</option></term>
+	<listitem>
+	  <para>
+	    specify log level. select in either debug, info, notice, error and fata.
+	    info is default.
+	  </para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+	<term><option>-s / --sync</option></term>
+	<listitem>
+	  <para>
+	    flush each log output.
+	  </para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+	<term><option>config file name</option></term>
+	<listitem>
+	  <para>
+	    config filename.
+	  </para>
+	</listitem>
+      </varlistentry>
+    </variablelist>
+  </refsect1>
+
+  <refsect1>
+    <title>description</title>
+    <para>
+      nursd consists of a core and a number of plugins.  All the real
+      power lies in the plugins, and in the user who configures the interactions
+      between those plugins.
+    </para>
+    <para>
+      By means of the configuration file, the administrator can build any number
+      of Plugin Stacks. A plugin stack is a series of plugins, starting with an
+      producer plugin, none, one or multiple filter plugins, and one consumer or
+      coveter plugin on top.
+    </para>
+    <para>
+      It is important to understand that nursd without plugins does nothing.  It
+      will receive packets, and do nothing with them.
+    </para>
+    <para>
+      There are three kinds of plugins, producer, filter and consumer. producer
+      yields information from outside of nursd, typically netlink socket, filter
+      plugins reads from it and create additional information, then consumer
+      plugins write the interpreted information to some logfile/database/...
+    </para>
+    <para>
+      You can get information about plugins by running
+      <screen>
+	nursd -i path/to/plugin/file.so
+      </screen>
+    </para>
+    <refsect2>
+      <title>Producer Plugins</title>
+      <para>
+	Producer plugins acts data source.  They get data from somewhere outside of
+	nursd, and convert it into a input for succeeding plugins.
+      </para>
+    </refsect2>
+    <refsect2>
+      <title>Filter Plugins</title>
+      <para>
+	Filter plugins interpret and/or filter data that was received from the
+	Producer or Filter Plugin and create a input for succeeding plugins.
+      </para>
+    </refsect2>
+    <refsect2>
+      <title>Consumer / Coveter Plugins</title>
+      <para>
+	This plugins describe how and where to put the information gained by
+	the Producer Plugin and processed by one or more Filter Plugins.  The
+	easiest way is to build a line per packet and fprint it to a file.
+      </para>
+    </refsect2>
+  </refsect1>
+
+  <refsect1>
+    <title>configfile syntax reference</title>
+    <para>
+      nursd is what this is all about, so let's describe it's
+      configuration...  All configurable parameters of nursd are in
+      the configfile. The following configuration parameters are
+      available:
+    </para>
+    <variablelist>
+      <varlistentry>
+	<term>plugin</term>
+	<listitem>
+	  <para>
+	    This option is followed by a filename of a ulogd plugin, which ulogd
+	    should load upon initialization. This option may appear more than
+	    once.
+	  </para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+	<term>stack</term>
+	<listitem>
+	  <para>
+	    This option is followed by a comma separated names which
+	    consists of plugin instance id and plugin name connected by :.
+	  </para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+	<term>workers</term>
+	<listitem>
+	  <para>
+	    This option specifys the number of thread which executes
+	    subsequent to Producer plugin.
+	  </para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+	<term>iosets</term>
+	<listitem>
+	  <para>
+	    This option specifys the number of input/output chunk of
+	    memory. This memory chunks holds per Producer.
+	  </para>
+	</listitem>
+      </varlistentry>
+    </variablelist>
+
+    <refsect2>
+      <title>Signals</title>
+      <para>
+	<!-- SIGALRM is needed? -->
+	nursd self understands two kinds of signals. These and others
+	--- SIGALRM, SIGUSR1 and SIGUSR2 --- are delivered to each
+	plugins by signal callback.
+      </para>
+      <variablelist>
+	<varlistentry>
+	  <term>SIGHUP</term>
+	  <listitem>
+	    <para>
+	      Close and re-open logfile. This is mainly intended
+	      for logrotate scripts.
+	    </para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>SIGINT / SIGTERM</term>
+	  <listitem>
+	    <para>
+	      Terminate nursd.
+	    </para>
+	  </listitem>
+	</varlistentry>
+      </variablelist>
+    </refsect2>
+  </refsect1>
+
+  <refsect1>
+    <title>Available plugins</title>
+    <refsect2>
+      <title><filename>nurs_producer_NFLOG.so</filename> (NFLOG)</title>
+      <para>
+	This interfaces the new nfnetlink_log interface.  To compile, you need
+	libnetfilter_log installed in your system.
+      </para>
+      <variablelist>
+	<varlistentry>
+	  <term>group (integer)</term>
+	  <listitem>
+	    <para>
+	      The number of the netlink multicast group to which NFLOG'ed
+	      packets are sent.  You will have to use the same group number in
+	      the NFLOG target (-\-nflog-group) and in the input plugin.
+	    </para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>numeric_label (integer)</term>
+	  <listitem>
+	    <para>
+	      You can use this label to store information relative to the
+	      logging. The administrator can define a convention which can be
+	      used later to differenciate packet. For example, it can store the
+	      severity of the logged event.
+	    </para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>block_size (integer)</term>
+	  <listitem>
+	    <para>linux/Documentation/netlink_mmap.txt</para>
+	    <para>
+	      must be a multiple of the architectures memory page size.
+	      The getpagesize() function can be used to get the page size.
+	    </para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>frame_size (integer)</term>
+	  <listitem>
+	    <para>
+	      mmaped netlink socket frames are grouped into blocks,
+	      where each block is a continuous region of memory and
+	      holds block_size / frame_size frames. The total number
+	      of frames in the ring is frame_nr.
+	    </para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>block_nr (integer)</term>
+	  <listitem>
+	    <para>
+	      number of blocks to allocate.
+	    </para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>bind (boolean)</term>
+	  <listitem>
+	    <para>
+	      group is 0 and this bind config is true, then invoke
+	      NFULNL_CFG_CMD_PF_BIND config command to bind AF_INET, AF_INET6
+	      and AF_BRIDGE.
+	    </para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>unbind (boolean)</term>
+	  <listitem>
+	    <para>
+	      forcing unbind of existing log handler for protocol or not.
+	    </para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>seq_local (boolean)</term>
+	  <listitem>
+	    <para>
+	      set NFULNL_CFG_F_SEQ config flag.
+	    </para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>seq_global (boolean)</term>
+	  <listitem>
+	    <para>
+	      set NFULNL_CFG_F_SEQ_GLOBAL flag.
+	    </para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>qthreshold (integer)</term>
+	  <listitem>
+	    <para>
+	      invoke NFULA_CFG_QTHRESH config command.
+	    </para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>qtimeout (integer)</term>
+	  <listitem>
+	    <para>
+	      invoke NFULA_CFG_TIMEOUT config command.
+	    </para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>copy_mode (string)</term>
+	  <listitem>
+	    <para>
+	      specify either "packet" - NFULNL_COPY_PACKET, "meta" -
+	      NFULNL_COPY_META or "none" - NFULNL_COPY_NONE to emit config mode.
+	      "packet" is default.
+	    </para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>copy_range (integer)</term>
+	  <listitem>
+	    <para>
+	      copy size for "packet" mode. default is 0xffff - NLA_HDRLEN.
+	    </para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>conntrack (boolean)</term>
+	  <listitem>
+	    <para>
+	      set NFULNL_CFG_F_CONNTRACK flag.
+	    </para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>reliable (boolean)</term>
+	  <listitem>
+	    <para>https://patchwork.ozlabs.org/patch/24919/</para>
+	  </listitem>
+	</varlistentry>
+      </variablelist>
+    </refsect2>
+    <refsect2>
+      <title><filename>nursd_producer_NFCT.so</filename> (NFCT)</title>
+      <para>
+	This interfaces the nfnetlink_conntrack kernel subsystem, and
+	provides flow-based logging.  To compile, you need
+	libnetfilter_conntrack installed on your system.
+      </para>
+      <variablelist>
+	<varlistentry>
+	  <term>pollinterval (integer)</term>
+	  <listitem>
+	    <para>
+	      Change connection tracking dump interval.
+	    </para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>hash_enable (boolean)</term>
+	  <listitem>
+	    <para>
+	      If set to 1 (default) a internal hash will be stored and
+	      only destroy event will reach the output plugin.  It set
+	      to 0, all events are reveived by the output plugin.
+	    </para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>hash_buckets (integer)</term>
+	  <listitem>
+	    <para>Size of the internal hash bucket.</para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>hash_max_entries (integer)</term>
+	  <listitem>
+	    <para>
+	      Maximum number of entries in the internal connection hash.
+	    </para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>event_mask (integer)</term>
+	  <listitem>
+	    <para>
+	      Select event received from kernel based on a mask. Event types
+	      are defined as follows:
+	      <itemizedlist spacing='compact'>
+		<listitem>
+		  <para>Creation event: 0x00000001</para>
+		</listitem>
+		<listitem>
+		  <para>Update event: 0x00000002</para>
+		</listitem>
+		<listitem>
+		  <para>Destroy event: 0x00000004</para>
+		</listitem>
+	      </itemizedlist>
+	    </para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>netlink_socket_buffer_size (integer)</term>
+	  <listitem>
+	    <para>
+	      Specify the base socket buffer size. This start value will be
+	      increased if needed up to netlink_socket_buffer_maxsize.
+	    </para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>netlink_socket_buffer_maxsize (integer)</term>
+	  <listitem>
+	    <para>Specify the base socket buffer maximum size.</para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>netlink_resync_timeout (integer)</term>
+	  <listitem>
+	    <para>
+	      set the number of seconds that we wait to perform a
+	      resynchronization due to a netlink overrun. default timeout is 60
+	      seconds (less agressive).
+	    </para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>reliable (boolean)</term>
+	  <listitem>
+	    <para>same as NFLOG above.</para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>accept_mark_filter (string)</term>
+	  <listitem>
+	    <para>
+	      string representation of conntrack mark, value[/mask]
+	    </para>
+	  </listitem>
+	</varlistentry>
+      </variablelist>
+    </refsect2>
+    <refsect2>
+      <title><filename>nursd_producer_NFCT2.so</filename> (NFCT2)</title>
+      <para>
+	This interfaces the nfnetlink_conntrack kernel subsystem, and
+	provides flow-based logging.  To compile, you need
+	libnetfilter_conntrack installed on your system.
+      </para>
+      <variablelist>
+	<varlistentry>
+	  <term>block_size (integer)</term>
+	  <term>block_nr (integer)</term>
+	  <term>frame_size (integer)</term>
+	  <term>reliable (boolean)</term>
+	  <term>mark_filter (string)</term>
+	  <term>event_buffer_size</term>
+	  <term>event_buffer_maxsize (integer)</term>
+	  <listitem>
+	    <para>same as NFCT above.</para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>active_timeout (integer)</term>
+	  <listitem>
+	    <para>
+	    </para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>destroy_only (boolean)</term>
+	  <listitem>
+	    <para>
+	    </para>
+	  </listitem>
+	</varlistentry>
+      </variablelist>
+    </refsect2>
+    <refsect2>
+      <title><filename>nurs_producer_NFQ.so</filename> (NFQ)</title>
+      <para>
+      </para>
+      <variablelist>
+	<varlistentry>
+	  <term>block_size (integer)</term>
+	  <term>block_nr (integer)</term>
+	  <term>frame_size (integer)</term>
+	  <term>reliable (boolean)</term>
+	  <listitem>
+	    <para>
+	    </para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>queue_num (integer)</term>
+	  <listitem>
+	    <para>
+	    </para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>copy_mode (string)</term>
+	  <term>copy_range (integer)</term>
+	  <listitem>
+	    <para>
+	      same as NFLOG above.
+	    </para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>fail_open (boolean)</term>
+	  <listitem>
+	    <para>
+	      set NFQA_CFG_F_FAIL_OPEN config flag.
+	    </para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>conntrack (boolean)</term>
+	  <listitem>
+	    <para>
+	      set NFQA_CFG_F_CONNTRACK config flag.
+	    </para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>gso (boolean)</term>
+	  <listitem>
+	    <para>
+	      set NFQA_CFG_F_GSO config flag.
+	    </para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>uid_gid (boolean)</term>
+	  <listitem>
+	    <para>
+	      set NFQA_CFG_F_UID_GID config flag.
+	    </para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>secctx (boolean)</term>
+	  <listitem>
+	    <para>
+	      set NFQA_CFG_F_SECCTX config flag.
+	    </para>
+	  </listitem>
+	</varlistentry>
+      </variablelist>
+    </refsect2>
+    <refsect2>
+      <title><filename>nursd_producer_NFACCT.so</filename> (NFACCT)</title>
+      <para>
+      </para>
+      <variablelist>
+	<varlistentry>
+	  <term>pollinterval (integer)</term>
+	  <listitem>
+	    <para>
+	    </para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>zerocounter (boolean)</term>
+	  <listitem>
+	    <para>
+	    </para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>timestamp (boolean)</term>
+	  <listitem>
+	    <para>
+	    </para>
+	  </listitem>
+	</varlistentry>
+      </variablelist>
+    </refsect2>
+    <refsect2>
+      <title><filename>nurs_producer_NFT.so</filename> (NFT)</title>
+      <para>
+      </para>
+      <variablelist>
+	<varlistentry>
+	  <term>socket_buffer_size (integer)</term>
+	  <listitem>
+	    <para>
+	    </para>
+	  </listitem>
+	</varlistentry>
+      </variablelist>
+    </refsect2>
+    <refsect2>
+      <title><filename>nurs_producer_NFCTST.so</filename> (NFCTST)</title>
+      <para>
+      </para>
+      <variablelist>
+	<varlistentry>
+	  <term>pollinterval (integer)</term>
+	  <listitem>
+	    <para>
+	    </para>
+	  </listitem>
+	</varlistentry>
+      </variablelist>
+    </refsect2>
+    <refsect2>
+      <title><filename>nurs_filter_MARKIF.so</filename> (MARKIF)</title>
+      <para>
+      </para>
+      <variablelist>
+	<varlistentry>
+	  <term>mask_ingress (string)</term>
+	  <listitem>
+	    <para>
+	    </para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>mask_egress (string)</term>
+	  <listitem>
+	    <para>
+	    </para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>mask_flow (string)</term>
+	  <listitem>
+	    <para>
+	    </para>
+	  </listitem>
+	</varlistentry>
+      </variablelist>
+    </refsect2>
+    <refsect2>
+      <title><filename>nurs_filter_PACKICMP.so</filename> (PACKICMP)</title>
+      <para>
+	create IPFIX icmpTypeCodeIPv4 uint16_t value from uint8_t icmp code and
+	uint8_t icmp type.
+      </para>
+    </refsect2>
+    <refsect2>
+      <title><filename>nurs_filter_TIMECONV.so</filename> (TIMECONV)</title>
+      <para>
+	create time values required for IPFIX or Netflow v9 from uint32_t sec and
+	usec. And also create uptime values from /proc/timer_list
+      </para>
+      <variablelist>
+	<varlistentry>
+	  <term>usec64 (boolean)</term>
+	  <listitem>
+	    <para>
+	      create IPFIX time values from uint32_t time values.
+	    </para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>uptime (boolean)</term>
+	  <listitem>
+	    <para>
+	      create Netflow v9 uptime values.
+	    </para>
+	  </listitem>
+	</varlistentry>
+      </variablelist>
+    </refsect2>
+    <refsect2>
+      <title><filename>nursd_consumer_XML.so</filename>(XML)</title>
+      <para>
+      </para>
+      <variablelist>
+	<varlistentry>
+	  <term>filename (string)</term>
+	  <listitem>
+	    <para>
+	    </para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>sync (boolean)</term>
+	  <listitem>
+	    <para>
+	    </para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>timestamp (boolean)</term>
+	  <listitem>
+	    <para>
+	    </para>
+	  </listitem>
+	</varlistentry>
+      </variablelist>
+    </refsect2>
+    <refsect2>
+      <title><filename>nurs_coveter_IPFIX.so</filename> (IPFIX)</title>
+    </refsect2>
+    <refsect2>
+      <title><filename>nurs_coveter_NFLOW9.so</filename> (NFLOW9)</title>
+      <para>
+	Suppose NFCT2 is the producer, convert input keys which has IPFIX field
+	to IPFIX or Netflow v9 format and send it to file, TCP or UDP socket.
+	SCTP output has not implemented.
+      </para>
+      <variablelist>
+	<varlistentry>
+	  <term>dest (string)</term>
+	  <listitem>
+	    <para>
+	    </para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>domain_id (integer)</term>
+	  <listitem>
+	    <para>
+	    </para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>nth_template (integer)</term>
+	  <listitem>
+	    <para>
+	    </para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>corksets_max (integer)</term>
+	  <listitem>
+	    <para>
+	    </para>
+	  </listitem>
+	</varlistentry>
+      </variablelist>
+    </refsect2>
+  </refsect1>
+
+  <refsect1>
+    <title>QUESTIONS / COMMENTS</title>
+    <para>
+      All comments / questions / ... are appreciated.
+      Just drop a note to chamas@h4.dion.ne.jp
+    </para>
+  </refsect1>
+
+  <refsect1>
+    <title>See Also</title>
+    <para>
+      <simplelist type="inline">
+	<member>iptables(8)</member>
+	<member>ip6tables(8)</member>
+	<member>nft(8)</member>
+      </simplelist>
+    </para>
+  </refsect1>
+
+  <refsect1>
+    <title>Authors</title>
+    <para>
+      nursd was written by Ken-ichirou MATSUZAWA, based on ulogd2.
+    </para>
+  </refsect1>
+
+  <refsect1>
+    <title>Copyright</title>
+    <simplelist>
+      <member>
+	Copyright &copy; 2000-2006 Harald Welte
+	<email>laforge@netfilter.org</email>
+      </member>
+      <member>
+	Copyright &copy; 2008-2012 Pablo Neira Ayuso
+	<email>pablo@netfilter.org</email>
+      </member>
+      <member>
+	Copyright &copy; 2008-2012 Eric Leblond
+	<email>eric@regit.org</email>
+      </member>
+      <member>
+	Copyright &copy; 2016 Ken-ichirou MATSUZAWA
+	<email>chamas@h4.dion.ne.jp</email>
+      </member>
+    </simplelist>
+    <para>
+      nursd is free software; you can redistribute it and/or modify it under the
+      terms of the GNU General Public License version 2 as published by the Free
+      Software Foundation.
+    </para>
+    <para>
+      This documentation is licenced under the terms of the Creative Commons
+      Attribution-ShareAlike 4.0 license, <ulink
+      url="http://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</ulink>.
+    </para>
+  </refsect1>
+</refentry>
