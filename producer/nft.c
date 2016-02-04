@@ -30,384 +30,384 @@
 #include <nurs/nurs.h>
 
 /* libnftnl commit 37268a018e99181a1d203f0a8a6fc5c6670d09b2 */
-enum nft_output_keys_index {
-	NFT_OUTPUT_NFT_EVENT = 0,
+enum nftnl_output_keys_index {
+	NFTNL_OUTPUT_NFTNL_EVENT = 0,
 
 	/* src/table.c, include/libnftnl/table.h						*/
-	NFT_OUTPUT_TABLE_OBJECT,	/* struct nft_table 					*/
+	NFTNL_OUTPUT_TABLE_OBJECT,	/* struct nftnl_table 					*/
 
 	/* src/rule.c, include/libnftnl/rule.h							*/
-	NFT_OUTPUT_RULE_OBJECT,	/* struct nft_rule						*/
+	NFTNL_OUTPUT_RULE_OBJECT,	/* struct nftnl_rule					*/
 
 	/* src/chain.c, include/libnftnl/chain.h						*/
-	NFT_OUTPUT_CHAIN_OBJECT,	/* struct nft_chain					*/
+	NFTNL_OUTPUT_CHAIN_OBJECT,	/* struct nftnl_chain					*/
 
 	/* include/set.h, include/libnftnl/set.h						*/
-	NFT_OUTPUT_SET_OBJECT,	/* struct nft_set						*/
+	NFTNL_OUTPUT_SET_OBJECT,	/* struct nftnl_set					*/
 
 	/* include/set_elem.h, include/libnftnl/set.h						*/
-	NFT_OUTPUT_SET_ELEM_OBJECT,	/* struct nft_set_elem					*/
+	NFTNL_OUTPUT_SET_ELEM_OBJECT,	/* struct nftnl_set_elem				*/
 
 	/* src/gen.c, include/libnftnl/gen.h							*/
-	NFT_OUTPUT_GEN_OBJECT,	/* struct nft_gen						*/
+	NFTNL_OUTPUT_GEN_OBJECT,	/* struct nftnl_gen					*/
 
 	/*** primitive */
-	/* struct nft_table::src/table.c, include/libnftnl/table.h				*/
-	NFT_OUTPUT_TABLE_NAME,		/* const char	*name		NFT_TABLE_ATTR_NAME	*/
-	NFT_OUTPUT_TABLE_FAMILY,	/* uint32_t	family		NFT_TABLE_ATTR_FAMILY	*/
-	NFT_OUTPUT_TABLE_TABLE_FLAGS,	/* uint32_t	table_flags	NFT_TABLE_ATTR_FLAGS	*/
-	NFT_OUTPUT_TABLE_USE = 10,	/* uint32_t	use		NFT_TABLE_ATTR_USE	*/
+	/* struct nftnl_table::src/table.c, include/libnftnl/table.h				*/
+	NFTNL_OUTPUT_TABLE_NAME,	/* const char	*name		NFTNL_TABLE_ATTR_NAME	*/
+	NFTNL_OUTPUT_TABLE_FAMILY,	/* uint32_t	family		NFTNL_TABLE_ATTR_FAMILY	*/
+	NFTNL_OUTPUT_TABLE_TABLE_FLAGS,	/* uint32_t	table_flags	NFTNL_TABLE_ATTR_FLAGS	*/
+	NFTNL_OUTPUT_TABLE_USE = 10,	/* uint32_t	use		NFTNL_TABLE_ATTR_USE	*/
 
-	/* struct nft_rule::src/rule.c, include/libnftnl/rule.h					*/
-	NFT_OUTPUT_RULE_FAMILY,		/* uint32_t	family		NFT_RULE_ATTR_FAMILY	*/
-	NFT_OUTPUT_RULE_TABLE,		/* const char	*table		NFT_RULE_ATTR_TABLE	*/
-	NFT_OUTPUT_RULE_CHAIN,		/* const char	*chain		NFT_RULE_ATTR_CHAIN	*/
-	NFT_OUTPUT_RULE_HANDLE,		/* uint64_t	handle		NFT_RULE_ATTR_HANDLE	*/
-	NFT_OUTPUT_RULE_POSITION,	/* uint64_t	position	NFT_RULE_ATTR_POSITION	*/
-	NFT_OUTPUT_RULE_USER_DATA,	/* void		*data		NFT_RULE_ATTR_USERDATA	*/
+	/* struct nftnl_rule::src/rule.c, include/libnftnl/rule.h					*/
+	NFTNL_OUTPUT_RULE_FAMILY,	/* uint32_t	family		NFTNL_RULE_ATTR_FAMILY	*/
+	NFTNL_OUTPUT_RULE_TABLE,	/* const char	*table		NFTNL_RULE_ATTR_TABLE	*/
+	NFTNL_OUTPUT_RULE_CHAIN,	/* const char	*chain		NFTNL_RULE_ATTR_CHAIN	*/
+	NFTNL_OUTPUT_RULE_HANDLE,	/* uint64_t	handle		NFTNL_RULE_ATTR_HANDLE	*/
+	NFTNL_OUTPUT_RULE_POSITION,	/* uint64_t	position	NFTNL_RULE_ATTR_POSITION	*/
+	NFTNL_OUTPUT_RULE_USER_DATA,	/* void		*data		NFTNL_RULE_ATTR_USERDATA	*/
 					/* uint32_t	len					*/
-	NFT_OUTPUT_RULE_COMPAT_FLAGS,	/* uint32_t	flags		NFT_RULE_ATTR_COMPAT_FLAGS	*/
-	NFT_OUTPUT_RULE_COMPAT_PROTO,	/* uint32_t	proto		NFT_RULE_ATTR_COMPAT_PROTO	*/
+	NFTNL_OUTPUT_RULE_COMPAT_FLAGS,	/* uint32_t	flags		NFTNL_RULE_ATTR_COMPAT_FLAGS	*/
+	NFTNL_OUTPUT_RULE_COMPAT_PROTO,	/* uint32_t	proto		NFTNL_RULE_ATTR_COMPAT_PROTO	*/
 
-	/* struct nft_chain::src/chain.c, include/libnftnl/chain.h				*/
-	NFT_OUTPUT_CHAIN_NAME,		/* char		name[NFT_CHAIN_MAXNAMELEN] NFT_CHAIN_ATTR_NAME	*/
-	NFT_OUTPUT_CHAIN_TYPE = 20,	/* const char	*type		NFT_CHAIN_ATTR_TYPE	*/
-	NFT_OUTPUT_CHAIN_TABLE,		/* const char	*table		NFT_CHAIN_ATTR_TABLE	*/
-	NFT_OUTPUT_CHAIN_DEV,		/* const char	*dev		NFT_CHAIN_ATTR_DEV	*/
-	NFT_OUTPUT_CHAIN_FAMILY,	/* uint32_t	family		NFT_CHAIN_ATTR_FAMILY	*/
-	NFT_OUTPUT_CHAIN_POLICY,	/* uint32_t	policy		NFT_CHAIN_ATTR_POLICY	*/
-	NFT_OUTPUT_CHAIN_HOOKNUM,	/* uint32_t	hooknum		NFT_CHAIN_ATTR_HOOKNUM	*/
-	NFT_OUTPUT_CHAIN_PRIO,		/* int32_t	prio		NFT_CHAIN_ATTR_PRIO	*/
-	NFT_OUTPUT_CHAIN_USE,		/* uint32_t	use		NFT_CHAIN_ATTR_USE	*/
-	NFT_OUTPUT_CHAIN_PACKETS,	/* uint64_t	packets		NFT_CHAIN_ATTR_PACKETS	*/
-	NFT_OUTPUT_CHAIN_BYTES,		/* uint64_t	bytes		NFT_CHAIN_ATTR_BYTES	*/
-	NFT_OUTPUT_CHAIN_HANDLE = 30,	/* uint64_t	handle		NFT_CHAIN_ATTR_HANDLE	*/
+	/* struct nftnl_chain::src/chain.c, include/libnftnl/chain.h				*/
+	NFTNL_OUTPUT_CHAIN_NAME,	/* char		name[NFTNL_CHAIN_MAXNAMELEN] NFTNL_CHAIN_ATTR_NAME	*/
+	NFTNL_OUTPUT_CHAIN_TYPE = 20,	/* const char	*type		NFTNL_CHAIN_ATTR_TYPE	*/
+	NFTNL_OUTPUT_CHAIN_TABLE,	/* const char	*table		NFTNL_CHAIN_ATTR_TABLE	*/
+	NFTNL_OUTPUT_CHAIN_DEV,		/* const char	*dev		NFTNL_CHAIN_ATTR_DEV	*/
+	NFTNL_OUTPUT_CHAIN_FAMILY,	/* uint32_t	family		NFTNL_CHAIN_ATTR_FAMILY	*/
+	NFTNL_OUTPUT_CHAIN_POLICY,	/* uint32_t	policy		NFTNL_CHAIN_ATTR_POLICY	*/
+	NFTNL_OUTPUT_CHAIN_HOOKNUM,	/* uint32_t	hooknum		NFTNL_CHAIN_ATTR_HOOKNUM	*/
+	NFTNL_OUTPUT_CHAIN_PRIO,	/* int32_t	prio		NFTNL_CHAIN_ATTR_PRIO	*/
+	NFTNL_OUTPUT_CHAIN_USE,		/* uint32_t	use		NFTNL_CHAIN_ATTR_USE	*/
+	NFTNL_OUTPUT_CHAIN_PACKETS,	/* uint64_t	packets		NFTNL_CHAIN_ATTR_PACKETS	*/
+	NFTNL_OUTPUT_CHAIN_BYTES,	/* uint64_t	bytes		NFTNL_CHAIN_ATTR_BYTES	*/
+	NFTNL_OUTPUT_CHAIN_HANDLE = 30,	/* uint64_t	handle		NFTNL_CHAIN_ATTR_HANDLE	*/
 
-	/* struct nft_set::include/set.h, include/libnftnl/set.h				*/
-	NFT_OUTPUT_SET_FAMILY,		/* uint32_t	family		NFT_SET_ATTR_FAMILY	*/
-	NFT_OUTPUT_SET_SET_FLAGS,	/* uint32_t	set_flags	NFT_SET_ATTR_FLAGS	*/
-	NFT_OUTPUT_SET_TABLE,		/* const char	*table		NFT_SET_ATTR_TABLE	*/
-	NFT_OUTPUT_SET_NAME,		/* const char	*name		NFT_SET_ATTR_NAME	*/
-	NFT_OUTPUT_SET_KEY_TYPE,	/* uint32_t	key_type	NFT_SET_ATTR_KEY_TYPE	*/
-	NFT_OUTPUT_SET_KEY_LEN,		/* uint32_t	key_len		NFT_SET_ATTR_KEY_LEN	*/
-	NFT_OUTPUT_SET_DATA_TYPE,	/* uint32_t	data_type	NFT_SET_ATTR_DATA_TYPE	*/
-	NFT_OUTPUT_SET_DATA_LEN,	/* uint32_t	data_len	NFT_SET_ATTR_DATA_LEN	*/
-	NFT_OUTPUT_SET_ID,		/* uint32_t	id		NFT_SET_ATTR_ID		*/
-	NFT_OUTPUT_SET_POLICY = 40,	/* enum nft_set_policies policy	NFT_SET_ATTR_POLICY	*/
-	NFT_OUTPUT_SET_DESC_SIZE,	/* uint32_t	size		NFT_SET_ATTR_DESC_SIZE	*/
-	NFT_OUTPUT_SET_GC_INTERVAL,	/* uint32_t	gc_interval	NFT_SET_ATTR_GC_INTERVAL*/
-	NFT_OUTPUT_SET_TIEOUT,		/* uint64_t	timeout		NFT_SET_ATTR_TIMEOUT	*/
+	/* struct nftnl_set::include/set.h, include/libnftnl/set.h				*/
+	NFTNL_OUTPUT_SET_FAMILY,	/* uint32_t	family		NFTNL_SET_ATTR_FAMILY	*/
+	NFTNL_OUTPUT_SET_SET_FLAGS,	/* uint32_t	set_flags	NFTNL_SET_ATTR_FLAGS	*/
+	NFTNL_OUTPUT_SET_TABLE,		/* const char	*table		NFTNL_SET_ATTR_TABLE	*/
+	NFTNL_OUTPUT_SET_NAME,		/* const char	*name		NFTNL_SET_ATTR_NAME	*/
+	NFTNL_OUTPUT_SET_KEY_TYPE,	/* uint32_t	key_type	NFTNL_SET_ATTR_KEY_TYPE	*/
+	NFTNL_OUTPUT_SET_KEY_LEN,	/* uint32_t	key_len		NFTNL_SET_ATTR_KEY_LEN	*/
+	NFTNL_OUTPUT_SET_DATA_TYPE,	/* uint32_t	data_type	NFTNL_SET_ATTR_DATA_TYPE	*/
+	NFTNL_OUTPUT_SET_DATA_LEN,	/* uint32_t	data_len	NFTNL_SET_ATTR_DATA_LEN	*/
+	NFTNL_OUTPUT_SET_ID,		/* uint32_t	id		NFTNL_SET_ATTR_ID		*/
+	NFTNL_OUTPUT_SET_POLICY = 40,	/* enum nftnl_set_policies policy	NFTNL_SET_ATTR_POLICY	*/
+	NFTNL_OUTPUT_SET_DESC_SIZE,	/* uint32_t	size		NFTNL_SET_ATTR_DESC_SIZE	*/
+	NFTNL_OUTPUT_SET_GC_INTERVAL,	/* uint32_t	gc_interval	NFTNL_SET_ATTR_GC_INTERVAL*/
+	NFTNL_OUTPUT_SET_TIEOUT,	/* uint64_t	timeout		NFTNL_SET_ATTR_TIMEOUT	*/
 
-	/* struct nft_set_elem::include/set_elem.h, include/libnftnl/set.h			*/
-	NFT_OUTPUT_SET_ELEM_FLAGS,	/* uint32_t	set_elem_flags	NFT_SET_ELEM_ATTR_FLAGS	*/
-	NFT_OUTPUT_SET_ELEM_KEY,	/* union nft_data_reg	key	NFT_SET_ELEM_ATTR_KEY	*/
-	NFT_OUTPUT_SET_ELEM_DATA,	/* union nft_data_reg	data	NFT_SET_ELEM_ATTR_DATA	*/
-	NFT_OUTPUT_SET_ELEM_EXPR,	/* struct nft_rule_expr	*expr	NFT_SET_ELEM_ATTR_EXPR	*/
-	NFT_OUTPUT_SET_ELEM_TIMEOUT,	/* uint64_t	timeout		NFT_SET_ELEM_ATTR_TIMEOUT	*/
-	NFT_OUTPUT_SET_ELEM_EXPIRATION, /* uint64_t	expiration	NFT_SET_ELEM_ATTR_EXPIRATION	*/
-	NFT_OUTPUT_SET_USER_DATA = 50,	/* void		*data		NFT_SET_ELEM_ATTR_USERDATA	*/
+	/* struct nftnl_set_elem::include/set_elem.h, include/libnftnl/set.h			*/
+	NFTNL_OUTPUT_SET_ELEM_FLAGS,	/* uint32_t	set_elem_flags	NFTNL_SET_ELEM_ATTR_FLAGS	*/
+	NFTNL_OUTPUT_SET_ELEM_KEY,	/* union nftnl_data_reg	key	NFTNL_SET_ELEM_ATTR_KEY	*/
+	NFTNL_OUTPUT_SET_ELEM_DATA,	/* union nftnl_data_reg	data	NFTNL_SET_ELEM_ATTR_DATA	*/
+	NFTNL_OUTPUT_SET_ELEM_EXPR,	/* struct nftnl_rule_expr	*expr	NFTNL_SET_ELEM_ATTR_EXPR	*/
+	NFTNL_OUTPUT_SET_ELEM_TIMEOUT,	/* uint64_t	timeout		NFTNL_SET_ELEM_ATTR_TIMEOUT	*/
+	NFTNL_OUTPUT_SET_ELEM_EXPIRATION, /* uint64_t	expiration	NFTNL_SET_ELEM_ATTR_EXPIRATION	*/
+	NFTNL_OUTPUT_SET_USER_DATA = 50,/* void		*data		NFTNL_SET_ELEM_ATTR_USERDATA	*/
 					/* uint32_t	len						*/
-	NFT_OUTPUT_SET_ELEM_VERDICT,	/* int nft_data_reg.verdict	NFT_SET_ELEM_ATTR_VERDICT	*/
-	NFT_OUTPUT_SET_ELEM_CHAIN,	/* char *nft_data_reg.chain 	NFT_SET_ELEM_ATTR_CHAIN	*/
+	NFTNL_OUTPUT_SET_ELEM_VERDICT,	/* int nftnl_data_reg.verdict	NFTNL_SET_ELEM_ATTR_VERDICT	*/
+	NFTNL_OUTPUT_SET_ELEM_CHAIN,	/* char *nftnl_data_reg.chain 	NFTNL_SET_ELEM_ATTR_CHAIN	*/
 
-	/* struct nft_gen::src/gen.c, include/libnftnl/gen.h					*/
-	NFT_OUTPUT_GEN_ID,		/* uint32_t 	id		NFT_GEN_ID		*/
-	NFT_OUTPUT_MAX,
+	/* struct nftnl_gen::src/gen.c, include/libnftnl/gen.h					*/
+	NFTNL_OUTPUT_GEN_ID,		/* uint32_t 	id		NFTNL_GEN_ID		*/
+	NFTNL_OUTPUT_MAX,
 };
 
-static struct nurs_output_def nft_output = {
-	.len	= NFT_OUTPUT_MAX,
+static struct nurs_output_def nftnl_output = {
+	.len	= NFTNL_OUTPUT_MAX,
 	.keys	= {
-		[NFT_OUTPUT_NFT_EVENT]	= {
+		[NFTNL_OUTPUT_NFTNL_EVENT]	= {
 			.name	= "nft.event",
 			.type	= NURS_KEY_T_UINT32,
 			.flags	= NURS_OKEY_F_ACTIVE,
 		},
-		[NFT_OUTPUT_TABLE_OBJECT]	= {
+		[NFTNL_OUTPUT_TABLE_OBJECT]	= {
 			.name	= "nft.table.object",
 			.type	= NURS_KEY_T_POINTER,
 			.flags	= NURS_OKEY_F_OPTIONAL | NURS_OKEY_F_DESTRUCT,
-			.destructor = (void (*)(void *))nft_table_free,
+			.destructor = (void (*)(void *))nftnl_table_free,
 		},
-		[NFT_OUTPUT_RULE_OBJECT]	= {
+		[NFTNL_OUTPUT_RULE_OBJECT]	= {
 			.name	= "nft.rule.object",
 			.type	= NURS_KEY_T_POINTER,
 			.flags	= NURS_OKEY_F_OPTIONAL | NURS_OKEY_F_DESTRUCT,
-			.destructor = (void (*)(void *))nft_rule_free,
+			.destructor = (void (*)(void *))nftnl_rule_free,
 		},
-		[NFT_OUTPUT_CHAIN_OBJECT]	= {
+		[NFTNL_OUTPUT_CHAIN_OBJECT]	= {
 			.name	= "nft.chain.object",
 			.type	= NURS_KEY_T_POINTER,
 			.flags	= NURS_OKEY_F_OPTIONAL | NURS_OKEY_F_DESTRUCT,
-			.destructor = (void (*)(void *))nft_chain_free,
+			.destructor = (void (*)(void *))nftnl_chain_free,
 		},
-		[NFT_OUTPUT_SET_OBJECT]	= {
+		[NFTNL_OUTPUT_SET_OBJECT]	= {
 			.name	= "nft.set.object",
 			.type	= NURS_KEY_T_POINTER,
 			.flags	= NURS_OKEY_F_OPTIONAL | NURS_OKEY_F_DESTRUCT,
-			.destructor = (void (*)(void *))nft_set_free,
+			.destructor = (void (*)(void *))nftnl_set_free,
 		},
-		[NFT_OUTPUT_SET_ELEM_OBJECT]	= {
+		[NFTNL_OUTPUT_SET_ELEM_OBJECT]	= {
 			.name	= "nft.set_elem.object",
 			.type	= NURS_KEY_T_POINTER,
 			.flags	= NURS_OKEY_F_OPTIONAL | NURS_OKEY_F_DESTRUCT,
-			/* .destructor = (void (*)(void *))nft_set_elem_free, */
-			.destructor = (void (*)(void *))nft_set_free,
+			/* .destructor = (void (*)(void *))nftnl_set_elem_free, */
+			.destructor = (void (*)(void *))nftnl_set_free,
 		},
-		[NFT_OUTPUT_GEN_OBJECT]	= {
+		[NFTNL_OUTPUT_GEN_OBJECT]	= {
 			.name	= "nft.gen.object",
 			.type	= NURS_KEY_T_POINTER,
 			.flags	= NURS_OKEY_F_OPTIONAL | NURS_OKEY_F_DESTRUCT,
-			.destructor = (void (*)(void *))nft_gen_free,
+			.destructor = (void (*)(void *))nftnl_gen_free,
 		},
 
 		/*** primitive */
-		[NFT_OUTPUT_TABLE_NAME]	= {
+		[NFTNL_OUTPUT_TABLE_NAME]	= {
 			.name	= "nft.table.name",
 			.type	= NURS_KEY_T_STRING,
 			.flags	= NURS_OKEY_F_OPTIONAL,
 			.len	= NFT_TABLE_MAXNAMELEN,
 		},
-		[NFT_OUTPUT_TABLE_FAMILY]	= {
+		[NFTNL_OUTPUT_TABLE_FAMILY]	= {
 			.name	= "nft.table.family",
 			.type	= NURS_KEY_T_UINT32,
 			.flags	= NURS_OKEY_F_OPTIONAL,
 		},
-		[NFT_OUTPUT_TABLE_TABLE_FLAGS]	= {
+		[NFTNL_OUTPUT_TABLE_TABLE_FLAGS]	= {
 			.name	= "nft.table.flags",
 			.type	= NURS_KEY_T_UINT32,
 			.flags	= NURS_OKEY_F_OPTIONAL,
 		},
-		[NFT_OUTPUT_TABLE_USE]	= {
+		[NFTNL_OUTPUT_TABLE_USE]	= {
 			.name	= "nft.table.use",
 			.type	= NURS_KEY_T_UINT32,
 			.flags	= NURS_OKEY_F_OPTIONAL,
 		},
-		[NFT_OUTPUT_RULE_FAMILY]	= {
+		[NFTNL_OUTPUT_RULE_FAMILY]	= {
 			.name	= "nft.rule.family",
 			.type	= NURS_KEY_T_UINT32,
 			.flags	= NURS_OKEY_F_OPTIONAL,
 		},
-		[NFT_OUTPUT_RULE_TABLE]	= {
+		[NFTNL_OUTPUT_RULE_TABLE]	= {
 			.name	= "nft.rule.table",
 			.type	= NURS_KEY_T_STRING,
 			.flags	= NURS_OKEY_F_OPTIONAL,
 			.len	= NFT_TABLE_MAXNAMELEN,
 		},
-		[NFT_OUTPUT_RULE_CHAIN]	= {
+		[NFTNL_OUTPUT_RULE_CHAIN]	= {
 			.name	= "nft.rule.chain",
 			.type	= NURS_KEY_T_STRING,
 			.flags	= NURS_OKEY_F_OPTIONAL,
 			.len	= NFT_CHAIN_MAXNAMELEN,
 		},
-		[NFT_OUTPUT_RULE_HANDLE]	= {
+		[NFTNL_OUTPUT_RULE_HANDLE]	= {
 			.name	= "nft.rule.handle",
 			.type	= NURS_KEY_T_UINT64,
 			.flags	= NURS_OKEY_F_OPTIONAL,
 		},
-		[NFT_OUTPUT_RULE_POSITION]	= {
+		[NFTNL_OUTPUT_RULE_POSITION]	= {
 			.name	= "nft.rule.position",
 			.type	= NURS_KEY_T_UINT64,
 			.flags	= NURS_OKEY_F_OPTIONAL,
 		},
-		[NFT_OUTPUT_RULE_USER_DATA]	= {
+		[NFTNL_OUTPUT_RULE_USER_DATA]	= {
 			.name	= "nft.rule.userdata",
 			.type	= NURS_KEY_T_EMBED,
 			.flags	= NURS_OKEY_F_OPTIONAL,
 			.len	= NFT_USERDATA_MAXLEN,
 		},
-		[NFT_OUTPUT_RULE_COMPAT_FLAGS]	= {
+		[NFTNL_OUTPUT_RULE_COMPAT_FLAGS]	= {
 			.name	= "nft.rule.compat_flags",
 			.type	= NURS_KEY_T_UINT32,
 			.flags	= NURS_OKEY_F_OPTIONAL,
 		},
-		[NFT_OUTPUT_RULE_COMPAT_PROTO]	= {
+		[NFTNL_OUTPUT_RULE_COMPAT_PROTO]	= {
 			.name	= "nft.rule.compat_proto",
 			.type	= NURS_KEY_T_UINT32,
 			.flags	= NURS_OKEY_F_OPTIONAL,
 		},
-		[NFT_OUTPUT_CHAIN_NAME]	= {
+		[NFTNL_OUTPUT_CHAIN_NAME]	= {
 			.name	= "nft.chain.name",
 			.type	= NURS_KEY_T_STRING,
 			.flags	= NURS_OKEY_F_OPTIONAL,
 			.len	= NFT_CHAIN_MAXNAMELEN,
 		},
-		[NFT_OUTPUT_CHAIN_TYPE]	= {
+		[NFTNL_OUTPUT_CHAIN_TYPE]	= {
 			.name	= "nft.chain.type",
 			.type	= NURS_KEY_T_STRING,
 			.flags	= NURS_OKEY_F_OPTIONAL,
 			.len	= 16, /* filter / nat / route */
 		},
-		[NFT_OUTPUT_CHAIN_TABLE]	= {
+		[NFTNL_OUTPUT_CHAIN_TABLE]	= {
 			.name	= "nft.chain.table",
 			.type	= NURS_KEY_T_STRING,
 			.flags	= NURS_OKEY_F_OPTIONAL,
 			.len	= NFT_TABLE_MAXNAMELEN,
 		},
-		[NFT_OUTPUT_CHAIN_DEV]	= {
+		[NFTNL_OUTPUT_CHAIN_DEV]	= {
 			.name	= "nft.chain.dev",
 			.type	= NURS_KEY_T_STRING,
 			.flags	= NURS_OKEY_F_OPTIONAL,
 			.len	= IFNAMSIZ,
 		},
-		[NFT_OUTPUT_CHAIN_FAMILY]	= {
+		[NFTNL_OUTPUT_CHAIN_FAMILY]	= {
 			.name	= "nft.chain.family",
 			.type	= NURS_KEY_T_UINT32,
 			.flags	= NURS_OKEY_F_OPTIONAL,
 		},
-		[NFT_OUTPUT_CHAIN_POLICY]	= {
+		[NFTNL_OUTPUT_CHAIN_POLICY]	= {
 			.name	= "nft.chain.policy",
 			.type	= NURS_KEY_T_UINT32,
 			.flags	= NURS_OKEY_F_OPTIONAL,
 		},
-		[NFT_OUTPUT_CHAIN_HOOKNUM]	= {
+		[NFTNL_OUTPUT_CHAIN_HOOKNUM]	= {
 			.name	= "nft.chain.hooknum",
 			.type	= NURS_KEY_T_UINT32,
 			.flags	= NURS_OKEY_F_OPTIONAL,
 		},
-		[NFT_OUTPUT_CHAIN_PRIO]	= {
+		[NFTNL_OUTPUT_CHAIN_PRIO]	= {
 			.name	= "nft.chain.prio",
 			.type	= NURS_KEY_T_INT32,
 			.flags	= NURS_OKEY_F_OPTIONAL,
 		},
-		[NFT_OUTPUT_CHAIN_USE]	= {
+		[NFTNL_OUTPUT_CHAIN_USE]	= {
 			.name	= "nft.chain.use",
 			.type	= NURS_KEY_T_UINT32,
 			.flags	= NURS_OKEY_F_OPTIONAL,
 		},
-		[NFT_OUTPUT_CHAIN_PACKETS]	= {
+		[NFTNL_OUTPUT_CHAIN_PACKETS]	= {
 			.name	= "nft.chain.packets",
 			.type	= NURS_KEY_T_UINT64,
 			.flags	= NURS_OKEY_F_OPTIONAL,
 		},
-		[NFT_OUTPUT_CHAIN_BYTES]	= {
+		[NFTNL_OUTPUT_CHAIN_BYTES]	= {
 			.name	= "nft.chain.bytes",
 			.type	= NURS_KEY_T_UINT64,
 			.flags	= NURS_OKEY_F_OPTIONAL,
 		},
-		[NFT_OUTPUT_CHAIN_HANDLE]	= {
+		[NFTNL_OUTPUT_CHAIN_HANDLE]	= {
 			.name	= "nft.chain.handle",
 			.type	= NURS_KEY_T_UINT64,
 			.flags	= NURS_OKEY_F_OPTIONAL,
 		},
-		[NFT_OUTPUT_SET_FAMILY]	= {
+		[NFTNL_OUTPUT_SET_FAMILY]	= {
 			.name	= "nft.set.family",
 			.type	= NURS_KEY_T_UINT32,
 			.flags	= NURS_OKEY_F_OPTIONAL,
 		},
-		[NFT_OUTPUT_SET_SET_FLAGS]	= {
+		[NFTNL_OUTPUT_SET_SET_FLAGS]	= {
 			.name	= "nft.set.flags",
 			.type	= NURS_KEY_T_UINT32,
 			.flags	= NURS_OKEY_F_OPTIONAL,
 		},
-		[NFT_OUTPUT_SET_TABLE]	= {
+		[NFTNL_OUTPUT_SET_TABLE]	= {
 			.name	= "nft.set.table",
 			.type	= NURS_KEY_T_STRING,
 			.flags	= NURS_OKEY_F_OPTIONAL,
 			.len	= NFT_TABLE_MAXNAMELEN,
 		},
-		[NFT_OUTPUT_SET_NAME]	= {
+		[NFTNL_OUTPUT_SET_NAME]	= {
 			.name	= "nft.set.name",
 			.type	= NURS_KEY_T_STRING,
 			.flags	= NURS_OKEY_F_OPTIONAL,
 			.len	= IFNAMSIZ,
 		},
-		[NFT_OUTPUT_SET_KEY_TYPE]	= {
+		[NFTNL_OUTPUT_SET_KEY_TYPE]	= {
 			.name	= "nft.set.key_type",
 			.type	= NURS_KEY_T_UINT32,
 			.flags	= NURS_OKEY_F_OPTIONAL,
 		},
-		[NFT_OUTPUT_SET_KEY_LEN]	= {
+		[NFTNL_OUTPUT_SET_KEY_LEN]	= {
 			.name	= "nft.set.key_len",
 			.type	= NURS_KEY_T_UINT32,
 			.flags	= NURS_OKEY_F_OPTIONAL,
 		},
-		[NFT_OUTPUT_SET_DATA_TYPE]	= {
+		[NFTNL_OUTPUT_SET_DATA_TYPE]	= {
 			.name	= "nft.set.data_type",
 			.type	= NURS_KEY_T_UINT32,
 			.flags	= NURS_OKEY_F_OPTIONAL,
 		},
-		[NFT_OUTPUT_SET_DATA_LEN]	= {
+		[NFTNL_OUTPUT_SET_DATA_LEN]	= {
 			.name	= "nft.set.data_len",
 			.type	= NURS_KEY_T_UINT32,
 			.flags	= NURS_OKEY_F_OPTIONAL,
 		},
-		[NFT_OUTPUT_SET_ID]	= {
+		[NFTNL_OUTPUT_SET_ID]	= {
 			.name	= "nft.set.id",
 			.type	= NURS_KEY_T_UINT32,
 			.flags	= NURS_OKEY_F_OPTIONAL,
 		},
-		[NFT_OUTPUT_SET_POLICY]	= {
+		[NFTNL_OUTPUT_SET_POLICY]	= {
 			.name	= "nft.set.policy",
 			.type	= NURS_KEY_T_UINT32,
 			.flags	= NURS_OKEY_F_OPTIONAL,
 		},
-		[NFT_OUTPUT_SET_DESC_SIZE]	= {
+		[NFTNL_OUTPUT_SET_DESC_SIZE]	= {
 			.name	= "nft.set.desc_size",
 			.type	= NURS_KEY_T_UINT32,
 			.flags	= NURS_OKEY_F_OPTIONAL,
 		},
-		[NFT_OUTPUT_SET_GC_INTERVAL]	= {
+		[NFTNL_OUTPUT_SET_GC_INTERVAL]	= {
 			.name	= "nft.set.gc_interval",
 			.type	= NURS_KEY_T_UINT32,
 			.flags	= NURS_OKEY_F_OPTIONAL,
 		},
-		[NFT_OUTPUT_SET_TIEOUT]	= {
+		[NFTNL_OUTPUT_SET_TIEOUT]	= {
 			.name	= "nft.set.timeout",
 			.type	= NURS_KEY_T_UINT64,
 			.flags	= NURS_OKEY_F_OPTIONAL,
 		},
-		[NFT_OUTPUT_SET_ELEM_FLAGS]	= {
+		[NFTNL_OUTPUT_SET_ELEM_FLAGS]	= {
 			.name	= "nft.set_elem.flags",
 			.type	= NURS_KEY_T_UINT32,
 			.flags	= NURS_OKEY_F_OPTIONAL,
 		},
-		[NFT_OUTPUT_SET_ELEM_KEY]	= {
+		[NFTNL_OUTPUT_SET_ELEM_KEY]	= {
 			.name	= "nft.set_elem.key",
 			.type	= NURS_KEY_T_POINTER,
 			.flags	= NURS_OKEY_F_OPTIONAL,
 			/* XXX: len */
 		},
-		[NFT_OUTPUT_SET_ELEM_DATA]	= {
+		[NFTNL_OUTPUT_SET_ELEM_DATA]	= {
 			.name	= "nft.set_elem.data",
 			.type	= NURS_KEY_T_POINTER,
 			.flags	= NURS_OKEY_F_OPTIONAL,
 			/* XXX: len */
 		},
-		[NFT_OUTPUT_SET_ELEM_VERDICT]	= {
+		[NFTNL_OUTPUT_SET_ELEM_VERDICT]	= {
 			.name	= "nft.set_elem.verdict",
 			.type	= NURS_KEY_T_UINT32,
 			.flags	= NURS_OKEY_F_OPTIONAL,
 		},
-		[NFT_OUTPUT_SET_ELEM_CHAIN]	= {
+		[NFTNL_OUTPUT_SET_ELEM_CHAIN]	= {
 			.name	= "nft.set_elem.chain",
 			.type	= NURS_KEY_T_STRING,
 			.flags	= NURS_OKEY_F_OPTIONAL,
 			.len	= NFT_CHAIN_MAXNAMELEN,
 		},
-		[NFT_OUTPUT_SET_ELEM_EXPR]	= {
+		[NFTNL_OUTPUT_SET_ELEM_EXPR]	= {
 			.name	= "nft.set_elem.expr",
 			.type	= NURS_KEY_T_POINTER,
 			.flags	= NURS_OKEY_F_OPTIONAL | NURS_OKEY_F_DESTRUCT,
-			.destructor = (void (*)(void *))nft_rule_expr_free,
+			.destructor = (void (*)(void *))nftnl_set_free,
 		},
-		[NFT_OUTPUT_SET_ELEM_TIMEOUT]	= {
+		[NFTNL_OUTPUT_SET_ELEM_TIMEOUT]	= {
 			.name	= "nft.set_elem.timeout",
 			.type	= NURS_KEY_T_UINT64,
 			.flags	= NURS_OKEY_F_OPTIONAL,
 		},
-		[NFT_OUTPUT_SET_ELEM_EXPIRATION]	= {
+		[NFTNL_OUTPUT_SET_ELEM_EXPIRATION]	= {
 			.name	= "nft.set_elem.expiration",
 			.type	= NURS_KEY_T_UINT64,
 			.flags	= NURS_OKEY_F_OPTIONAL,
 		},
-		[NFT_OUTPUT_SET_USER_DATA]	= {
+		[NFTNL_OUTPUT_SET_USER_DATA]	= {
 			.name	= "nft.set_elem.userdata",
 			.type	= NURS_KEY_T_EMBED,
 			.flags	= NURS_OKEY_F_OPTIONAL,
 			.len	= NFT_USERDATA_MAXLEN,
 		},
-		[NFT_OUTPUT_GEN_ID]	= {
+		[NFTNL_OUTPUT_GEN_ID]	= {
 			.name	= "nft.gen.id",
 			.type	= NURS_KEY_T_UINT32,
 			.flags	= NURS_OKEY_F_OPTIONAL,
@@ -416,14 +416,14 @@ static struct nurs_output_def nft_output = {
 };
 
 enum nftable_config_keys_index {
-	NFT_CONFIG_BUFSIZE,
-	NFT_CONFIG_MAX,
+	NFTNL_CONFIG_BUFSIZE,
+	NFTNL_CONFIG_MAX,
 };
 
-static struct nurs_config_def nft_config = {
-	.len	= NFT_CONFIG_MAX,
+static struct nurs_config_def nftnl_config = {
+	.len	= NFTNL_CONFIG_MAX,
 	.keys	= {
-		[NFT_CONFIG_BUFSIZE]	= {
+		[NFTNL_CONFIG_BUFSIZE]	= {
 			.name	 = "socket_buffer_size",
 			.type	 = NURS_CONFIG_T_INTEGER,
 			.integer = 0,
@@ -431,69 +431,69 @@ static struct nurs_config_def nft_config = {
 	},
 };
 
-#define bufsize_ce(x)	nurs_config_integer(nurs_producer_config(x), NFT_CONFIG_BUFSIZE)
+#define bufsize_ce(x)	nurs_config_integer(nurs_producer_config(x), NFTNL_CONFIG_BUFSIZE)
 
-struct nft_priv {
+struct nftnl_priv {
 	struct mnl_socket *nls;
 	struct nurs_fd *fd;
 };
 
-static int set_table_keys(struct nurs_output *output, struct nft_table *src)
+static int set_table_keys(struct nurs_output *output, struct nftnl_table *src)
 {
 	return MNL_CB_OK;
 }
 
-static int set_chain_keys(struct nurs_output *output, struct nft_chain *src)
+static int set_chain_keys(struct nurs_output *output, struct nftnl_chain *src)
 {
 	return MNL_CB_OK;
 }
 
-static int set_rule_keys(struct nurs_output *output, struct nft_rule *src)
+static int set_rule_keys(struct nurs_output *output, struct nftnl_rule *src)
 {
 	return MNL_CB_OK;
 }
 
-static int set_set_keys(struct nurs_output *output, struct nft_set *src)
+static int set_set_keys(struct nurs_output *output, struct nftnl_set *src)
 {
 	return MNL_CB_OK;
 }
 
-static int set_gen_keys(struct nurs_output *output, struct nft_gen *src)
+static int set_gen_keys(struct nurs_output *output, struct nftnl_gen *src)
 {
 	return MNL_CB_OK;
 }
 
-static int set_set_elems_keys(struct nurs_output *output, struct nft_set *src)
+static int set_set_elems_keys(struct nurs_output *output, struct nftnl_set *src)
 {
 	return MNL_CB_OK;
 }
 
-#define NFT_CB(name, objname, keyidx)					\
+#define NFTNL_CB(name, objname, keyidx)					\
 static int name##_cb(struct nurs_producer *producer,			\
 		     const struct nlmsghdr *nlh, uint32_t event) {	\
 	struct nurs_output *_output = nurs_get_output(producer);	\
-	struct nft_##objname *_t = nft_##objname##_alloc();		\
+	struct nftnl_##objname *_t = nftnl_##objname##_alloc();		\
 	if (_t == NULL)							\
 		return MNL_CB_ERROR;					\
-	if (nft_##name##_nlmsg_parse(nlh, _t) < 0)			\
+	if (nftnl_##name##_nlmsg_parse(nlh, _t) < 0)			\
 		goto free;						\
-	nurs_output_set_u32(_output, NFT_OUTPUT_NFT_EVENT, event);	\
+	nurs_output_set_u32(_output, NFTNL_OUTPUT_NFTNL_EVENT, event);	\
 	nurs_output_set_pointer(_output, keyidx, _t);			\
 	set_##name##_keys(_output, _t);					\
 	if (nurs_propagate(producer, _output) == 0)			\
 		return MNL_CB_OK;					\
 free:									\
 	nurs_output_set_pointer(_output, keyidx, NULL);			\
-	nft_##objname##_free(_t);					\
+	nftnl_##objname##_free(_t);					\
 	return MNL_CB_ERROR;						\
 }
 
-NFT_CB(table,		table,	NFT_OUTPUT_TABLE_OBJECT)
-NFT_CB(chain,		chain,	NFT_OUTPUT_CHAIN_OBJECT)
-NFT_CB(rule,		rule,	NFT_OUTPUT_RULE_OBJECT)
-NFT_CB(set,		set,	NFT_OUTPUT_SET_OBJECT)
-NFT_CB(set_elems,	set,	NFT_OUTPUT_SET_ELEM_OBJECT)
-NFT_CB(gen,		gen,	NFT_OUTPUT_GEN_OBJECT)
+NFTNL_CB(table,		table,	NFTNL_OUTPUT_TABLE_OBJECT)
+NFTNL_CB(chain,		chain,	NFTNL_OUTPUT_CHAIN_OBJECT)
+NFTNL_CB(rule,		rule,	NFTNL_OUTPUT_RULE_OBJECT)
+NFTNL_CB(set,		set,	NFTNL_OUTPUT_SET_OBJECT)
+NFTNL_CB(set_elems,	set,	NFTNL_OUTPUT_SET_ELEM_OBJECT)
+NFTNL_CB(gen,		gen,	NFTNL_OUTPUT_GEN_OBJECT)
 
 static int events_cb(const struct nlmsghdr *nlh, void *data)
 {
@@ -534,10 +534,10 @@ static int events_cb(const struct nlmsghdr *nlh, void *data)
 	return ret;
 }
 
-static int nft_fd_cb(int fd, uint16_t what, void *param)
+static int nftnl_fd_cb(int fd, uint16_t what, void *param)
 {
 	struct nurs_producer *producer = param;
-	struct nft_priv *priv = nurs_producer_context(producer);
+	struct nftnl_priv *priv = nurs_producer_context(producer);
 	char buf[MNL_SOCKET_BUFFER_SIZE];
 	ssize_t nrecv;
 	int ret;
@@ -574,9 +574,9 @@ static int setnlbufsize(struct mnl_socket *nl, int size)
 	return size;
 }
 
-static int nft_organize(const struct nurs_producer *producer)
+static int nftnl_organize(const struct nurs_producer *producer)
 {
-	struct nft_priv *priv = nurs_producer_context(producer);
+	struct nftnl_priv *priv = nurs_producer_context(producer);
 	int nlbufsize = bufsize_ce(producer);
 
 	priv->nls = mnl_socket_open(NETLINK_NETFILTER);
@@ -610,9 +610,9 @@ err_exit:
 	return NURS_RET_ERROR;
 }
 
-static int nft_disorganize(const struct nurs_producer *producer)
+static int nftnl_disorganize(const struct nurs_producer *producer)
 {
-	struct nft_priv *priv = nurs_producer_context(producer);
+	struct nftnl_priv *priv = nurs_producer_context(producer);
 
 	nurs_fd_destroy(priv->fd);
 	if (mnl_socket_close(priv->nls)) {
@@ -624,12 +624,12 @@ static int nft_disorganize(const struct nurs_producer *producer)
 	return NURS_RET_OK;
 }
 
-static int nft_start(const struct nurs_producer *producer)
+static int nftnl_start(const struct nurs_producer *producer)
 {
-	struct nft_priv *priv = nurs_producer_context(producer);
+	struct nftnl_priv *priv = nurs_producer_context(producer);
 	void *cbdata = (void *)(uintptr_t)producer; /* remove const qualifier */
 
-	if (nurs_fd_register(priv->fd, nft_fd_cb, cbdata)) {
+	if (nurs_fd_register(priv->fd, nftnl_fd_cb, cbdata)) {
 		nurs_log(NURS_ERROR, "nurs_fd_register failed: %s\n",
 			 strerror(errno));
 		return NURS_RET_ERROR;
@@ -638,9 +638,9 @@ static int nft_start(const struct nurs_producer *producer)
 	return NURS_RET_OK;
 }
 
-static int nft_stop(const struct nurs_producer *producer)
+static int nftnl_stop(const struct nurs_producer *producer)
 {
-	struct nft_priv *priv = nurs_producer_context(producer);
+	struct nftnl_priv *priv = nurs_producer_context(producer);
 
 	if (nurs_fd_unregister(priv->fd)) {
 		nurs_log(NURS_ERROR, "nurs_fd_unregister: %s\n",
@@ -651,21 +651,21 @@ static int nft_stop(const struct nurs_producer *producer)
 	return NURS_RET_OK;
 }
 
-static struct nurs_producer_def nft_producer = {
+static struct nurs_producer_def nftnl_producer = {
 	.version	= VERSION,
 	.name 		= "NFT",
-	.context_size	= sizeof(struct nft_priv),
-	.config_def	= &nft_config,
-	.output_def	= &nft_output,
-	.organize	= &nft_organize,
-	.disorganize	= &nft_disorganize,
-	.start		= &nft_start,
-	.stop		= &nft_stop,
+	.context_size	= sizeof(struct nftnl_priv),
+	.config_def	= &nftnl_config,
+	.output_def	= &nftnl_output,
+	.organize	= &nftnl_organize,
+	.disorganize	= &nftnl_disorganize,
+	.start		= &nftnl_start,
+	.stop		= &nftnl_stop,
 };
 
 void __attribute__ ((constructor)) init(void);
 
 void init(void)
 {
-	nurs_producer_register(&nft_producer);
+	nurs_producer_register(&nftnl_producer);
 }
