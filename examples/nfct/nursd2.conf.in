@@ -1,5 +1,5 @@
 # example configuration for nursd
-# GOGC=off NURS_PYSON=@pynurs@/producer/nfct_event.json:@pynurs@/consumer/nfct_log.json ../../src/nursd -f nursd.log -v -l info nursd.conf
+# NURS_PYSON=@pynurs@/producer/nfct_event.json:@pynurs@/consumer/nfct_log.json ../../src/nursd -f nursd.log -v -l info nursd2.conf
 
 [global]
 

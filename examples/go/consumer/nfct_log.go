@@ -65,23 +65,13 @@ func interp(cplugin *C.struct_nurs_plugin, cinput *C.struct_nurs_input) C.enum_n
 	priv := (*nfctPriv)(plugin.Context())
 	input := (*nurs.Input)(cinput)
 	buf := make([]byte, 4096)
-	var msg_type nfct.ConntrackMsgType
 
-	mtype, err := input.String(0)
+	i, err := input.U32(0)
 	if err != nil {
-		nurs.Log(nurs.ERROR, "failed to get mtype: %s\n", err)
+		nurs.Log(nurs.ERROR, "failed to get message type: %s\n", err)
 		return C.enum_nurs_return_t(nurs.RET_ERROR)
 	}
-	switch mtype {
-	case "NEW":
-		msg_type = nfct.NFCT_T_NEW
-	case "UPDATE":
-		msg_type = nfct.NFCT_T_UPDATE
-	case "DESTROY":
-		msg_type = nfct.NFCT_T_DESTROY
-	default:
-		msg_type = 0
-	}
+	msg_type := nfct.ConntrackMsgType(i)
 
 	ptr, err := input.Pointer(1)
 	if err != nil {
@@ -107,7 +97,7 @@ var jsonrc = `{
     ],
     "input"	: [
         { "name"        : "ct.event",
-          "type"        : "NURS_KEY_T_STRING",
+          "type"        : "NURS_KEY_T_UINT32",
           "flags"       : ["NURS_IKEY_F_REQUIRED"]
         },
         { "name"	: "nfct",

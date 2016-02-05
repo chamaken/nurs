@@ -51,17 +51,17 @@ var (
 
 func dataCb(nlh *mnl.Nlmsghdr, data interface{}) (int, syscall.Errno) {
 	producer := data.(*nurs.Producer)
-	mtype := "UNKNOWN"
+	event := uint32(nfct.NFCT_T_UNKNOWN)
 
 	switch nlh.Type & 0xFF {
 	case C.IPCTNL_MSG_CT_NEW:
 		if nlh.Flags & (C.NLM_F_CREATE|C.NLM_F_EXCL) != 0 {
-			mtype = "NEW"
+			event = uint32(nfct.NFCT_T_NEW) // "NEW"
 		} else {
-			mtype = "UPDATE"
+			event = uint32(nfct.NFCT_T_UPDATE) // "UPDATE"
 		}
 	case C.IPCTNL_MSG_CT_DELETE:
-		mtype = "DESTROY"
+		event = uint32(nfct.NFCT_T_DESTROY) // "DESTROY"
 	}
 
 	output, err := producer.GetOutput()
@@ -83,7 +83,7 @@ func dataCb(nlh *mnl.Nlmsghdr, data interface{}) (int, syscall.Errno) {
 	}
 
 	l3proto, _ := ct.AttrU8(nfct.ATTR_L3PROTO)
-	output.SetString(idx_ct_event, mtype)
+	output.SetU32(idx_ct_event, event)
 	output.SetU8(idx_oob_family, l3proto)
 	if ret, _ := ct.AttrIsSet(nfct.ATTR_ORIG_L4PROTO); ret {
 		l4proto, _ := ct.AttrU8(nfct.ATTR_ORIG_L4PROTO)
@@ -235,33 +235,32 @@ var jsonrc = `{
     "name": "GO_NFCT",
     "output" : [
 	{ "name"        : "ct.event",
-	  "type"        : "NURS_KEY_T_STRING",
-	  "flags"       : ["NURS_OKEY_F_ACTIVE"],
-	  "len"		: 32 },
+	  "type"        : "NURS_KEY_T_UINT32",
+	  "flags"       : ["NURS_OKEY_F_ACTIVE"] },
 	{ "name"	: "oob.family",
 	  "type"	: "NURS_KEY_T_UINT8",
 	  "flags"	: ["NURS_OKEY_F_ACTIVE"] },
-	{ "name"	: "ip.protocol",
+	{ "name"	: "orig.ip.protocol",
 	  "type"	: "NURS_KEY_T_UINT8",
 	  "flags"	: ["NURS_OKEY_F_ACTIVE"],
 	  "ipfix_vendor": "IPFIX_VENDOR_IETF",
 	  "ipfix_field" : "IPFIX_protocolIdentifier" },
-	{ "name"	: "orig.pktlen",
+	{ "name"	: "orig.raw.pktlen.delta",
 	  "type"	: "NURS_KEY_T_UINT64",
 	  "flags"	: ["NURS_OKEY_F_ACTIVE"],
 	  "ipfix_vendor": "IPFIX_VENDOR_IETF",
 	  "ipfix_field" : "IPFIX_octetTotalCount" },
-	{ "name"	: "orig.pktcount",
+	{ "name"	: "orig.raw.pktcount.delta",
 	  "type"	: "NURS_KEY_T_UINT64",
 	  "flags"	: ["NURS_OKEY_F_ACTIVE"],
 	  "ipfix_vendor": "IPFIX_VENDOR_IETF",
 	  "ipfix_field" : "IPFIX_packetTotalCount" },
-	{ "name"	: "reply.pktlen",
+	{ "name"	: "reply.raw.pktlen.delta",
 	  "type"	: "NURS_KEY_T_UINT64",
 	  "flags"	: ["NURS_OKEY_F_ACTIVE"],
 	  "ipfix_vendor": "IPFIX_VENDOR_REVERSE",
 	  "ipfix_field" : "IPFIX_octetTotalCount" },
-	{ "name"	: "reply.pktcount",
+	{ "name"	: "reply.raw.pktcount.delta",
 	  "type"	: "NURS_KEY_T_UINT64",
 	  "flags"	: ["NURS_OKEY_F_ACTIVE"],
 	  "ipfix_vendor": "IPFIX_VENDOR_REVERSE",
@@ -302,17 +301,17 @@ func init() {
 	var priv nfctPriv
 	defkeys, err := nurs.ParseJsonKeys(jsonrc)
 	if err != nil {
-		nurs.Log(nurs.ERROR, "failed to parse json rc\n");
+		nurs.Log(nurs.ERROR, "failed to parse json rc: %s\n", err);
 		return
 	}
 
 	idx_ct_event, err	= defkeys.OutputIndex("ct.event")
 	idx_oob_family, err	= defkeys.OutputIndex("oob.family")
-	idx_ip_protocol, err	= defkeys.OutputIndex("ip.protocol")
-	idx_orig_pktlen, err	= defkeys.OutputIndex("orig.pktlen")
-	idx_orig_pktcount, err	= defkeys.OutputIndex("orig.pktcount")
-	idx_reply_pktlen, err	= defkeys.OutputIndex("reply.pktlen")
-	idx_reply_pktcount, err	= defkeys.OutputIndex("reply.pktcount")
+	idx_ip_protocol, err	= defkeys.OutputIndex("orig.ip.protocol")
+	idx_orig_pktlen, err	= defkeys.OutputIndex("orig.raw.pktlen.delta")
+	idx_orig_pktcount, err	= defkeys.OutputIndex("orig.raw.pktcount.delta")
+	idx_reply_pktlen, err	= defkeys.OutputIndex("reply.raw.pktlen.delta")
+	idx_reply_pktcount, err	= defkeys.OutputIndex("reply.raw.pktcount.delta")
 	idx_orig_ip_saddr, err	= defkeys.OutputIndex("orig.ip.saddr")
 	idx_orig_ip_daddr, err	= defkeys.OutputIndex("orig.ip.daddr")
 	idx_orig_ip6_saddr, err	= defkeys.OutputIndex("orig.ip6.saddr")
