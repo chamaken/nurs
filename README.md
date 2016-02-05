@@ -1,7 +1,7 @@
-I needed to account network traffic and looked for it, I found some libpcap base  
-accounting software. I tried to keep searching, understood linux has kernel  
-space accounting system, named conntrack, not need to account in userspace, and  
-found software named ulogd based on conntrack.  
+I needed to account network traffic and looked for, I found some libpcap base  
+accounting software. I kept searching, understood linux has kernel  
+space accounting system conntrack, not need to account in userspace, and  
+found software named ulogd which use it.
 
 <!--
 ネットワークトラヒックの集計が必要で、調べてみたところ、いくつか libpcap ベース  
@@ -10,7 +10,7 @@ found software named ulogd based on conntrack.
 かり、これを基とした ulogd というソフトウェアがありました。  
 -->
 
-I had thought I need IPFIX but it was Netflow version9 actually. Then I tried to  
+I had thought I needed IPFIX but it was Netflow version9 actually. Then I tried to  
 create ulogd patches and post it. I'm not good at English and my lack of  
 knowledge, those patches were not accepted but used it in personal.  
 
@@ -33,9 +33,9 @@ Suite has been made.
 -->
 
 As described above, I am only using examples/ctflow9 now since I am satisfied  
-with letting conntrack information to handle as Netflow version9. There is less  
+with converting conntrack information to Netflow version9 format. There is less  
 document (patches for doc are welcome too!) and other samples under examples/  
-were just for my interest, has not tested well, but I'm glad if you refer those  
+were just for my interest, has not tested well. But I'm glad if you refer those  
 samples to use this software. Thanks,  
 
 <!--
@@ -140,8 +140,7 @@ memo
 ====
 
 * input / output key size aligned 4
-* start callback is needed only for producer?
-* switch / case statements for struct nurs_plugin.type seems nasty things?
+* switch / case statements for struct nurs_plugin.type seems nasty things.
 * filter / consumer which input is all optional may receive no input.
 * ioset depends on producer which has stack(s).  
   owner of iosets is producer, not stack
@@ -150,6 +149,7 @@ memo
   - https://github.com/phaethon/scapy
   - https://github.com/google/gopacket
   - https://github.com/libpnet/libpnet
+
 * struct nurs_ioset
 <pre>
 stack = "src, f1, f2, ...
