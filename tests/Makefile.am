@@ -1,8 +1,9 @@
+SUBDIRS		= data
 AUTOM4TE	= autom4te
 AUTOTEST	= $(AUTOM4TE) --language=autotest
 AM_CPPFLAGS	= -I$(top_srcdir)/include -I$(top_srcdir)/src
 AM_CFLAGS	= -g ${regular_CFLAGS}
-LDADD		= ${libdl_LIBS} ${JANSSON_LIBS} $(top_srcdir)/src/libnurs.la
+LDADD		= ${libdl_LIBS} ${JANSSON_LIBS} ../src/libnurs.la
 
 TESTSUITE = $(srcdir)/testsuite
 EXTRA_DIST = testsuite.at $(TESTSUITE) atlocal.in

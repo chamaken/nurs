@@ -217,6 +217,7 @@ AC_CONFIG_FILES([Makefile
                  src/Makefile
                  tests/Makefile
 		 tests/atlocal
+                 tests/data/Makefile
 		 util/Makefile
 		 producer/Makefile
 		 filter/Makefile

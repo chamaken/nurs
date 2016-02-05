@@ -1,1 +1,1 @@
-noinst_HEADERS = nurs.h ipfix_protocol.h utils.h
+noinst_HEADERS = nurs.h list.h ipfix_protocol.h utils.h ring.h

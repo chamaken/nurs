@@ -1,5 +1,5 @@
 my_testdir="@abs_top_builddir@/tests"
-my_datadir="@abs_top_builddir@/tests/data"
+my_datadir="@abs_top_srcdir@/tests/data"
 VALGRIND="valgrind \
 	--suppressions=/usr/lib/valgrind/debian.supp \
 	--leak-check=full \

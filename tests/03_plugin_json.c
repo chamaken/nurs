@@ -1,4 +1,3 @@
-#include <libgen.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -8,15 +7,13 @@
 
 #include "test.h"
 
-static char *hint2path(const char *progname, const char *hint)
+static char *hint2path(const char *dirname, const char *hint)
 {
-	char *d = strdup(progname);
 	char *s = calloc(1, 4096);
-	assert(d && s);
+	assert(s);
 
-	dirname(d);
-	snprintf(s, 4096, "%s/data/03_%s.json", d, hint);
-	free(d);
+	snprintf(s, 4096, "%s/03_%s.json", dirname, hint);
+
 	return s;
 }
 
@@ -41,14 +38,14 @@ int main(int argc, char *argv[])
 	plugin_init();
 
 	for (cmd = success_cmds; cmd->regist; cmd++) {
-		char *path = hint2path(argv[0], cmd->hint);
+		char *path = hint2path(argv[1], cmd->hint);
 		assertf(cmd->register_assert ? cmd->regist(path, 0) : !cmd->regist(path, 0),
 			"should success to register %s", path);
 		free(path);
 	}
 
 	for (cmd = success_cmds; cmd->regist; cmd++) {
-		char *path = hint2path(argv[0], cmd->hint);
+		char *path = hint2path(argv[1], cmd->hint);
 		assertf(!cmd->unregist(path),
 			"should success to unregister %s", path);
 		free(path);

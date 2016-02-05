@@ -17,4 +17,4 @@ SUFFIXES = .conf .conf.in .json .json.in
 	go build -buildmode=c-shared -o $@ $<
 
 clean-local:
-	-rm -rf core *.conf *.json *.log *.gso *.h
+	-rm -f core *.conf *.json *.log *.gso *.h
