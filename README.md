@@ -1,7 +1,11 @@
-I needed to account network traffic and looked for, I found some libpcap base  
-accounting software. I kept searching, understood linux has kernel  
-space accounting system conntrack, not need to account in userspace, and  
-found software named ulogd which use it.
+Background
+==========
+
+I needed to collect network traffic, and, after searching, I found several  
+libpcap-based softwares. With a little more research, I found that, even without  
+collecting in userspace, Linux has something called conntrack that collects data  
+from within the kernel. There is a software called ulogd that uses this as a  
+module.  
 
 <!--
 ネットワークトラヒックの集計が必要で、調べてみたところ、いくつか libpcap ベース  
@@ -10,9 +14,10 @@ found software named ulogd which use it.
 かり、これを基とした ulogd というソフトウェアがありました。  
 -->
 
-I had thought I needed IPFIX but it was Netflow version9 actually. Then I tried to  
-create ulogd patches and post it. I'm not good at English and my lack of  
-knowledge, those patches were not accepted but used it in personal.  
+Although at first I believed that I need IPFIX was necessary, in actuality is  
+Netflow ver. 9, so I made several patches for ulogd and sent it out to the  
+mailing list. It wasn't adopted because my technical skills and English ability  
+weren't enough, but it was used privately.  
 
 <!--
 当初は IPFIX が必要と思い込んでいたものの、実際は Netflow version 9 を用いること  
@@ -20,10 +25,10 @@ knowledge, those patches were not accepted but used it in personal.
 術と英語が拙かったため採用されませんでしたが、内々で使っていました。  
 -->
 
-After that, I found next-generation ulogd trying to be a multithreaded and (rx  
-side) mmaped netlink socket has been implemented in kernel. I tried to use those  
-tech and implement similar to ulogd, that's why this Nfnetlink Userspace Receipt  
-Suite has been made.  
+Afterwards, I learned that ulogd was aiming for multithreading and that, when  
+acquiring netlink information, a faster mmaped socket existed. I made my own  
+implementation based on ulogd, which created this Nfnetlink Userspace Receipt  
+Suite.  
 
 <!--
 その後、次期 ulogd ではマルチスレッド化を目指していることや、netlink の情報を取  
@@ -32,11 +37,12 @@ Suite has been made.
 た次第です。  
 -->
 
-As described above, I am only using examples/ctflow9 now since I am satisfied  
-with converting conntrack information to Netflow version9 format. There is less  
-document (patches for doc are welcome too!) and other samples under examples/  
-were just for my interest, has not tested well. But I'm glad if you refer those  
-samples to use this software. Thanks,  
+As described above, personally it is plenty to be able to use conntrack  
+information as Netflow ver. 9, so the methods actually being used are under  
+examples/ctflow9. There is less document (I would welcome document patches too).  
+Other examples outside of ctflow9 are only for the interests sake and haven't  
+been tested well, but I would be pleased if you could take them into  
+consideration. (Thank you to Gengo for translating the above document.)  
 
 <!--
 上記通り、個人的には conntrack の情報を Netflow version 9 として扱うことができれ
@@ -50,7 +56,7 @@ ulogd2 is userspace logging daemon for netfilter/iptables
 (http://www.netfilter.org/projects/ulogd/), see README.ulogd2
 
 
-prerequisites
+Prerequisites
 =============
 * libmnl (http://www.netfilter.org/projects/libmnl/)  
   current git (2015-10-03) is better,  
@@ -59,7 +65,7 @@ prerequisites
 * liburcu2 (http://liburcu.org/)  
   (atomic operation only, it can be replaced by GCC builtins.)
 
-optional
+Optional
 --------
 * mmaped netlink available kernel (>= 4.5 is better see:  
   commit aa3a022094fac7f6e48050e139fa8a5a2e3265ce  
@@ -74,7 +80,7 @@ optional
   - cpylmnl (https://github.com/chamaken/cpylmnl)
 
 
-installation
+Installation
 ============
 ```
 $ ./autogen.sh
@@ -84,13 +90,13 @@ $ make
 ```
 
 
-sample
+Sample
 ======
 python required. cd examples/tick after install
 ```
 NURS_PYSON=consumer_py.json ../../src/nursd nursd1.conf
 ```
-head *.conf file under examples directory.
+head *.conf file under examples directories.
 
 
 Python
