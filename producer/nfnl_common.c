@@ -1,4 +1,8 @@
+#include <errno.h>
+#include <string.h>
+
 #include <libmnl/libmnl.h>
+#include <nurs/nurs.h>
 
 #include "nfnl_common.h"
 
@@ -20,4 +24,18 @@ void frame_destructor(void *data)
 {
 	struct nl_mmap_hdr *frame = data;
 	frame->nm_status = NL_MMAP_STATUS_UNUSED;
+}
+
+struct mnl_socket *nurs_mnl_socket(const char *ns, int bus)
+{
+	int fd;
+
+	if (!ns || !strlen(ns))
+		return mnl_socket_open(bus);
+
+	fd = nurs_nssocket(ns, AF_NETLINK, SOCK_RAW, bus);
+	if (fd == -1)
+		return NULL;
+
+	return mnl_socket_fdopen(fd);
 }
