@@ -17,5 +17,6 @@
 
 int mnl_socket_set_reliable(struct mnl_socket *nl);
 void frame_destructor(void *data);
+struct mnl_socket *nurs_mnl_socket(const char *ns, int bus);
 
 #endif
