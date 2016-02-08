@@ -396,6 +396,11 @@ int useless_fini(void);
 
 
 /*
+ * nssocket
+ */
+int nurs_reap_nssocket(pid_t pid);
+void nurs_fini_nssocket(int force);
+/*
  * boot option
  */
 struct nurs_options {

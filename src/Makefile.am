@@ -3,7 +3,7 @@ AM_CFLAGS = ${regular_CFLAGS}
 
 nurs_SOURCES	= internal.h config.c fd.c key.c main.c misc.c worker.c \
 		stack.c json_plugin.c ioset.c plugin.c plugin_producer.c \
-		plugin_filter.c plugin_consumer.c plugin_coveter.c
+		plugin_filter.c plugin_consumer.c plugin_coveter.c nssocket.c
 
 sbin_PROGRAMS	= nursd
 

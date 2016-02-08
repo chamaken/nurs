@@ -566,8 +566,8 @@ int nurs_timer_pending(struct nurs_timer *timer);
 /*
  * misc
  */
-#define DEBUG
-#ifdef DEBUG
+#define DEBUG_PTHREAD
+#ifdef DEBUG_PTHREAD
 #define NURS_MUTEX_INITIALIZER PTHREAD_ERRORCHECK_MUTEX_INITIALIZER_NP
 #define NURS_MUTEX_ATTR PTHREAD_MUTEX_ERRORCHECK_NP
 #else
@@ -628,5 +628,8 @@ void __nurs_log(int level, char *file, int line, const char *message, ...);
 	__nurs_log(level, __FILE__, line, format, ## args)
 #define nurs_flog(level, file, line, format, args...)	\
 	__nurs_log(level, file, line, format, ## args)
+
+/* create socket for namespace */
+int nurs_nssocket(const char *name, int domain, int type, int protocol);
 
 #endif /* _NURS_H */

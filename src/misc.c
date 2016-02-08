@@ -244,6 +244,9 @@ signal_cb(int fd, uint16_t when, void *data)
 	} else if (fdsi.ssi_signo == SIGTERM ||
 		   fdsi.ssi_signo == SIGINT) {
 		stop_handler(fdsi.ssi_signo);
+	} else if (fdsi.ssi_signo == SIGCHLD &&
+		   nurs_reap_nssocket((pid_t)fdsi.ssi_pid)) {
+		nurs_log(NURS_ERROR, "failed to reap nssocket child\n");
 	}
 
 	/* call signal callback synchronously */
@@ -276,6 +279,7 @@ int signal_nfd_init(void)
 	    sigaddset(&mask, SIGINT)  ||
 	    sigaddset(&mask, SIGHUP)  ||
 	    sigaddset(&mask, SIGALRM) ||
+	    sigaddset(&mask, SIGCHLD) ||
 	    sigaddset(&mask, SIGUSR1) ||
 	    sigaddset(&mask, SIGUSR2)) {
 		nurs_log(NURS_FATAL, "failed to sigaddset: %s\n",
