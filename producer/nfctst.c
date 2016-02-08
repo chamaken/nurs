@@ -20,19 +20,33 @@
 #include <libmnl/libmnl.h>
 
 #include <nurs/nurs.h>
+#include "nfnl_common.h"
+
+enum nfctst_conf {
+	NFCTST_CONFIG_POLLINT,
+	NFCTST_CONFIG_NAMESPACE,
+	NFCTST_CONFIG_MAX,
+};
 
 static struct nurs_config_def nfctst_config = {
-	.len  = 1,
+	.len  = NFCTST_CONFIG_MAX,
 	.keys = {
-		{
+		[NFCTST_CONFIG_POLLINT] =  {
 			.name	 = "pollinterval",
 			.type	 = NURS_CONFIG_T_INTEGER,
 			.integer = 60,
 		},
+		[NFCTST_CONFIG_NAMESPACE] = {
+			.name	 = "namespace",
+			.type	 = NURS_CONFIG_T_STRING,
+			.flags   = NURS_CONFIG_F_NONE,
+			.string	 = "",
+		},
 	},
 };
 
-#define config_pollint(x)	nurs_config_integer(nurs_producer_config(x), 0)
+#define config_pollint(x)	nurs_config_integer(nurs_producer_config(x), NFCTST_CONFIG_POLLINT)
+#define config_namespace(x)	nurs_config_string(nurs_producer_config(x), NFCTST_CONFIG_NAMESPACE)
 
 enum {
 	NFCTST_OUTPUT_STATS_SEARCHED		= CTA_STATS_SEARCHED	   - 1,
@@ -238,9 +252,10 @@ static enum nurs_return_t nfctst_organize(const struct nurs_producer *producer)
 		return -1;
 	}
 
-	priv->nls = mnl_socket_open(NETLINK_NETFILTER);
+	priv->nls = nurs_mnl_socket(config_namespace(producer),
+				    NETLINK_NETFILTER);
 	if (priv->nls == NULL) {
-		nurs_log(NURS_ERROR, "mnl_socket_open: %s\n",
+		nurs_log(NURS_ERROR, "failed to create socket: %s\n",
 			 strerror(errno));
 		goto err_exit;
 	}

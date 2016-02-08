@@ -74,6 +74,7 @@ enum nfct_conf {
 	NFCT_CONFIG_DESTROY_ONLY,
 	NFCT_CONFIG_EVENT_BUFSIZ,
 	NFCT_CONFIG_EVENT_BUFMAX,
+	NFCT_CONFIG_NAMESPACE,
 	NFCT_CONFIG_MAX,
 };
 
@@ -132,7 +133,13 @@ static struct nurs_config_def nfct_config = {
 			.type	 = NURS_CONFIG_T_INTEGER,
 			.flags   = NURS_CONFIG_F_NONE,
 			.integer = 0,
-		}
+		},
+		[NFCT_CONFIG_NAMESPACE] = {
+			.name	 = "namespace",
+			.type	 = NURS_CONFIG_T_STRING,
+			.flags   = NURS_CONFIG_F_NONE,
+			.string	 = "",
+		},
 	},
 };
 
@@ -145,6 +152,7 @@ static struct nurs_config_def nfct_config = {
 #define config_destroy_only(x)	nurs_config_boolean(nurs_producer_config(x), NFCT_CONFIG_DESTROY_ONLY)
 #define config_event_bufsiz(x)	nurs_config_integer(nurs_producer_config(x), NFCT_CONFIG_EVENT_BUFSIZ)
 #define config_event_bufmax(x)	nurs_config_integer(nurs_producer_config(x), NFCT_CONFIG_EVENT_BUFMAX)
+#define config_namespace(x)	nurs_config_string(nurs_producer_config(x), NFCT_CONFIG_NAMESPACE)
 
 #include "nfct.keydef"
 
@@ -557,15 +565,20 @@ out:
 	return ret;
 }
 
-static int clear_counters(struct nfct_priv *priv)
+static int clear_counters(const struct nurs_producer *producer)
 {
-	struct mnl_socket *nl = mnl_socket_open(NETLINK_NETFILTER);
+	struct nfct_priv *priv = nurs_producer_context(producer);
+	struct mnl_socket *nl;
 	ssize_t nrecv;
 	char buf[MNL_SOCKET_BUFFER_SIZE];
 	int ret;
 
-	if (!nl)
+	nl = nurs_mnl_socket(config_namespace(producer), NETLINK_NETFILTER);
+	if (!nl) {
+		nurs_log(NURS_ERROR, "failed to create socket: %s\n",
+			 strerror(errno));
 		return -1;
+	}
 
 	if (mnl_socket_sendto(nl, priv->dump_request,
 			      priv->dump_request->nlmsg_len) == -1) {
@@ -736,9 +749,10 @@ static int open_event_socket(const struct nurs_producer *producer)
 {
 	struct nfct_priv *priv = nurs_producer_context(producer);
 
-	priv->event_nl = mnl_socket_open(NETLINK_NETFILTER);
+	priv->event_nl = nurs_mnl_socket(config_namespace(producer),
+					 NETLINK_NETFILTER);
 	if (!priv->event_nl) {
-		nurs_log(NURS_ERROR, "mnl_socket_open: %s\n",
+		nurs_log(NURS_ERROR, "failed to create socket: %s\n",
 			 strerror(errno));
 		return NURS_RET_ERROR;
 	}
@@ -784,9 +798,10 @@ static int open_dump_socket(const struct nurs_producer *producer)
 				  * config_block_nr(producer),
 	};
 
-	priv->dump_nl = mnl_socket_open(NETLINK_NETFILTER);
+	priv->dump_nl = nurs_mnl_socket(config_namespace(producer),
+					NETLINK_NETFILTER);
 	if (!priv->dump_nl) {
-		nurs_log(NURS_ERROR, "mnl_socket_open: %s\n",
+		nurs_log(NURS_ERROR, "failed to create socket: %s\n",
 			 strerror(errno));
 		goto error_close;
 	}
@@ -843,7 +858,7 @@ nfct_organize(const struct nurs_producer *producer)
 	}
 
 	if (!config_destroy_only(producer)) {
-		if (clear_counters(priv) == -1) {
+		if (clear_counters(producer) == -1) {
 			nurs_log(NURS_ERROR, "could not clear counters: %s\n",
 				 strerror(errno));
 			goto error_close_event;

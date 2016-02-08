@@ -395,7 +395,7 @@ nfq_common_organize(const struct nurs_producer *producer)
 				  * block_nr_ce(producer),
 	};
 
-	priv->nl = mnl_socket_open(NETLINK_NETFILTER);
+	priv->nl = nurs_mnl_socket(namespace_ce(producer), NETLINK_NETFILTER);
 	if (!priv->nl) {
 		nurs_log(NURS_FATAL, "failed to mnl_socket_open: %s\n",
 			  strerror(errno));
