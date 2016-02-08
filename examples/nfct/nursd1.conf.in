@@ -14,17 +14,26 @@ iosets	= 12
 # 2. options for each plugin in seperate section below
 plugin	= "@pkglibdir@/nurs_PYTHON.so"
 plugin	= "@pkglibdir@/nurs_producer_NFCT.so"
+plugin	= "@pkglibdir@/nurs_producer_NFCT2.so"
 
 # stack
 # each element represented id:name, separated by ,
 stack	= "nfct:NFCT, log1:PY_NFCT_LOG"
 stack	= "pyevent:PY_NFCT, log2:PY_NFCT_LOG"
+stack	= "nfct2:NFCT2, log3:PY_NFCT_LOG"
 
 [nfct]
 # If pollinterval is not set, NFCT plugin will work in event mode
-# enable reliable flow-based logging (may drop packets)# pollinterval = 10
+# enable reliable flow-based logging (may drop packets)
+# pollinterval = 10
 reliable = true
 hash_enable = false
+
+[nfct2]
+namespace = "testns"
+active_timeout = 4
+event_buffer_size = 217088
+event_buffer_maxsize = 1085440
 
 [pyevent]
 path = "@pynurs@/producer"
@@ -40,3 +49,8 @@ logfile = "@cwd@/py1.log"
 path = "@pynurs@/consumer"
 module = "nfct_log"
 logfile = "@cwd@/py2.log"
+
+[log3]
+path = "@pynurs@/consumer"
+module = "nfct_log"
+logfile = "@cwd@/py3.log"
