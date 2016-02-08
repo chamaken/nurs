@@ -177,6 +177,10 @@ disorganize_plugin:
 		nurs_log(NURS_ERROR, "failed to disorganize plugins\n");
 		ret = EXIT_FAILURE;
 	}
+
+	nurs_log(NURS_INFO, "fini nssocket\n");
+	nurs_fini_nssocket(true);
+
 stop_workers:
 	nurs_log(NURS_INFO, "stop workers\n");
 	if (workers_stop()) {
