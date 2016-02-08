@@ -25,11 +25,13 @@
 #include <libnetfilter_acct/libnetfilter_acct.h>
 
 #include <nurs/nurs.h>
+#include "nfnl_common.h"
 
 enum {
 	NFACCT_CONFIG_POLLINTERVAL,
 	NFACCT_CONFIG_ZEROCOUNTER,
 	NFACCT_CONFIG_TIMESTAMP,
+	NFACCT_CONFIG_NAMESPACE,
 	NFACCT_CONFIG_MAX,
 };
 
@@ -50,13 +52,20 @@ static struct nurs_config_def nfacct_config = {
 			.name	 = "timestamp",
 			.type	 = NURS_CONFIG_T_BOOLEAN,
 			.boolean = true,
-		}
+		},
+		[NFACCT_CONFIG_NAMESPACE] = {
+			.name	 = "namespace",
+			.type	 = NURS_CONFIG_T_STRING,
+			.flags   = NURS_CONFIG_F_NONE,
+			.string	 = "",
+		},
 	},
 };
 
 #define config_pollint(x)	nurs_config_integer(nurs_producer_config(x), NFACCT_CONFIG_POLLINTERVAL)
 #define config_zerocounter(x)	nurs_config_boolean(nurs_producer_config(x), NFACCT_CONFIG_ZEROCOUNTER)
 #define config_timestamp(x)	nurs_config_boolean(nurs_producer_config(x), NFACCT_CONFIG_TIMESTAMP)
+#define config_namespace(x)	nurs_config_string(nurs_producer_config(x), NFACCT_CONFIG_NAMESPACE)
 
 enum nurs_nfacct_keys {
 	NFACCT_OUTPUT_NAME,
@@ -230,9 +239,11 @@ static enum nurs_return_t nfacct_organize(const struct nurs_producer *producer)
 		goto err_exit;
 	}
 
-	priv->nl = mnl_socket_open(NETLINK_NETFILTER);
+	priv->nl = nurs_mnl_socket(config_namespace(producer),
+				   NETLINK_NETFILTER);
 	if (!priv->nl) {
-		nurs_log(NURS_ERROR, "mnl_socket_open: %s\n", strerror(errno));
+		nurs_log(NURS_ERROR, "failed to create socket: %s\n",
+			 strerror(errno));
 		goto err_exit;
 	}
 

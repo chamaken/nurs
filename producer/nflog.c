@@ -54,6 +54,7 @@ enum {
 	NFLOG_CONFIG_COPY_RANGE,
 	NFLOG_CONFIG_CONNTRACK,
 	NFLOG_CONFIG_RELIABLE,
+	NFLOG_CONFIG_NAMESPACE,
 	NFLOG_CONFIG_MAX,
 };
 
@@ -135,6 +136,12 @@ static struct nurs_config_def nflog_config = {
 			.type    = NURS_CONFIG_T_BOOLEAN,
 			.boolean = false,
 		},
+		[NFLOG_CONFIG_NAMESPACE] = {
+			.name	 = "namespace",
+			.type	 = NURS_CONFIG_T_STRING,
+			.flags   = NURS_CONFIG_F_NONE,
+			.string	 = "",
+		},
 	}
 };
 
@@ -154,6 +161,7 @@ static struct nurs_config_def nflog_config = {
 #define copy_range_ce(x)	(uint32_t)nurs_config_integer(nurs_producer_config(x), NFLOG_CONFIG_COPY_RANGE)
 #define conntrack_ce(x)		nurs_config_boolean(nurs_producer_config(x), NFLOG_CONFIG_CONNTRACK)
 #define reliable_ce(x)		nurs_config_boolean(nurs_producer_config(x), NFLOG_CONFIG_RELIABLE)
+#define namespace_ce(x)		nurs_config_string(nurs_producer_config(x), NFLOG_CONFIG_NAMESPACE)
 
 enum {
 	NFLOG_OUTPUT_RAW_MAC = 0,
@@ -849,7 +857,7 @@ nflog_organize(const struct nurs_producer *producer)
 		* block_nr_ce(producer)
 	};
 
-	priv->nl = mnl_socket_open(NETLINK_NETFILTER);
+	priv->nl = nurs_mnl_socket(namespace_ce(producer), NETLINK_NETFILTER);
 	if (!priv->nl) {
 		nurs_log(NURS_FATAL, "mnl_socket_open: %s\n",
 			 strerror(errno));

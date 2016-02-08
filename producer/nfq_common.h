@@ -30,6 +30,7 @@ enum {
 	NFQ_CONFIG_UID_GID,		/* NFQA_CFG_F_UID_GID */
 	NFQ_CONFIG_SECCTX,		/* NFQA_CFG_F_SECCTX */
 	NFQ_CONFIG_RELIABLE,
+	NFQ_CONFIG_NAMESPACE,
 	NFQ_CONFIG_MAX,
 };
 
@@ -45,6 +46,7 @@ enum {
 #define uid_gid_ce(x)		nurs_config_boolean(nurs_producer_config(x), NFQ_CONFIG_UID_GID)
 #define secctx_ce(x)		nurs_config_boolean(nurs_producer_config(x), NFQ_CONFIG_SECCTX)
 #define reliable_ce(x)		nurs_config_boolean(nurs_producer_config(x), NFQ_CONFIG_RELIABLE)
+#define namespace_ce(x)		nurs_config_string(nurs_producer_config(x), NFQ_CONFIG_NAMESPACE)
 
 enum {
 	NFQ_OUTPUT_NLATTRS,

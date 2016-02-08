@@ -28,6 +28,7 @@
 #include <libnftnl/expr.h>
 
 #include <nurs/nurs.h>
+#include "nfnl_common.h"
 
 /* libnftnl commit 37268a018e99181a1d203f0a8a6fc5c6670d09b2 */
 enum nftnl_output_keys_index {
@@ -417,6 +418,7 @@ static struct nurs_output_def nftnl_output = {
 
 enum nftable_config_keys_index {
 	NFTNL_CONFIG_BUFSIZE,
+	NFTNL_CONFIG_NAMESPACE,
 	NFTNL_CONFIG_MAX,
 };
 
@@ -428,10 +430,17 @@ static struct nurs_config_def nftnl_config = {
 			.type	 = NURS_CONFIG_T_INTEGER,
 			.integer = 0,
 		},
+		[NFTNL_CONFIG_NAMESPACE] = {
+			.name	 = "namespace",
+			.type	 = NURS_CONFIG_T_STRING,
+			.flags   = NURS_CONFIG_F_NONE,
+			.string	 = "",
+		},
 	},
 };
 
 #define bufsize_ce(x)	nurs_config_integer(nurs_producer_config(x), NFTNL_CONFIG_BUFSIZE)
+#define namespace_ce(x)	nurs_config_string(nurs_producer_config(x), NFTNL_CONFIG_NAMESPACE)
 
 struct nftnl_priv {
 	struct mnl_socket *nls;
@@ -579,7 +588,7 @@ static int nftnl_organize(const struct nurs_producer *producer)
 	struct nftnl_priv *priv = nurs_producer_context(producer);
 	int nlbufsize = bufsize_ce(producer);
 
-	priv->nls = mnl_socket_open(NETLINK_NETFILTER);
+	priv->nls = nurs_mnl_socket(namespace_ce(producer), NETLINK_NETFILTER);
 	if (priv->nls == NULL) {
 		nurs_log(NURS_FATAL, "mnl_socket_open: %s\n",
 			 strerror(errno));
