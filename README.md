@@ -62,8 +62,6 @@ Prerequisites
   current git (2015-10-03) is better,  
   since go and python binding implements mnl_socket_open2()
 * libjansson (http://www.digip.org/jansson/)
-* liburcu2 (http://liburcu.org/)  
-  (atomic operation only, it can be replaced by GCC builtins.)
 
 Optional
 --------

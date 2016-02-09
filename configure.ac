@@ -100,7 +100,6 @@ AC_CHECK_HEADER(sys/epoll.h,[],[AC_MSG_ERROR(unable to find epoll header)])
 dnl Check by pkg-config
 PKG_CHECK_MODULES([LIBMNL], [libmnl >= 1.0.3])
 PKG_CHECK_MODULES([JANSSON], [jansson >= 2.6])
-PKG_CHECK_MODULES([URCU], [liburcu >= 0.8])
 
 AC_MSG_CHECKING([for enable mmaped netlink])
 AC_CACHE_VAL(ac_cv_mmaped_netlink,
