@@ -268,16 +268,16 @@ static struct nlmsghdr *nfq_hdr_put(char *buf, int type, uint32_t queue_num)
 static int nfq_put_config(struct nlmsghdr *nlh,
 			  const struct nurs_producer *producer)
 {
-	const char *copy_mode = copy_mode_ce(producer);
+	const char *copy_mode = config_copy_mode(producer);
 	uint32_t flags = 0;
 
 	if (!strcasecmp(copy_mode, "packet")) {
 		uint32_t copy_range;
-		if (frame_size_ce(producer) < copy_range_ce(producer))
+		if (config_frame_size(producer) < config_copy_range(producer))
 			nurs_log(NURS_NOTICE, "may cause COPY status"
 				  " - frame size: %d, copy_range: %d\n",
-				  frame_size_ce(producer), copy_range_ce(producer));
-		copy_range = htonl(copy_range_ce(producer));
+				  config_frame_size(producer), config_copy_range(producer));
+		copy_range = htonl(config_copy_range(producer));
 		nfq_nlmsg_cfg_put_params(nlh, NFQNL_COPY_PACKET, (int)copy_range);
 	} else if (!strcasecmp(copy_mode, "meta")) {
 		nfq_nlmsg_cfg_put_params(nlh, NFQNL_COPY_META, 0);
@@ -288,16 +288,16 @@ static int nfq_put_config(struct nlmsghdr *nlh,
 		return -1;
 	}
 
-	if (fail_open_ce(producer))
+	if (config_fail_open(producer))
 		flags |= NFQA_CFG_F_FAIL_OPEN;
-	if (conntrack_ce(producer))
+	if (config_conntrack(producer))
 		flags |= NFQA_CFG_F_CONNTRACK;
-	if (gso_ce(producer))
+	if (config_gso(producer))
 		flags |= NFQA_CFG_F_GSO;
-	if (uid_gid_ce(producer))
+	if (config_uid_gid(producer))
 		flags |= NFQA_CFG_F_UID_GID;
 #if defined(NFQA_CFG_F_SECCTX)
-	if (secctx_ce(producer))
+	if (config_secctx(producer))
 		flags |= NFQA_CFG_F_SECCTX;
 #endif
 	mnl_attr_put_u32(nlh, NFQA_CFG_FLAGS, htonl(flags));
@@ -332,7 +332,7 @@ int config_nfq(const struct nurs_producer *producer)
 	struct nfq_common_priv *priv = nurs_producer_context(producer);
 	struct nlmsghdr *nlh;
 	char buf[MNL_SOCKET_BUFFER_SIZE];
-	uint32_t queue_num = queue_num_ce(producer);
+	uint32_t queue_num = config_queue_num(producer);
 
 	/* kernels 3.8 and later is required to omit PF_(UN)BIND */
 	/*
@@ -387,15 +387,15 @@ nfq_common_organize(const struct nurs_producer *producer)
 {
 	struct nfq_common_priv *priv = nurs_producer_context(producer);
 	struct nl_mmap_req req = {
-		.nm_block_size	= block_size_ce(producer),
-		.nm_block_nr	= block_nr_ce(producer),
-		.nm_frame_size	= frame_size_ce(producer),
-		.nm_frame_nr	= block_size_ce(producer)
-				  / frame_size_ce(producer)
-				  * block_nr_ce(producer),
+		.nm_block_size	= config_block_size(producer),
+		.nm_block_nr	= config_block_nr(producer),
+		.nm_frame_size	= config_frame_size(producer),
+		.nm_frame_nr	= config_block_size(producer)
+				  / config_frame_size(producer)
+				  * config_block_nr(producer),
 	};
 
-	priv->nl = nurs_mnl_socket(namespace_ce(producer), NETLINK_NETFILTER);
+	priv->nl = nurs_mnl_socket(config_namespace(producer), NETLINK_NETFILTER);
 	if (!priv->nl) {
 		nurs_log(NURS_FATAL, "failed to mnl_socket_open: %s\n",
 			  strerror(errno));
@@ -418,7 +418,7 @@ nfq_common_organize(const struct nurs_producer *producer)
 	}
 	priv->portid = mnl_socket_get_portid(priv->nl);
 
-	if (reliable_ce(producer) &&
+	if (config_reliable(producer) &&
 	    mnl_socket_set_reliable(priv->nl)) {
 		nurs_log(NURS_ERROR, "failed to mnl_socket_set_reliable: %s\n",
 			 strerror(errno));
@@ -463,7 +463,7 @@ nfq_common_disorganize(const struct nurs_producer *producer)
 int unbind_nfq(const struct nurs_producer *producer)
 {
 	struct nfq_common_priv *priv = nurs_producer_context(producer);
-	uint32_t queue_num = queue_num_ce(producer);
+	uint32_t queue_num = config_queue_num(producer);
 	char buf[MNL_SOCKET_BUFFER_SIZE];
 	struct nlmsghdr *nlh;
 

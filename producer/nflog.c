@@ -145,23 +145,22 @@ static struct nurs_config_def nflog_config = {
 	}
 };
 
-#define block_size_ce(x)	(unsigned int)nurs_config_integer(nurs_producer_config(x), NFLOG_CONFIG_BLOCK_SIZE)
-#define block_nr_ce(x)		(unsigned int)nurs_config_integer(nurs_producer_config(x), NFLOG_CONFIG_BLOCK_NR)
-#define frame_size_ce(x)	(unsigned int)nurs_config_integer(nurs_producer_config(x), NFLOG_CONFIG_FRAME_SIZE)
-#define oneshot_ce(x)		nurs_config_integer(nurs_producer_config(x), NFLOG_CONFIG_ONESHOT)
-#define bind_ce(x)		nurs_config_boolean(nurs_producer_config(x), NFLOG_CONFIG_BIND)
-#define unbind_ce(x)		nurs_config_boolean(nurs_producer_config(x), NFLOG_CONFIG_UNBIND)
-#define group_ce(x)		(uint16_t)nurs_config_integer(nurs_producer_config(x), NFLOG_CONFIG_GROUP)
-#define seq_ce(x)		nurs_config_boolean(nurs_producer_config(x), NFLOG_CONFIG_SEQ_LOCAL)
-#define seq_global_ce(x)	nurs_config_boolean(nurs_producer_config(x), NFLOG_CONFIG_SEQ_GLOBAL)
-#define label_ce(x)		(uint8_t)nurs_config_integer(nurs_producer_config(x), NFLOG_CONFIG_NUMLABEL)
-#define qthresh_ce(x)		(uint32_t)nurs_config_integer(nurs_producer_config(x), NFLOG_CONFIG_QTHRESH)
-#define qtimeout_ce(x)		(uint32_t)nurs_config_integer(nurs_producer_config(x), NFLOG_CONFIG_QTIMEOUT)
-#define copy_mode_ce(x)		nurs_config_string(nurs_producer_config(x), NFLOG_CONFIG_COPY_MODE)
-#define copy_range_ce(x)	(uint32_t)nurs_config_integer(nurs_producer_config(x), NFLOG_CONFIG_COPY_RANGE)
-#define conntrack_ce(x)		nurs_config_boolean(nurs_producer_config(x), NFLOG_CONFIG_CONNTRACK)
-#define reliable_ce(x)		nurs_config_boolean(nurs_producer_config(x), NFLOG_CONFIG_RELIABLE)
-#define namespace_ce(x)		nurs_config_string(nurs_producer_config(x), NFLOG_CONFIG_NAMESPACE)
+#define config_block_size(x)	(unsigned int)nurs_config_integer(nurs_producer_config(x), NFLOG_CONFIG_BLOCK_SIZE)
+#define config_block_nr(x)	(unsigned int)nurs_config_integer(nurs_producer_config(x), NFLOG_CONFIG_BLOCK_NR)
+#define config_frame_size(x)	(unsigned int)nurs_config_integer(nurs_producer_config(x), NFLOG_CONFIG_FRAME_SIZE)
+#define config_bind(x)		nurs_config_boolean(nurs_producer_config(x), NFLOG_CONFIG_BIND)
+#define config_unbind(x)	nurs_config_boolean(nurs_producer_config(x), NFLOG_CONFIG_UNBIND)
+#define config_group(x)		(uint16_t)nurs_config_integer(nurs_producer_config(x), NFLOG_CONFIG_GROUP)
+#define config_seq_local(x)	nurs_config_boolean(nurs_producer_config(x), NFLOG_CONFIG_SEQ_LOCAL)
+#define config_seq_global(x)	nurs_config_boolean(nurs_producer_config(x), NFLOG_CONFIG_SEQ_GLOBAL)
+#define config_label(x)		(uint8_t)nurs_config_integer(nurs_producer_config(x), NFLOG_CONFIG_NUMLABEL)
+#define config_qthresh(x)	(uint32_t)nurs_config_integer(nurs_producer_config(x), NFLOG_CONFIG_QTHRESH)
+#define config_qtimeout(x)	(uint32_t)nurs_config_integer(nurs_producer_config(x), NFLOG_CONFIG_QTIMEOUT)
+#define config_copy_mode(x)	nurs_config_string(nurs_producer_config(x), NFLOG_CONFIG_COPY_MODE)
+#define config_copy_range(x)	(uint32_t)nurs_config_integer(nurs_producer_config(x), NFLOG_CONFIG_COPY_RANGE)
+#define config_conntrack(x)	nurs_config_boolean(nurs_producer_config(x), NFLOG_CONFIG_CONNTRACK)
+#define config_reliable(x)	nurs_config_boolean(nurs_producer_config(x), NFLOG_CONFIG_RELIABLE)
+#define config_namespace(x)	nurs_config_string(nurs_producer_config(x), NFLOG_CONFIG_NAMESPACE)
 
 enum {
 	NFLOG_OUTPUT_RAW_MAC = 0,
@@ -503,7 +502,8 @@ static int handle_valid_frame(struct nurs_producer *producer,
 		nurs_put_output(producer, output);
 		return NURS_RET_ERROR;
 	}
-	nurs_output_set_u8(output, NFLOG_OUTPUT_RAW_LABEL, label_ce(producer));
+	nurs_output_set_u8(output, NFLOG_OUTPUT_RAW_LABEL,
+			   config_label(producer));
 
 	if (nurs_propagate(producer, output)) {
 		frame->nm_status = NL_MMAP_STATUS_UNUSED;
@@ -611,7 +611,7 @@ static int become_system_logging(const struct nurs_producer *producer,
 	char buf[MNL_SOCKET_BUFFER_SIZE];
 	struct nlmsghdr *nlh;
 
-	if (unbind_ce(producer)) {
+	if (config_unbind(producer)) {
 		nurs_log(NURS_NOTICE, "forcing unbind of existing log "
 			 "handler for protocol %d\n", family);
 		nlh = nflog_nlmsg_put_header(buf, NFULNL_MSG_CONFIG, family, 0);
@@ -660,12 +660,12 @@ static int config_nflog(const struct nurs_producer *producer)
 	struct nflog_priv *priv = nurs_producer_context(producer);
 	char buf[MNL_SOCKET_BUFFER_SIZE];
 	struct nlmsghdr *nlh;
-	uint16_t group = group_ce(producer);
-	const char *copy_mode = copy_mode_ce(producer);
+	uint16_t group = config_group(producer);
+	const char *copy_mode = config_copy_mode(producer);
 	uint16_t flags = 0;
 
 	/* This is the system logging (conntrack, ...) facility */
-	if (!group || bind_ce(producer)) {
+	if (!group || config_bind(producer)) {
 		if (become_system_logging(producer, AF_INET))
 			return -1;
 		if (become_system_logging(producer, AF_INET6))
@@ -697,11 +697,11 @@ static int config_nflog(const struct nurs_producer *producer)
 	nlh->nlmsg_flags |= NLM_F_ACK;
 	if (!strcasecmp(copy_mode, "packet")) {
 		uint32_t copy_range;
-		if (frame_size_ce(producer) < copy_range_ce(producer))
+		if (config_frame_size(producer) < config_copy_range(producer))
 			nurs_log(NURS_NOTICE, "may cause COPY status"
 				 " - frame size: %d, copy_range: %d\n",
-				 frame_size_ce(producer), copy_range_ce(producer));
-		copy_range = htonl(copy_range_ce(producer));
+				 config_frame_size(producer), config_copy_range(producer));
+		copy_range = htonl(config_copy_range(producer));
 		if (nflog_attr_put_cfg_mode(nlh, NFULNL_COPY_PACKET,
 					    copy_range) < 0) {
 			nurs_log(NURS_ERROR, "nflog_attr_put_cfg_mode: %s\n",
@@ -735,10 +735,12 @@ static int config_nflog(const struct nurs_producer *producer)
 		return -1;
 	}
 
-	if (qthresh_ce(producer)) {
-		nlh = nflog_nlmsg_put_header(buf, NFULNL_MSG_CONFIG, AF_UNSPEC, group);
+	if (config_qthresh(producer)) {
+		nlh = nflog_nlmsg_put_header(buf, NFULNL_MSG_CONFIG,
+					     AF_UNSPEC, group);
 		nlh->nlmsg_flags |= NLM_F_ACK;
-		mnl_attr_put_u32(nlh, NFULA_CFG_QTHRESH, htonl(qthresh_ce(producer)));
+		mnl_attr_put_u32(nlh, NFULA_CFG_QTHRESH,
+				 htonl(config_qthresh(producer)));
 		if (mnl_socket_sendto(priv->nl, nlh, nlh->nlmsg_len) < 0) {
 			nurs_log(NURS_ERROR, "mnl_socket_sendto: %s\n",
 				 strerror(errno));
@@ -747,16 +749,18 @@ static int config_nflog(const struct nurs_producer *producer)
 		if (check_config_response(priv)) {
 			nurs_log(NURS_NOTICE,
 				 "NFLOG netlink queue threshold can't "
-				 "be set to %d: %s\n", qthresh_ce(producer),
+				 "be set to %d: %s\n", config_qthresh(producer),
 				 strerror(errno));
 			return -1;
 		}
 	}
 
-	if (qtimeout_ce(producer)) {
-		nlh = nflog_nlmsg_put_header(buf, NFULNL_MSG_CONFIG, AF_UNSPEC, group);
+	if (config_qtimeout(producer)) {
+		nlh = nflog_nlmsg_put_header(buf, NFULNL_MSG_CONFIG,
+					     AF_UNSPEC, group);
 		nlh->nlmsg_flags |= NLM_F_ACK;
-		mnl_attr_put_u32(nlh, NFULA_CFG_TIMEOUT, htonl(qtimeout_ce(producer)));
+		mnl_attr_put_u32(nlh, NFULA_CFG_TIMEOUT,
+				 htonl(config_qtimeout(producer)));
 		if (mnl_socket_sendto(priv->nl, nlh, nlh->nlmsg_len) < 0) {
 			nurs_log(NURS_ERROR, "mnl_socket_sendto: %s\n",
 				 strerror(errno));
@@ -765,18 +769,19 @@ static int config_nflog(const struct nurs_producer *producer)
 		if (check_config_response(priv)) {
 			nurs_log(NURS_NOTICE,
 				 "NFLOG netlink queue timeout can't "
-				 "be set to %d: %s\n", qtimeout_ce(producer),
+				 "be set to %d: %s\n",
+				 config_qtimeout(producer),
 				 strerror(errno));
 			return -1;
 		}
 	}
 
 	/* set log flags based on configuration */
-	if (seq_ce(producer))
+	if (config_seq_local(producer))
 		flags = NFULNL_CFG_F_SEQ;
-	if (seq_global_ce(producer))
+	if (config_seq_global(producer))
 		flags |= NFULNL_CFG_F_SEQ_GLOBAL;
-	if (conntrack_ce(producer))
+	if (config_conntrack(producer))
 		flags |= NFULNL_CFG_F_CONNTRACK;
 	if (flags) {
 		nlh = nflog_nlmsg_put_header(buf, NFULNL_MSG_CONFIG, AF_UNSPEC, group);
@@ -850,14 +855,15 @@ nflog_organize(const struct nurs_producer *producer)
 	struct nflog_priv *priv = nurs_producer_context(producer);
 
 	struct nl_mmap_req req = {
-		.nm_block_size	= block_size_ce(producer),
-		.nm_block_nr	= block_nr_ce(producer),
-		.nm_frame_size	= frame_size_ce(producer),
-		.nm_frame_nr	= block_size_ce(producer) / frame_size_ce(producer)
-		* block_nr_ce(producer)
+		.nm_block_size	= config_block_size(producer),
+		.nm_block_nr	= config_block_nr(producer),
+		.nm_frame_size	= config_frame_size(producer),
+		.nm_frame_nr	= config_block_size(producer)
+				/ config_frame_size(producer)
+		* config_block_nr(producer)
 	};
 
-	priv->nl = nurs_mnl_socket(namespace_ce(producer), NETLINK_NETFILTER);
+	priv->nl = nurs_mnl_socket(config_namespace(producer), NETLINK_NETFILTER);
 	if (!priv->nl) {
 		nurs_log(NURS_FATAL, "mnl_socket_open: %s\n",
 			 strerror(errno));
@@ -880,7 +886,7 @@ nflog_organize(const struct nurs_producer *producer)
 	}
 	priv->portid = mnl_socket_get_portid(priv->nl);
 
-	if (reliable_ce(producer)) {
+	if (config_reliable(producer)) {
 		if (mnl_socket_set_reliable(priv->nl)) {
 			nurs_log(NURS_ERROR, "mnl_socket_set_reliable: %s\n",
 				 strerror(errno));
@@ -953,7 +959,7 @@ nflog_stop(const struct nurs_producer *producer)
 	nurs_fd_unregister(priv->fd);
 
 	nlh = nflog_nlmsg_put_header(buf, NFULNL_MSG_CONFIG,
-				     AF_UNSPEC, group_ce(producer));
+				     AF_UNSPEC, config_group(producer));
 	if (!nlh) {
 		nurs_log(NURS_ERROR, "failed to put NFULNL_MSG_CONFIG\n");
 		return NURS_RET_ERROR;
@@ -966,7 +972,7 @@ nflog_stop(const struct nurs_producer *producer)
 		nurs_log(NURS_ERROR, "failed to mnl_socket_sendto: %s\n",
 			 strerror(errno));
 	}
-	if (!group_ce(producer) /* || bind_ce(producer) */ &&
+	if (!config_group(producer) /* || config_bind(producer) */ &&
 	    nflog_pf_unbind(priv->nl)) {
 		nurs_log(NURS_ERROR, "failed to unbind nflog\n");
 		return NURS_RET_ERROR;
