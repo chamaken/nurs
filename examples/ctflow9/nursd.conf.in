@@ -30,9 +30,9 @@ stack	= "nfct2:NFCT2, timeconv:TIMECONV, packicmp:PACKICMP, markif:MARKIF, nflow
 # each pluginstance settings
 
 [nfct2]
-active_timeout = 4
-event_buffer_size = 217088
-event_buffer_maxsize = 1085440
+pollinterval = 4
+netlink_socket_buffer_size = 217088
+netlink_socket_buffer_maxsize = 1085440
 mark_filter = "0x1000/0x1000"
 
 [timeconv]
