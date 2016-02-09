@@ -34,19 +34,19 @@ enum {
 	NFQ_CONFIG_MAX,
 };
 
-#define block_size_ce(x)	(unsigned int)nurs_config_integer(nurs_producer_config(x), NFQ_CONFIG_BLOCK_SIZE)
-#define block_nr_ce(x)		(unsigned int)nurs_config_integer(nurs_producer_config(x), NFQ_CONFIG_BLOCK_NR)
-#define frame_size_ce(x)	(unsigned int)nurs_config_integer(nurs_producer_config(x), NFQ_CONFIG_FRAME_SIZE)
-#define queue_num_ce(x)		(uint32_t)nurs_config_integer(nurs_producer_config(x), NFQ_CONFIG_QUEUE_NUM)
-#define copy_mode_ce(x)		nurs_config_string(nurs_producer_config(x), NFQ_CONFIG_COPY_MODE)
-#define copy_range_ce(x)	(uint32_t)nurs_config_integer(nurs_producer_config(x), NFQ_CONFIG_COPY_RANGE)
-#define fail_open_ce(x)		nurs_config_boolean(nurs_producer_config(x), NFQ_CONFIG_FAIL_OPEN)
-#define conntrack_ce(x)		nurs_config_boolean(nurs_producer_config(x), NFQ_CONFIG_CONNTRACK)
-#define gso_ce(x)		nurs_config_boolean(nurs_producer_config(x), NFQ_CONFIG_GSO)
-#define uid_gid_ce(x)		nurs_config_boolean(nurs_producer_config(x), NFQ_CONFIG_UID_GID)
-#define secctx_ce(x)		nurs_config_boolean(nurs_producer_config(x), NFQ_CONFIG_SECCTX)
-#define reliable_ce(x)		nurs_config_boolean(nurs_producer_config(x), NFQ_CONFIG_RELIABLE)
-#define namespace_ce(x)		nurs_config_string(nurs_producer_config(x), NFQ_CONFIG_NAMESPACE)
+#define config_block_size(x)	(unsigned int)nurs_config_integer(nurs_producer_config(x), NFQ_CONFIG_BLOCK_SIZE)
+#define config_block_nr(x)	(unsigned int)nurs_config_integer(nurs_producer_config(x), NFQ_CONFIG_BLOCK_NR)
+#define config_frame_size(x)	(unsigned int)nurs_config_integer(nurs_producer_config(x), NFQ_CONFIG_FRAME_SIZE)
+#define config_queue_num(x)	(uint32_t)nurs_config_integer(nurs_producer_config(x), NFQ_CONFIG_QUEUE_NUM)
+#define config_copy_mode(x)	nurs_config_string(nurs_producer_config(x), NFQ_CONFIG_COPY_MODE)
+#define config_copy_range(x)	(uint32_t)nurs_config_integer(nurs_producer_config(x), NFQ_CONFIG_COPY_RANGE)
+#define config_fail_open(x)	nurs_config_boolean(nurs_producer_config(x), NFQ_CONFIG_FAIL_OPEN)
+#define config_conntrack(x)	nurs_config_boolean(nurs_producer_config(x), NFQ_CONFIG_CONNTRACK)
+#define config_gso(x)		nurs_config_boolean(nurs_producer_config(x), NFQ_CONFIG_GSO)
+#define config_uid_gid(x)	nurs_config_boolean(nurs_producer_config(x), NFQ_CONFIG_UID_GID)
+#define config_secctx(x)	nurs_config_boolean(nurs_producer_config(x), NFQ_CONFIG_SECCTX)
+#define config_reliable(x)	nurs_config_boolean(nurs_producer_config(x), NFQ_CONFIG_RELIABLE)
+#define config_namespace(x)	nurs_config_string(nurs_producer_config(x), NFQ_CONFIG_NAMESPACE)
 
 enum {
 	NFQ_OUTPUT_NLATTRS,

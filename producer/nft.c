@@ -433,7 +433,7 @@ static struct nurs_config_def nftnl_config = {
 	},
 };
 
-#define namespace_ce(x)	nurs_config_string(nurs_producer_config(x), NFTNL_CONFIG_NAMESPACE)
+#define config_namespace(x)	nurs_config_string(nurs_producer_config(x), NFTNL_CONFIG_NAMESPACE)
 
 struct nftnl_priv {
 	struct mnl_socket *nls;
@@ -567,7 +567,8 @@ static int nftnl_organize(const struct nurs_producer *producer)
 {
 	struct nftnl_priv *priv = nurs_producer_context(producer);
 
-	priv->nls = nurs_mnl_socket(namespace_ce(producer), NETLINK_NETFILTER);
+	priv->nls = nurs_mnl_socket(config_namespace(producer),
+				    NETLINK_NETFILTER);
 	if (priv->nls == NULL) {
 		nurs_log(NURS_FATAL, "mnl_socket_open: %s\n",
 			 strerror(errno));

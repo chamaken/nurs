@@ -144,16 +144,16 @@ static struct nurs_config_def nfct_config = {
 	},
 };
 
-#define pollint_ce(x)		nurs_config_integer(nurs_producer_config(x), NFCT_CONFIG_POLLINTERVAL)
-#define usehash_ce(x)		nurs_config_boolean(nurs_producer_config(x), NFCT_CONFIG_HASH_ENABLE)
-#define buckets_ce(x)		(uint32_t)nurs_config_integer(nurs_producer_config(x), NFCT_CONFIG_HASH_BUCKETS)
-#define maxentries_ce(x) 	(uint32_t)nurs_config_integer(nurs_producer_config(x), NFCT_CONFIG_HASH_MAX)
-#define eventmask_ce(x) 	(unsigned int)nurs_config_integer(nurs_producer_config(x), NFCT_CONFIG_EVENT_MASK)
-#define nlsockbufsize_ce(x) 	(unsigned int)nurs_config_integer(nurs_producer_config(x), NFCT_CONFIG_SOCK_BUFSIZE)
-#define nlsockbufmaxsize_ce(x)	(unsigned int)nurs_config_integer(nurs_producer_config(x), NFCT_CONFIG_SOCK_MAXBUF)
-#define nlresynctimeout_ce(x)	nurs_config_integer(nurs_producer_config(x), NFCT_CONFIG_RESYNC_TIMEOUT)
-#define reliable_ce(x)		nurs_config_boolean(nurs_producer_config(x), NFCT_CONFIG_RELIABLE)
-#define mark_filter_ce(x)	nurs_config_string(nurs_producer_config(x), NFCT_CONFIG_MARK_FILTER)
+#define config_pollint(x)	nurs_config_integer(nurs_producer_config(x), NFCT_CONFIG_POLLINTERVAL)
+#define config_usehash(x)	nurs_config_boolean(nurs_producer_config(x), NFCT_CONFIG_HASH_ENABLE)
+#define config_buckets(x)	(uint32_t)nurs_config_integer(nurs_producer_config(x), NFCT_CONFIG_HASH_BUCKETS)
+#define config_maxentries(x) 	(uint32_t)nurs_config_integer(nurs_producer_config(x), NFCT_CONFIG_HASH_MAX)
+#define config_eventmask(x) 	(unsigned int)nurs_config_integer(nurs_producer_config(x), NFCT_CONFIG_EVENT_MASK)
+#define config_nlsockbufsize(x)	(unsigned int)nurs_config_integer(nurs_producer_config(x), NFCT_CONFIG_SOCK_BUFSIZE)
+#define config_nlsockbufmaxsize(x)	(unsigned int)nurs_config_integer(nurs_producer_config(x), NFCT_CONFIG_SOCK_MAXBUF)
+#define config_nlresynctimeout(x)	nurs_config_integer(nurs_producer_config(x), NFCT_CONFIG_RESYNC_TIMEOUT)
+#define config_reliable(x)	nurs_config_boolean(nurs_producer_config(x), NFCT_CONFIG_RELIABLE)
+#define config_mark_filter(x)	nurs_config_string(nurs_producer_config(x), NFCT_CONFIG_MARK_FILTER)
 
 #include "nfct.keydef"
 
@@ -560,7 +560,7 @@ static int setnlbufsiz(const struct nurs_producer *producer, unsigned int size)
 	struct nfct_priv *priv = nurs_producer_context(producer);
 	static int warned = 0;
 
-	if (size < nlsockbufmaxsize_ce(producer)) {
+	if (size < config_nlsockbufmaxsize(producer)) {
 		priv->nlbufsiz = nfnl_rcvbufsiz(nfct_nfnlh(priv->cth), size);
 		return 1;
 	}
@@ -589,7 +589,7 @@ static int read_cb_nfct(int fd, uint16_t when, void *data)
 
 	if (nfct_catch(priv->cth) == -1) {
 		if (errno == ENOBUFS) {
-			if (nlsockbufmaxsize_ce(producer)) {
+			if (config_nlsockbufmaxsize(producer)) {
 				unsigned int s = priv->nlbufsiz * 2;
 				if (setnlbufsiz(producer, s)) {
 					nurs_log(NURS_NOTICE,
@@ -607,14 +607,14 @@ static int read_cb_nfct(int fd, uint16_t when, void *data)
 			}
 
 			/* internal hash can deal with refresh */
-			if (usehash_ce(producer) != 0) {
+			if (config_usehash(producer) != 0) {
 				/* schedule a resynchronization in N
 				 * seconds, this parameter is configurable
 				 * via config. Note that we don't re-schedule
 				 * a resync if it's already in progress. */
 				if (!nurs_timer_pending(priv->ov_timer)) {
 					nurs_timer_add(priv->ov_timer,
-						       nlresynctimeout_ce(producer));
+						       config_nlresynctimeout(producer));
 				}
 			}
 		}
@@ -700,7 +700,7 @@ static int read_cb_ovh(int fd, uint16_t when, void *data)
 		if (errno == ENOBUFS) {
 			if (!nurs_timer_pending(priv->ov_timer)) {
 				nurs_timer_add(priv->ov_timer,
-					       nlresynctimeout_ce(producer));
+					       config_nlresynctimeout(producer));
 			}
 		}
 	}
@@ -783,7 +783,7 @@ polling_timer_cb(struct nurs_timer *t, void *data)
 
 	nfct_query(priv->pgh, NFCT_Q_DUMP_FILTER, priv->filter_dump);
 	hashtable_iterate(priv->ct_active, producer, do_purge);
-	nurs_timer_add(priv->timer, pollint_ce(producer));
+	nurs_timer_add(priv->timer, config_pollint(producer));
 
 	return NURS_RET_OK;
 }
@@ -866,26 +866,27 @@ nfct_organize_events(const struct nurs_producer *producer)
 	void *cbdata = (void *)((uintptr_t)producer);
 	int on = 1;
 
-	priv->cth = nfct_open(NFNL_SUBSYS_CTNETLINK, eventmask_ce(producer));
+	priv->cth = nfct_open(NFNL_SUBSYS_CTNETLINK,
+			      config_eventmask(producer));
 	if (!priv->cth) {
 		nurs_log(NURS_FATAL, "error opening ctnetlink\n");
 		return NURS_RET_ERROR;
 	}
 
-	if (strlen(mark_filter_ce(producer)) &&
+	if (strlen(config_mark_filter(producer)) &&
 	    set_mark_filter(priv->cth, priv->filter_dump,
-			    mark_filter_ce(producer))) {
+			    config_mark_filter(producer))) {
 		nurs_log(NURS_FATAL, "failed to create mark filter\n");
 		goto close_cth;
 	}
 
-	if (nlsockbufsize_ce(producer)) {
-		setnlbufsiz(producer, nlsockbufsize_ce(producer));
+	if (config_nlsockbufsize(producer)) {
+		setnlbufsiz(producer, config_nlsockbufsize(producer));
 		nurs_log(NURS_NOTICE, "NFCT netlink buffer size has been "
 			 "set to %d\n", priv->nlbufsiz);
 	}
 
-	if (reliable_ce(producer)) {
+	if (config_reliable(producer)) {
 		if (setsockopt(nfct_fd(priv->cth), SOL_NETLINK,
 			NETLINK_BROADCAST_SEND_ERROR, &on, sizeof(int)) ||
 		    setsockopt(nfct_fd(priv->cth), SOL_NETLINK,
@@ -903,11 +904,11 @@ nfct_organize_events(const struct nurs_producer *producer)
 		goto close_cth;
 	}
 
-	if (usehash_ce(producer)) {
+	if (config_usehash(producer)) {
 		/* we use a hashtable to cache entries in userspace. */
 		priv->ct_active =
-			hashtable_create(buckets_ce(producer),
-					 maxentries_ce(producer),
+			hashtable_create(config_buckets(producer),
+					 config_maxentries(producer),
 					 hash,
 					 compare);
 		if (!priv->ct_active) {
@@ -964,7 +965,7 @@ nfct_organize_polling(const struct nurs_producer *producer)
 	struct nfct_priv *priv = nurs_producer_context(producer);
 	void *cbdata = (void *)((uintptr_t)producer);
 
-	if (!usehash_ce(producer)) {
+	if (!config_usehash(producer)) {
 		nurs_log(NURS_FATAL, "NFCT polling mode requires "
 			 "the hashtable\n");
 		return NURS_RET_ERROR;
@@ -976,16 +977,16 @@ nfct_organize_polling(const struct nurs_producer *producer)
 		return NURS_RET_ERROR;
 	}
 
-	if (strlen(mark_filter_ce(producer)) &&
+	if (strlen(config_mark_filter(producer)) &&
 	    set_mark_filter(priv->pgh, priv->filter_dump,
-			    mark_filter_ce(producer))) {
+			    config_mark_filter(producer))) {
 		nurs_log(NURS_FATAL, "failed to create mark filter\n");
 		goto close_pgh;
 	}
 
 	priv->ct_active =
-		hashtable_create(buckets_ce(producer),
-				 maxentries_ce(producer),
+		hashtable_create(config_buckets(producer),
+				 config_maxentries(producer),
 				 hash,
 				 compare);
 	if (!priv->ct_active) {
@@ -1020,7 +1021,7 @@ nfct_organize(const struct nurs_producer *producer)
 		return NURS_RET_ERROR;
 	}
 
-	if (pollint_ce(producer)) {
+	if (config_pollint(producer)) {
 		/* poll from ctnetlink periodically. */
 		ret = nfct_organize_polling(producer);
 	} else {
@@ -1040,7 +1041,7 @@ nfct_disorganize_events(const struct nurs_producer *producer)
 	struct nfct_priv *priv = nurs_producer_context(producer);
 	int ret = 0;
 
-	if (usehash_ce(producer)) {
+	if (config_usehash(producer)) {
 		if (nfct_close(priv->pgh)) {
 			nurs_log(NURS_ERROR, "failed to close pgh\n");
 			ret = -1;
@@ -1094,7 +1095,7 @@ nfct_disorganize(const struct nurs_producer *producer)
 	struct nfct_priv *priv = nurs_producer_context(producer);
 	enum nurs_return_t ret;
 
-	if (pollint_ce(producer)) {
+	if (config_pollint(producer)) {
 		ret = nfct_disorganize_polling(producer);
 	} else {
 		ret = nfct_disorganize_events(producer);
@@ -1110,7 +1111,7 @@ nfct_start_events(const struct nurs_producer *producer)
 	struct nfct_priv *priv = nurs_producer_context(producer);
 	void *cbdata = (void *)((uintptr_t)producer);
 
-	if (usehash_ce(producer) &&
+	if (config_usehash(producer) &&
 	    nfct_callback_register(priv->cth, NFCT_T_ALL,
 				   &event_handler_hashtable, cbdata)) {
 		nurs_log(NURS_FATAL, "failed to register hashtable handler\n");
@@ -1127,7 +1128,7 @@ nfct_start_events(const struct nurs_producer *producer)
 		goto unregister_cth;
 	}
 
-	if (usehash_ce(producer)) {
+	if (config_usehash(producer)) {
 		struct nfct_handle *h;
 
 		/* populate the hashtable: we use a disposable handler, we
@@ -1185,8 +1186,8 @@ nfct_start_polling(const struct nurs_producer *producer)
 		return NURS_RET_ERROR;
 	}
 
-	if (pollint_ce(producer) &&
-	    nurs_timer_add(priv->timer, pollint_ce(producer))) {
+	if (config_pollint(producer) &&
+	    nurs_timer_add(priv->timer, config_pollint(producer))) {
 		nurs_log(NURS_FATAL, "failed to add timer\n");
 		goto unregister_pgh;
 	}
@@ -1202,7 +1203,7 @@ unregister_pgh:
 static enum nurs_return_t
 nfct_start(const struct nurs_producer *producer)
 {
-	if (pollint_ce(producer) == 0) {
+	if (config_pollint(producer) == 0) {
 		/* listen to ctnetlink events. */
 		return nfct_start_events(producer);
 	} else {
@@ -1225,7 +1226,7 @@ nfct_stop_events(const struct nurs_producer *producer)
 		ret = -1;
 	}
 
-	if (usehash_ce(producer)) {
+	if (config_usehash(producer)) {
 		if (nurs_fd_unregister(priv->nfct_ov)) {
 			nurs_log(NURS_ERROR, "failed to unregister ovh nfd");
 			ret = -1;
@@ -1254,7 +1255,7 @@ nfct_stop_polling(const struct nurs_producer *producer)
 static enum nurs_return_t
 nfct_stop(const struct nurs_producer *producer)
 {
-	if (pollint_ce(producer))
+	if (config_pollint(producer))
 		return nfct_stop_polling(producer);
 	return nfct_stop_events(producer);
 }
