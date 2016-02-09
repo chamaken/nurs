@@ -417,7 +417,6 @@ static struct nurs_output_def nftnl_output = {
 };
 
 enum nftable_config_keys_index {
-	NFTNL_CONFIG_BUFSIZE,
 	NFTNL_CONFIG_NAMESPACE,
 	NFTNL_CONFIG_MAX,
 };
@@ -425,11 +424,6 @@ enum nftable_config_keys_index {
 static struct nurs_config_def nftnl_config = {
 	.len	= NFTNL_CONFIG_MAX,
 	.keys	= {
-		[NFTNL_CONFIG_BUFSIZE]	= {
-			.name	 = "socket_buffer_size",
-			.type	 = NURS_CONFIG_T_INTEGER,
-			.integer = 0,
-		},
 		[NFTNL_CONFIG_NAMESPACE] = {
 			.name	 = "namespace",
 			.type	 = NURS_CONFIG_T_STRING,
@@ -439,7 +433,6 @@ static struct nurs_config_def nftnl_config = {
 	},
 };
 
-#define bufsize_ce(x)	nurs_config_integer(nurs_producer_config(x), NFTNL_CONFIG_BUFSIZE)
 #define namespace_ce(x)	nurs_config_string(nurs_producer_config(x), NFTNL_CONFIG_NAMESPACE)
 
 struct nftnl_priv {
@@ -570,23 +563,9 @@ static int nftnl_fd_cb(int fd, uint16_t what, void *param)
 	return NURS_RET_OK;
 }
 
-static int setnlbufsize(struct mnl_socket *nl, int size)
-{
-	int fd = mnl_socket_get_fd(nl);
-	socklen_t socklen = sizeof(int);
-
-	if (setsockopt(fd, SOL_SOCKET, SO_RCVBUFFORCE, &size, socklen) == -1) {
-		setsockopt(fd, SOL_SOCKET, SO_RCVBUF, &size, socklen);
-	}
-	if (getsockopt(fd, SOL_SOCKET, SO_RCVBUF, &size, &socklen) == -1)
-		return -1;
-	return size;
-}
-
 static int nftnl_organize(const struct nurs_producer *producer)
 {
 	struct nftnl_priv *priv = nurs_producer_context(producer);
-	int nlbufsize = bufsize_ce(producer);
 
 	priv->nls = nurs_mnl_socket(namespace_ce(producer), NETLINK_NETFILTER);
 	if (priv->nls == NULL) {
@@ -594,13 +573,7 @@ static int nftnl_organize(const struct nurs_producer *producer)
 			 strerror(errno));
 		goto err_exit;
 	}
-	if (nlbufsize > 0) {
-		if (setnlbufsize(priv->nls, nlbufsize) < 0) {
-			nurs_log(NURS_FATAL, "setnlbufsize: %s\n",
-				 strerror(errno));
-			goto err_close;
-		}
-	}
+
 	if (mnl_socket_bind(priv->nls, (1 << (NFNLGRP_NFTABLES-1)), MNL_SOCKET_AUTOPID) < 0) {
 		nurs_log(NURS_FATAL, "mnl_socket_bind: %s\n",
 			 strerror(errno));
