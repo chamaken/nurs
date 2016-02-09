@@ -19,8 +19,6 @@
 
 #include <assert.h>
 
-#include <urcu/uatomic.h>
-
 #include <nurs/nurs.h>
 #include "internal.h"
 
@@ -305,7 +303,7 @@ static void *stack_routine(void *arg)
 				 "returned: %d\n",
 				 worker->tid, ioset, stack->name, nret);
 		}
-		if (uatomic_sub_return(&ioset->refcnt, 1) == 0) {
+		if (__sync_sub_and_fetch(&ioset->refcnt, 1) == 0) {
 			if ((ret = ioset_clear(ioset)))
 				nurs_log(NURS_ERROR, "failed to clear ioset:"
 					 " %s\n", _sys_errlist[ret]);
@@ -371,7 +369,6 @@ nurs_publish_ioset(struct nurs_producer *producer,
 	if (nurs_mutex_lock(&worker->mutex))
 		goto fail;
 
-	// uatomic_set(&ioset->refcnt, producer->nstacks);
 	ioset->refcnt = producer->nstacks;
 	worker->ioset = ioset;
 	worker->producer = producer;
@@ -400,7 +397,7 @@ nurs_publish_stack(struct nurs_producer *producer,
 	struct nurs_stack *stack;
 	struct nurs_worker *worker;
 
-	uatomic_set(&ioset->refcnt, producer->nstacks);
+	ioset->refcnt = producer->nstacks;
 	list_for_each_entry(stack, &producer->stacks, list) {
 		worker = worker_get();
 		if (!worker) {
