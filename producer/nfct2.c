@@ -68,12 +68,12 @@ enum nfct_conf {
 	NFCT_CONFIG_BLOCK_SIZE = 0,	/* 8192 */
 	NFCT_CONFIG_BLOCK_NR,		/* 128 */
 	NFCT_CONFIG_FRAME_SIZE,		/* 8192 */
-	NFCT_CONFIG_ACTIVE_TIMEOUT,
+	NFCT_CONFIG_POLLINTERVAL,
 	NFCT_CONFIG_RELIABLE,
 	NFCT_CONFIG_MARK_FILTER,
 	NFCT_CONFIG_DESTROY_ONLY,
-	NFCT_CONFIG_EVENT_BUFSIZ,
-	NFCT_CONFIG_EVENT_BUFMAX,
+	NFCT_CONFIG_SOCK_BUFSIZE,
+	NFCT_CONFIG_SOCK_MAXBUF,
 	NFCT_CONFIG_NAMESPACE,
 	NFCT_CONFIG_MAX,
 };
@@ -99,8 +99,8 @@ static struct nurs_config_def nfct_config = {
 			.flags   = NURS_CONFIG_F_NONE,
 			.integer = 8192,
 		},
-		[NFCT_CONFIG_ACTIVE_TIMEOUT] = {
-			.name	 = "active_timeout",
+		[NFCT_CONFIG_POLLINTERVAL] = {
+			.name	 = "pollinterval",
 			.type	 = NURS_CONFIG_T_INTEGER,
 			.flags	 = NURS_CONFIG_F_NONE,
 			.integer = 300,
@@ -122,14 +122,14 @@ static struct nurs_config_def nfct_config = {
 			.flags   = NURS_CONFIG_F_NONE,
 			.boolean = false,
 		},
-		[NFCT_CONFIG_EVENT_BUFSIZ] = {
-			.name	 = "event_buffer_size",
+		[NFCT_CONFIG_SOCK_BUFSIZE] = {
+			.name	 = "netlink_socket_buffer_size",
 			.type	 = NURS_CONFIG_T_INTEGER,
 			.flags   = NURS_CONFIG_F_NONE,
 			.integer = 0,
 		},
-		[NFCT_CONFIG_EVENT_BUFMAX] = {
-			.name	 = "event_buffer_maxsize",
+		[NFCT_CONFIG_SOCK_MAXBUF] = {
+			.name	 = "netlink_socket_buffer_maxsize",
 			.type	 = NURS_CONFIG_T_INTEGER,
 			.flags   = NURS_CONFIG_F_NONE,
 			.integer = 0,
@@ -146,12 +146,12 @@ static struct nurs_config_def nfct_config = {
 #define config_block_size(x)	(unsigned int)nurs_config_integer(nurs_producer_config(x), NFCT_CONFIG_BLOCK_SIZE)
 #define config_block_nr(x)	(unsigned int)nurs_config_integer(nurs_producer_config(x), NFCT_CONFIG_BLOCK_NR)
 #define config_frame_size(x)	(unsigned int)nurs_config_integer(nurs_producer_config(x), NFCT_CONFIG_FRAME_SIZE)
-#define config_active_timeout(x)	(time_t)nurs_config_integer(nurs_producer_config(x), NFCT_CONFIG_ACTIVE_TIMEOUT)
+#define config_pollint(x)	(time_t)nurs_config_integer(nurs_producer_config(x), NFCT_CONFIG_POLLINTERVAL)
 #define config_reliable(x)	nurs_config_boolean(nurs_producer_config(x), NFCT_CONFIG_RELIABLE)
 #define config_mark_filter(x)	nurs_config_string (nurs_producer_config(x), NFCT_CONFIG_MARK_FILTER)
 #define config_destroy_only(x)	nurs_config_boolean(nurs_producer_config(x), NFCT_CONFIG_DESTROY_ONLY)
-#define config_event_bufsiz(x)	nurs_config_integer(nurs_producer_config(x), NFCT_CONFIG_EVENT_BUFSIZ)
-#define config_event_bufmax(x)	nurs_config_integer(nurs_producer_config(x), NFCT_CONFIG_EVENT_BUFMAX)
+#define config_nlsockbufsize(x)	nurs_config_integer(nurs_producer_config(x), NFCT_CONFIG_SOCK_BUFSIZE)
+#define config_nlsockbufmaxsize(x)	nurs_config_integer(nurs_producer_config(x), NFCT_CONFIG_SOCK_MAXBUF)
 #define config_namespace(x)	nurs_config_string(nurs_producer_config(x), NFCT_CONFIG_NAMESPACE)
 
 #include "nfct.keydef"
@@ -393,7 +393,7 @@ static int setnlbufsiz(struct mnl_socket *nl, int size)
 static int update_bufsize(const struct nurs_producer *producer)
 {
 	struct nfct_priv *priv = nurs_producer_context(producer);
-	int maxbufsiz = config_event_bufmax(producer);
+	int maxbufsiz = config_nlsockbufmaxsize(producer);
 	int size;
 	static int warned = 0;
 
@@ -865,8 +865,8 @@ nfct_organize(const struct nurs_producer *producer)
 		}
 	}
 
-	event_bufsiz = config_event_bufsiz(producer);
-	event_bufmax = config_event_bufmax(producer);
+	event_bufsiz = config_nlsockbufsize(producer);
+	event_bufmax = config_nlsockbufmaxsize(producer);
 	if (event_bufsiz) {
 		if (event_bufsiz > event_bufmax) {
 			nurs_log(NURS_INFO, "set event buffer size to: %d\n",
@@ -927,7 +927,7 @@ static enum nurs_return_t
 nfct_start(const struct nurs_producer *producer)
 {
 	struct nfct_priv *priv = nurs_producer_context(producer);
-	time_t interval = config_active_timeout(producer);
+	time_t interval = config_pollint(producer);
 	void *cbdata = (void *)(uintptr_t)producer; /* remove const qualifier */
 
 	if (nurs_fd_register(priv->event_fd, nfct_event_cb, cbdata)) {
