@@ -351,6 +351,7 @@ int workers_stop(void);
 /* for tests */
 struct nurs_worker *worker_get(void);
 int worker_put(struct nurs_worker *worker);
+void nurs_output_set_validate(bool b);
 
 /*
  * fd

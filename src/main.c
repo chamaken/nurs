@@ -34,6 +34,7 @@ enum {
 	NURS_CONFIG_STACK,
 	NURS_CONFIG_WORKERS,
 	NURS_CONFIG_IOSETS,
+	NURS_CONFIG_VALIDATE_OUTPUT,
 	NURS_CONFIG_MAX,
 };
 
@@ -64,6 +65,12 @@ static struct nurs_config_def global_config = {
 			.flags	= NURS_CONFIG_T_NONE,
 			.integer = 8,
 		},
+		[NURS_CONFIG_VALIDATE_OUTPUT] = {
+			.name	= "validate_output",
+			.type	= NURS_CONFIG_T_BOOLEAN,
+			.flags	= NURS_CONFIG_T_NONE,
+			.boolean = false,
+		},
 	},
 };
 
@@ -71,6 +78,7 @@ static int nurs(char *cfname)
 {
 	struct nurs_config *config;
 	int nworkers, niosets;
+	bool validate_output;
 	int ret = EXIT_SUCCESS;
 
 	nurs_log(NURS_INFO, "initialize plugins\n");
@@ -128,6 +136,15 @@ static int nurs(char *cfname)
 		ret = EXIT_FAILURE;
 		goto unregister_all_plugin;
 	}
+	validate_output
+		= nurs_config_boolean(config, NURS_CONFIG_VALIDATE_OUTPUT);
+	if (errno) {
+		nurs_log(NURS_FATAL, "failed to get validate_output config: %s",
+			 strerror(errno));
+		free(config);
+		ret = EXIT_FAILURE;
+		goto unregister_all_plugin;
+	}
 	free(config);
 
 	nurs_log(NURS_INFO, "setting workers: %d, iosets (per stack): %d\n",
@@ -144,6 +161,7 @@ static int nurs(char *cfname)
 		goto unsettle_stack;
 	}
 
+	nurs_output_set_validate(validate_output);
 	plugins_order_group();
 
 	nurs_log(NURS_INFO, "organize plugins\n");

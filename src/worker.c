@@ -34,6 +34,11 @@ static LIST_HEAD(nurs_runnable_workers);
 static size_t nurs_runnable_workers_size;
 static enum nurs_workers_state nurs_runnable_workers_state;
 
+
+static int no_validate_output(const char *id, const struct nurs_output *output);
+static int(*validate_output)
+(const char *id, const struct nurs_output *output) = no_validate_output;
+
 #define STOPPED_WORKER ((struct nurs_worker *)-1)
 
 /* XXX: set errno? caller clear errno before call? */
@@ -121,6 +126,8 @@ exec_stack(struct nurs_stack *stack, struct nurs_ioset *ioset)
 			if (!filter->def->mtsafe &&
 			    nurs_mutex_unlock(&filter->mutex))
 				return NURS_RET_ERROR;
+			if (validate_output(e->plugin->id, output))
+				ret = NURS_RET_ERROR;
 			break;
 		case NURS_PLUGIN_T_CONSUMER:
 			consumer = (struct nurs_consumer *)e->plugin;
@@ -355,8 +362,15 @@ nurs_publish_ioset(struct nurs_producer *producer,
 	struct nurs_ioset *ioset
 		= container_of((struct nurs_output (*)[])output,
 			       struct nurs_ioset, base);
-	struct nurs_worker *worker = worker_get();
+	struct nurs_worker *worker;
 
+	if (validate_output(producer->id, output)) {
+		nurs_put_output(producer, output);
+		errno = EIO;
+		return NURS_RET_ERROR;
+	}
+
+	worker = worker_get();
 	if (!worker) {
 		nurs_log(NURS_ERROR, "failed to get worker: %s\n",
 			 _sys_errlist[errno]);
@@ -396,6 +410,12 @@ nurs_publish_stack(struct nurs_producer *producer,
 			       struct nurs_ioset, base);
 	struct nurs_stack *stack;
 	struct nurs_worker *worker;
+
+	if (validate_output(producer->id, output)) {
+		nurs_put_output(producer, output);
+		errno = EIO;
+		return NURS_RET_ERROR;
+	}
 
 	ioset->refcnt = producer->nstacks;
 	list_for_each_entry(stack, &producer->stacks, list) {
@@ -640,4 +660,34 @@ int workers_stop(void)
 	nurs_workers_size = 0;
 exit:
 	return ret;
+}
+
+static int really_validate_output(const char *id,
+				  const struct nurs_output *output)
+{
+	uint16_t i;
+	int ret = 0;
+
+	for (i = 0; i < output->len; i++) {
+		if (!(output->keys[i].def->flags & NURS_OKEY_F_ACTIVE))
+			continue;
+		if (!(output->keys[i].flags & NURS_KEY_F_VALID)) {
+			nurs_log(NURS_ERROR, "not valid active output: %s@%s\n",
+				 output->keys[i].def->name, id);
+			ret = -1;
+		}
+	}
+
+	return ret;
+}
+
+static int no_validate_output(const char *id,
+			      const struct nurs_output *output)
+{
+	return 0;
+}
+
+void nurs_output_set_validate(bool b)
+{
+	if (b) validate_output = really_validate_output;
 }
