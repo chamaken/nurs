@@ -164,8 +164,6 @@ TODO
 
 * put / propagate for output may cause trouble.  
   add borrowing flag for duplicate calling?
-* input key which has VALID flag will not check at runtime.  
-  should check at propagate / interp?
 
 
 memo
