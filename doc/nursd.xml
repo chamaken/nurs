@@ -219,7 +219,7 @@
     </para>
     <variablelist>
       <varlistentry>
-	<term>plugin</term>
+	<term>plugin (string)</term>
 	<listitem>
 	  <para>
 	    This option is followed by a filename of a ulogd plugin, which ulogd
@@ -229,7 +229,7 @@
 	</listitem>
       </varlistentry>
       <varlistentry>
-	<term>stack</term>
+	<term>stack (string)</term>
 	<listitem>
 	  <para>
 	    This option is followed by a comma separated names which
@@ -238,7 +238,7 @@
 	</listitem>
       </varlistentry>
       <varlistentry>
-	<term>workers</term>
+	<term>workers (integer)</term>
 	<listitem>
 	  <para>
 	    This option specifys the number of thread which executes
@@ -247,11 +247,20 @@
 	</listitem>
       </varlistentry>
       <varlistentry>
-	<term>iosets</term>
+	<term>iosets (integer)</term>
 	<listitem>
 	  <para>
 	    This option specifys the number of input/output chunk of
 	    memory. This memory chunks holds per Producer.
+	  </para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+	<term>validate_output (boolean)</term>
+	<listitem>
+	  <para>
+	    check output values which flag is NURS_OKEY_F_ACTIVE is valid or not
+	    at runtime, for debugging purpose.
 	  </para>
 	</listitem>
       </varlistentry>
@@ -387,8 +396,9 @@
 	  <term>qthreshold (integer)</term>
 	  <listitem>
 	    <para>
-	      invoke NFULA_CFG_QTHRESH config command. Specify number of ulogged
-              packets which kernel enqueues.
+	      invoke NFULA_CFG_QTHRESH config command. Specify the maximum
+	      number of log entries in the buffer until it is pushed to
+	      userspace.
 	    </para>
 	  </listitem>
 	</varlistentry>
@@ -396,8 +406,11 @@
 	  <term>qtimeout (integer)</term>
 	  <listitem>
 	    <para>
-	      invoke NFULA_CFG_TIMEOUT config command. Specify msec which kernel
-              send message to userspace after matching nflog target.
+	      invoke NFULA_CFG_TIMEOUT config command. Specify the maximum time
+	      that nflog waits until it pushes the log buffer to userspace if no
+	      new logged packets have occured.  Basically, nflog implements a
+	      buffer to reduce the computational cost of delivering the log
+	      message to userspace.
 	    </para>
 	  </listitem>
 	</varlistentry>
@@ -895,11 +908,57 @@
   </refsect1>
 
   <refsect1>
-    <title>QUESTIONS / COMMENTS</title>
-    <para>
-      All comments / questions / ... are appreciated.
-      Just drop a note to chamas@h4.dion.ne.jp
-    </para>
+    <title>Examples</title>
+    <refsect2>
+      <title>Export Netflow v9 from conntrack</title>
+      <para>
+	Primary target for nurs. It requires NFCT2 not NFCT since Netflow v9
+	requires delta counter. And times in conntrack needs to be convert, add
+	uptime, and convert icmp type and code to 16bit, so that plugins NFCT2,
+	TIMECONV, PACKICMP and NFLOW9 is needed.
+      </para>
+      <para>
+	conntrack is propagated at destroy event and imitate active timeout by
+	polling, assume this interval is 300sec. Netflow data will export to
+	localhost, port 9995. Its domain is 1 and send template every 16 data.
+	Before send via udp, it is saved in buffer, lengthen 20 data.
+      </para>
+      <para>
+	<variablelist>
+	  <varlistentry>
+	    <term>configuration (nursd.conf)</term>
+	    <listitem>
+	<screen>
+[global]
+plugin	= "/usr/local/lib/nurs/nurs_producer_NFCT2.so"
+plugin	= "/usr/local/lib/nurs/nurs_filter_TIMECONV.so"
+plugin	= "/usr/local/lib/nurs/nurs_filter_PACKICMP.so"
+plugin	= "/usr/local/lib/nurs/nurs_coveter_NFLOW9.so"
+
+stack	= "nfct2:NFCT2, timeconv:TIMECONV, packicmp:PACKICMP, nflow9:NFLOW9"
+
+[nfct2]
+pollinterval = 300
+
+[nflow9]
+dest = udp://127.0.0.1:9995
+domain_id = 1
+nth_template = 16
+corksets_max = 20
+	</screen>
+	    </listitem>
+	  </varlistentry>
+	  <varlistentry>
+	    <term>command</term>
+	    <listitem>
+	      <para>
+		<option>nursd nursd.conf</option>
+	      </para>
+	    </listitem>
+	  </varlistentry>
+	</variablelist>
+      </para>
+    </refsect2>
   </refsect1>
 
   <refsect1>
