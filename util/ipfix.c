@@ -64,7 +64,7 @@ int open_connect_descriptor(const char *dest)
 		if (strlen(host) == 0)
 			fd = STDOUT_FILENO;
 		else
-			fd = open(host, O_CREAT|O_WRONLY|O_APPEND);
+			fd = open(host, O_CREAT|O_WRONLY|O_APPEND, 0600);
 		free(proto);
 		return fd;
 	}
