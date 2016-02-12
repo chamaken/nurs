@@ -16,10 +16,10 @@ import "C"
 import "unsafe"
 import nurs "../../binding/go"
 
-// I KNOW its size is 16 and write it in json
 type tickPriv struct {
 	counter uint64
 	timer   *nurs.Timer
+	myname	string
 }
 
 func timerCb(timer *nurs.Timer, data interface{}) nurs.ReturnType {
@@ -29,6 +29,7 @@ func timerCb(timer *nurs.Timer, data interface{}) nurs.ReturnType {
 
 	output.SetU64(0, priv.counter)
 	priv.counter += 1
+	output.SetString(1, priv.myname)
 
 	ret, _ := producer.Propagate(output)
 	return ret
@@ -44,6 +45,9 @@ func tickOrganize(cproducer *C.struct_nurs_producer) C.enum_nurs_return_t {
 		nurs.Log(nurs.ERROR, "failed to create timer\n")
 		return C.enum_nurs_return_t(nurs.RET_ERROR)
 	}
+
+	config := producer.Config()
+	priv.myname, _ = config.String(0)
 	return C.enum_nurs_return_t(nurs.RET_OK)
 }
 
@@ -89,10 +93,19 @@ func tickStop(cproducer *C.struct_nurs_producer) C.enum_nurs_return_t {
 const jsonrc = `{
     "version": "0.1",
     "name": "GO_TICK_PRODUCER",
+    "config": [
+	{ "name": "myname",
+	  "type": "NURS_CONFIG_T_STRING",
+	  "flags": ["NURS_CONFIG_F_MANDATORY"]}
+    ],
     "output" : [
 	{ "name": "counter",
 	  "type": "NURS_KEY_T_UINT64",
-	  "flags": ["NURS_OKEY_F_ACTIVE"] }
+	  "flags": ["NURS_OKEY_F_ACTIVE"] },
+	{ "name": "producer.name",
+	  "type": "NURS_KEY_T_STRING",
+	  "flags": ["NURS_OKEY_F_ACTIVE"],
+	  "len":  32 }
     ],
     "organize":		"tickOrganize",
     "disorganize":	"tickDisorganize",

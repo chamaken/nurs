@@ -92,7 +92,7 @@ Sample
 ======
 python required. cd examples/tick after install
 ```
-NURS_PYSON=consumer_py.json ../../src/nursd nursd1.conf
+NURS_PYSON=consumer_py.json ../../src/nursd nursd.conf
 ```
 head *.conf file under examples directories.
 
@@ -108,26 +108,14 @@ Python
 
 Go
 ==
-It's my fault, lack of knowledge, I've met runtime errors.  
-a few of them seems related to:  
-
-* https://groups.google.com/forum/#!msg/golang-nuts/h9GbvfYv83w/5Ly_jvOr86wJ
-* https://github.com/golang/go/issues/12879
-* https://gist.github.com/dwbuiten/c9865c4afb38f482702e
-
-nurs handles signals synchronously by signalfd with blocking, but go seems  
-to call sigprocmask in runtime and to establish its own signal handler.  
-
-... Above seems to be solved 1.6?  
+1.6 is required because of:  
 https://github.com/golang/go/commit/fbdfa99246ecbb04954a042a5809c4748415574d  
-Exit process is obviously differ from 1.5.  
 
-in addition to signal handling, I do not understand Go's GC. examples seems  
-to work (not stop correctly) with GOGC=off but it's useless for real use at all.  
-I should have run go plugin in another process like python one, but it seems  
-to be hard for me.
+I do not understand Go's GC. tick examples seems to work but another examples  
+need GOGC=off, useless for real use at all. This GC related problem still  
+exists at 1.6rc2, but resolved after 1.6rc2? I have probably not tried:  
+https://github.com/golang/go/issues/13372
 
-This GC problem still exists at 1.6.
 <pre>
 runtime: free list of span 0x7f4fef181438:
 0x1c820018140 -> 0x1c9200181de (BAD)
