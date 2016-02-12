@@ -1,5 +1,5 @@
 # example configuration for nursd. run at this dir as
-# NURS_PYSON=@cwd@/consumer_py.json ../../src/nursd -l info nursd1.conf
+# NURS_PYSON=@cwd@/consumer_py.json ../../src/nursd nursd.conf
 
 [global]
 
@@ -8,11 +8,16 @@
 # 2. options for each plugin in seperate section below
 plugin	= "@pkglibdir@/nurs_producer_TICK.so"
 plugin	= "@pkglibdir@/nurs_PYTHON.so"
+plugin	= "@cwd@/producer.gso"
+plugin	= "@cwd@/consumer.gso"
 
 # stack
 # each element represented id:name, separated by ,
 stack	= "tick:TICK, py_consumer1:PY_TICK_CONSUMER"
 stack	= "tick:TICK, py_consumer2:PY_TICK_CONSUMER"
+stack	= "tick:TICK, go_consumer:GO_TICK_CONSUMER"
+stack	= "tickgo:GO_TICK_PRODUCER, go_consumer:GO_TICK_CONSUMER"
+stack	= "tickgo:GO_TICK_PRODUCER, py_consumer2:PY_TICK_CONSUMER"
 
 # number of workers
 workers	= 8
@@ -22,12 +27,21 @@ iosets	= 8
 
 # each pluginstance settings
 
+[tick]
+myname = "C producer"
+
 [py_consumer1]
 path = "@cwd@"
 module = "consumer"
-config-string = "sample string"
+myname = "Python consumer x 1"
 
 [py_consumer2]
 path = "@cwd@"
 module = "consumer2"
-config-string = "sample2 string"
+myname = "Python consumer x 2"
+
+[tickgo]
+myname = "Go producer"
+
+[go_consumer]
+myname = "Go consumer"

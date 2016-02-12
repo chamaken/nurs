@@ -225,7 +225,6 @@ AC_CONFIG_FILES([Makefile
 		 binding/Makefile
 		 binding/python/Makefile
 		 binding/go/Makefile
-		 binding/go/contrib/Makefile
 		 doc/Makefile
 
 		 examples/Makefile

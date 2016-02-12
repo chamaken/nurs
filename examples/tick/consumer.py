@@ -1,9 +1,13 @@
+myname = None
+
 def organize(plugin):
-    nurs.Log.info("organize - config-string: %s" \
-                  % plugin.config['config-string'])
+    global myname
+    myname = plugin.config['myname']
     return nurs.NURS_RET_OK
 
 
 def interp(plugin, nuin):
-    nurs.Log.info("counter x 1: %d" % nuin.value(0))
+    global myname
+    nurs.Log.info("counter x 1: %d, %s -> %s" \
+                  % (nuin.value(0), nuin.value(1), myname))
     return nurs.NURS_RET_OK
