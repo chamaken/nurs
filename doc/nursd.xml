@@ -40,8 +40,8 @@
   <refnamediv>
     <refname>nursd</refname>
     <refpurpose>
-      NFNetlink Userspace Receipt Suite Daemon, is a unstable
-      re-implementaion of ulogd2.
+      NFNetlink Userspace Receipt Suite Daemon, is a unstable re-implementaion
+      of ulogd2.
     </refpurpose>
   </refnamediv>
 
@@ -97,7 +97,7 @@
 	<term><option>-V / --version</option></term>
 	<listitem>
 	  <para>
-	    Print version information about ulogd.
+	    Print version information about nursd.
 	  </para>
 	</listitem>
       </varlistentry>
@@ -114,7 +114,7 @@
 	<term><option>-i / --info</option></term>
 	<listitem>
 	  <para>
-	    Display informations about the plugin whom filename is given as
+	    Display informations about the plugin which filename is given as
 	    argument.
 	  </para>
 	</listitem>
@@ -159,9 +159,9 @@
   <refsect1>
     <title>description</title>
     <para>
-      nursd consists of a core and a number of plugins.  All the real
-      power lies in the plugins, and in the user who configures the interactions
-      between those plugins.
+      nursd consists of a core and a number of plugins.  All the real power lies
+      in the plugins, and in the user who configures the interactions between
+      those plugins.
     </para>
     <para>
       By means of the configuration file, the administrator can build any number
@@ -188,8 +188,8 @@
     <refsect2>
       <title>Producer Plugins</title>
       <para>
-	Producer plugins acts data source.  They get data from somewhere outside of
-	nursd, and convert it into a input for succeeding plugins.
+	Producer plugins acts data source. They get data from somewhere outside
+	of nursd, and convert it into a input for succeeding plugins.
       </para>
     </refsect2>
     <refsect2>
@@ -202,9 +202,9 @@
     <refsect2>
       <title>Consumer / Coveter Plugins</title>
       <para>
-	This plugins describe how and where to put the information gained by
-	the Producer Plugin and processed by one or more Filter Plugins.  The
-	easiest way is to build a line per packet and fprint it to a file.
+	This plugins describe how and where to put the information gained by the
+	Producer Plugin and processed by one or more Filter Plugins. The easiest
+	way is to build a line per packet and fprint it to a file.
       </para>
     </refsect2>
   </refsect1>
@@ -212,17 +212,16 @@
   <refsect1>
     <title>configfile syntax reference</title>
     <para>
-      nursd is what this is all about, so let's describe it's
-      configuration...  All configurable parameters of nursd are in
-      the configfile. The following configuration parameters are
-      available:
+      nursd is what this is all about, so let's describe it's configuration...
+      All configurable parameters of nursd are in the configfile. The following
+      configuration parameters are available:
     </para>
     <variablelist>
       <varlistentry>
 	<term>plugin (string)</term>
 	<listitem>
 	  <para>
-	    This option is followed by a filename of a ulogd plugin, which ulogd
+	    This option is followed by a filename of a nursd plugin, which nursd
 	    should load upon initialization. This option may appear more than
 	    once.
 	  </para>
@@ -232,8 +231,8 @@
 	<term>stack (string)</term>
 	<listitem>
 	  <para>
-	    This option is followed by a comma separated names which
-	    consists of plugin instance id and plugin name connected by :.
+	    This option is followed by a comma separated names which consists of
+	    plugin instance id and plugin name connected by :.
 	  </para>
 	</listitem>
       </varlistentry>
@@ -241,8 +240,8 @@
 	<term>workers (integer)</term>
 	<listitem>
 	  <para>
-	    This option specifys the number of thread which executes
-	    subsequent to Producer plugin.
+	    This option specifys the number of thread which executes subsequent
+	    to Producer plugins. This workers are shared between whole nursd.
 	  </para>
 	</listitem>
       </varlistentry>
@@ -251,7 +250,7 @@
 	<listitem>
 	  <para>
 	    This option specifys the number of input/output chunk of
-	    memory. This memory chunks holds per Producer.
+	    memory. This memory chunks are hold per Producer.
 	  </para>
 	</listitem>
       </varlistentry>
@@ -259,8 +258,8 @@
 	<term>validate_output (boolean)</term>
 	<listitem>
 	  <para>
-	    check output values which flag is NURS_OKEY_F_ACTIVE is valid or not
-	    at runtime, for debugging purpose.
+	    Check output values, which flag is NURS_OKEY_F_ACTIVE, is valid or
+	    not at runtime, for debugging purpose.
 	  </para>
 	</listitem>
       </varlistentry>
@@ -270,17 +269,17 @@
       <title>Signals</title>
       <para>
 	<!-- SIGALRM is needed? -->
-	nursd self understands two kinds of signals. These and others
-	--- SIGALRM, SIGUSR1 and SIGUSR2 --- are delivered to each
-	plugins by signal callback.
+	nursd self understands two kinds of signals. These and others ---
+	SIGCHLD, SIGALRM, SIGUSR1 and SIGUSR2 --- are delivered to each plugins
+	by signal callback. (SIGCHLD was added for socket for namespace.)
       </para>
       <variablelist>
 	<varlistentry>
 	  <term>SIGHUP</term>
 	  <listitem>
 	    <para>
-	      Close and re-open logfile. This is mainly intended
-	      for logrotate scripts.
+	      Close and re-open logfile. This is mainly intended for logrotate
+	      scripts.
 	    </para>
 	  </listitem>
 	</varlistentry>
@@ -301,7 +300,7 @@
     <refsect2>
       <title><filename>nurs_producer_NFLOG.so</filename> (NFLOG)</title>
       <para>
-	This interfaces the new nfnetlink_log interface.  To compile, you need
+	This interfaces the nfnetlink_log interface. To compile, you need
 	libnetfilter_log installed in your system.
       </para>
       <variablelist>
@@ -310,7 +309,7 @@
 	  <listitem>
 	    <para>
 	      The number of the netlink multicast group to which NFLOG'ed
-	      packets are sent.  You will have to use the same group number in
+	      packets are sent. You will have to use the same group number in
 	      the NFLOG target (-\-nflog-group) and in the input plugin.
 	    </para>
 	  </listitem>
@@ -331,8 +330,8 @@
 	  <listitem>
 	    <para>linux/Documentation/netlink_mmap.txt</para>
 	    <para>
-	      must be a multiple of the architectures memory page size.
-	      The getpagesize() function can be used to get the page size.
+	      must be a multiple of the architectures memory page size. The
+	      getpagesize() function can be used to get the page size.
 	    </para>
 	  </listitem>
 	</varlistentry>
@@ -340,10 +339,10 @@
 	  <term>frame_size (integer)</term>
 	  <listitem>
 	    <para>
-	      mmaped netlink socket frames are grouped into blocks,
-	      where each block is a continuous region of memory and
-	      holds block_size / frame_size frames. The total number
-	      of frames in the ring is frame_nr.
+	      mmaped netlink socket frames are grouped into blocks, where each
+	      block is a continuous region of memory and holds block_size /
+	      frame_size frames. The total number of frames in the ring is
+	      frame_nr.
 	    </para>
 	  </listitem>
 	</varlistentry>
@@ -467,9 +466,9 @@
     <refsect2>
       <title><filename>nursd_producer_NFCT.so</filename> (NFCT)</title>
       <para>
-	This interfaces the nfnetlink_conntrack kernel subsystem, and
-	provides flow-based logging.  To compile, you need
-	libnetfilter_conntrack installed on your system.
+	This interfaces the nfnetlink_conntrack kernel subsystem, and provides
+	flow-based logging. To compile, you need libnetfilter_conntrack
+	installed on your system.
       </para>
       <variablelist>
 	<varlistentry>
@@ -484,9 +483,9 @@
 	  <term>hash_enable (boolean)</term>
 	  <listitem>
 	    <para>
-	      If set to 1 (default) a internal hash will be stored and
-	      only destroy event will reach the output plugin.  It set
-	      to 0, all events are reveived by the output plugin.
+	      If set to 1 (default) a internal hash will be stored and only
+	      destroy event will reach the output plugin. It set to 0, all
+	      events are reveived by the output plugin.
 	    </para>
 	  </listitem>
 	</varlistentry>
@@ -574,9 +573,9 @@
     <refsect2>
       <title><filename>nursd_producer_NFCT2.so</filename> (NFCT2)</title>
       <para>
-	This interfaces the nfnetlink_conntrack kernel subsystem, and
-	provides flow-based logging.  To compile, you need
-	libnetfilter_conntrack installed on your system.
+	This interfaces the nfnetlink_conntrack kernel subsystem, and provides
+	data suite for Netflow / IPFIX. To compile, you need libnetfilter_conntrack
+	installed on your system.
       </para>
       <variablelist>
 	<varlistentry>
@@ -611,6 +610,8 @@
     <refsect2>
       <title><filename>nurs_producer_NFQ.so</filename> (NFQ)</title>
       <para>
+	This interfaces the nfnetlink_queue kernel subsystem, you need
+	libnetfilter_queue installed on your system.
       </para>
       <variablelist>
 	<varlistentry>
@@ -656,7 +657,7 @@
 	  <listitem>
 	    <para>
 	      set NFQA_CFG_F_CONNTRACK config flag, same as
-              NFULNL_CFG_F_CONNTRACK in NFLOG.
+	      NFULNL_CFG_F_CONNTRACK in NFLOG.
 	    </para>
 	  </listitem>
 	</varlistentry>
@@ -664,7 +665,8 @@
 	  <term>gso (boolean)</term>
 	  <listitem>
 	    <para>
-	      set NFQA_CFG_F_GSO config flag.
+	      set NFQA_CFG_F_GSO config flag, allows userspace to ask for large
+	      gso packets via nfqueue or not.
 	    </para>
 	  </listitem>
 	</varlistentry>
@@ -672,8 +674,10 @@
 	  <term>uid_gid (boolean)</term>
 	  <listitem>
 	    <para>
-	      set NFQA_CFG_F_UID_GID config flag, allows userspace to ask for
-              large gso packets via nfqueue or not.
+	      set NFQA_CFG_F_UID_GID config flag, enables to parse UID and GID
+	      socket info also for incoming TCP and UDP connections. Having this
+	      info available, it is convenient to let NFQUEUE parse it in order
+	      to improve and refine the traffic analysis in userspace.
 	    </para>
 	  </listitem>
 	</varlistentry>
@@ -692,6 +696,8 @@
     <refsect2>
       <title><filename>nursd_producer_NFACCT.so</filename> (NFACCT)</title>
       <para>
+	This interfaces the nfnetlink_acct kernel subsystem, you need
+	libnetfilter_acct installed on your system.
       </para>
       <variablelist>
 	<varlistentry>
@@ -710,7 +716,7 @@
 	  <term>timestamp (boolean)</term>
 	  <listitem>
 	    <para>
-              propagate sec and usec of dump request.
+              propagate sec and usec on each dump request.
 	    </para>
 	  </listitem>
 	</varlistentry>
@@ -725,6 +731,8 @@
     <refsect2>
       <title><filename>nurs_producer_NFT.so</filename> (NFT)</title>
       <para>
+	This interfaces the nfnetlink_nftables kernel subsystem. To compile, you
+	need libnftnl installed on your system.
       </para>
       <variablelist>
 	<varlistentry>
@@ -738,6 +746,7 @@
     <refsect2>
       <title><filename>nurs_producer_NFCTST.so</filename> (NFCTST)</title>
       <para>
+	This interfaces the nfnetlink_conntrack stats kernel subsystem.
       </para>
       <variablelist>
 	<varlistentry>
@@ -757,26 +766,18 @@
     <refsect2>
       <title><filename>nurs_filter_MARKIF.so</filename> (MARKIF)</title>
       <para>
+	This filter creates input ifindex, output ifindex and flow direction
+	from conntrack mark.
       </para>
       <variablelist>
 	<varlistentry>
 	  <term>mask_ingress (string)</term>
-	  <listitem>
-	    <para>
-	    </para>
-	  </listitem>
-	</varlistentry>
-	<varlistentry>
 	  <term>mask_egress (string)</term>
-	  <listitem>
-	    <para>
-	    </para>
-	  </listitem>
-	</varlistentry>
-	<varlistentry>
 	  <term>mask_flow (string)</term>
 	  <listitem>
 	    <para>
+	      each value will be created by specifying <option>&lt;mask&gt;
+	      &gt;&gt; &lt;shift bit&gt;</option> for ct mark.
 	    </para>
 	  </listitem>
 	</varlistentry>
@@ -817,6 +818,8 @@
     <refsect2>
       <title><filename>nursd_consumer_XML.so</filename>(XML)</title>
       <para>
+	This consumer plugin write XML entry with encoded method provided each
+	nfnetlink library.
       </para>
       <variablelist>
 	<varlistentry>
@@ -889,18 +892,20 @@
     <refsect2>
       <title><filename>nurs_PYTHON.so</filename></title>
       <para>
+	This plugin is generic, can be any kind of plugin specified json
+	resource which is specified by NURS_PYSON env variable.
       </para>
       <variablelist>
 	<varlistentry>
 	  <term>path (string)</term>
 	  <listitem>
-	    <para></para>
+	    <para>specify path to add sys.path</para>
 	  </listitem>
 	</varlistentry>
 	<varlistentry>
 	  <term>module (string)</term>
 	  <listitem>
-	    <para></para>
+	    <para>specify python module name to load.</para>
 	  </listitem>
 	</varlistentry>
       </variablelist>
@@ -914,14 +919,14 @@
       <para>
 	Primary target for nurs. It requires NFCT2 not NFCT since Netflow v9
 	requires delta counter. And times in conntrack needs to be convert, add
-	uptime, and convert icmp type and code to 16bit, so that plugins NFCT2,
-	TIMECONV, PACKICMP and NFLOW9 is needed.
+	uptime, and convert icmp type and code to 16bit, so that required
+	plugins are NFCT2, TIMECONV, PACKICMP and NFLOW9.
       </para>
       <para>
-	conntrack is propagated at destroy event and imitate active timeout by
-	polling, assume this interval is 300sec. Netflow data will export to
-	localhost, port 9995. Its domain is 1 and send template every 16 data.
-	Before send via udp, it is saved in buffer, lengthen 20 data.
+	conntrack is propagated at destroy event and by polling to imitate
+	active timeout, assume polling interval is 300sec. Netflow data will
+	export to localhost, port 9995. Its domain is 1 and send template every
+	16 data. Before sending via udp, it is saved in 20 data length buffer.
       </para>
       <para>
 	<variablelist>
@@ -953,6 +958,109 @@ corksets_max = 20
 	    <listitem>
 	      <para>
 		<option>nursd nursd.conf</option>
+	      </para>
+	    </listitem>
+	  </varlistentry>
+	</variablelist>
+      </para>
+    </refsect2>
+    <refsect2>
+      <title>Python</title>
+      <para>
+	Try to display just only IPv4 addresses from conntrack. NFCT plugin
+	propagate source address as "orig.ip.saddr" and destination address as
+	"orig.ip.daddr", use this only two keys and displays to stdout. You can
+	see a litte more complidated example in
+	<filename>examples/nfct</filename>
+	<variablelist>
+	  <varlistentry>
+	    <term>JSON resource, named <filename>/home/myname/pynurs/ctlog.json</filename></term>
+	    <listitem>
+	      <para></para>
+	      <para>
+		<screen>
+{
+    "consumer": [
+        {
+            "version": "0.1",
+            "name": "PY_CTLOG",
+            "input" : [
+                { "name"        : "oob.family",
+                  "type"        : "NURS_KEY_T_UINT8",
+                  "flags"       : ["NURS_IKEY_F_REQUIRED"] },
+                { "name"        : "orig.ip.saddr",
+                  "type"        : "NURS_KEY_T_INADDR",
+                  "flags"       : ["NURS_IKEY_F_OPTIONAL"] },
+                { "name"        : "orig.ip.daddr",
+                  "type"        : "NURS_KEY_T_INADDR",
+                  "flags"       : ["NURS_IKEY_F_OPTIONAL"] }
+            ]
+        }
+    ]
+}
+		</screen>
+		declare this is a consumer by first key, "consumer". current
+		nurs version is "0.1" and named this as "PY_CTLOG". This read
+		value named "orig.ip.addr" and "orig.ip.daddr" as in_addr,
+		specified by "input", add "oob.family" which can get always to
+		check optional address values existing or not.
+	      </para>
+	    </listitem>
+	  </varlistentry>
+	  <varlistentry>
+	    <term>
+	      python code, named
+	      <filename>/home/myname/pynurs/ctlog.py</filename>
+	    </term>
+	    <listitem>
+	      <para></para>
+	      <para>
+		<screen>
+import socket, ipaddress
+
+def interp(plugin, nuin):
+    if nuin.value("oob.family") != socket.AF_INET:
+        return nurs.NURS_RET_OK
+
+    saddr = ipaddress.IPv4Address(socket.ntohl(nuin.value("orig.ip.saddr")))
+    daddr = ipaddress.IPv4Address(socket.ntohl(nuin.value("orig.ip.daddr")))
+    print("%s >> %s" % (saddr, daddr))
+    return nurs.NURS_RET_OK
+		</screen>
+		callback methods names are fixed --- start, stop, organize,
+		disorganize, interp and signal. In this example only interp is
+		defined to be a simple. Args for those callback functions can be
+		guessed from nurs header file (sorry for less documents).
+	      </para>
+	      <para>
+		keys to get value from input is specified by string at this
+		example. But you can get it by number, ordered in JSON
+		resource.<command>nuin.value("oob.family")</command> can be
+		replaced <command>nuin.value(0)</command> and
+		<command>nuin.value("orig.ip.saddr")</command> be
+		<command>nuin.value(1)</command>.
+	      </para>
+	    </listitem>
+	  </varlistentry>
+	  <varlistentry>
+	    <term>configuration file, nursd.conf</term>
+	    <listitem>
+	      <para></para>
+	      <para>
+		<screen>
+[global]
+plugin	= "/usr/local/lib/nurs/nurs_producer_NFCT.so"
+plugin	= "/usr/local/lib/nurs/nurs_PYTHON.so"
+stack	= "nfct:NFCT, pylog:PY_CTLOG"
+[nfct]
+pollinterval = 10
+[pylog]
+path = "/home/myname/pynurs"
+module = "ctlog"
+		</screen>
+		then, run as root
+		<command>NURS_PYSON=/home/myname/pynurs/ctlog.json nursd nursd.conf</command>
+		and stop by ^C.
 	      </para>
 	    </listitem>
 	  </varlistentry>
