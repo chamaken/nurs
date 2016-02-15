@@ -9,8 +9,8 @@ nurs_producer_TICK_la_LDFLAGS = -avoid-version -module
 EXTRA_DIST = consumer.py consumer2.py \
 	consumer_py.json.in \
 	producer.go consumer.go \
-	consumer_go.json.in nursd.conf.in
-noinst_DATA = consumer_py.json consumer_go.json nursd.conf
+	consumer_go.json.in py.conf.in go.conf.in
+noinst_DATA = consumer_py.json consumer_go.json py.conf go.conf
 
 if HAVE_GO
 noinst_DATA += producer.gso consumer.gso

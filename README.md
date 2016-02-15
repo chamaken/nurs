@@ -92,9 +92,14 @@ Sample
 ======
 python required. cd examples/tick after install
 ```
-NURS_PYSON=consumer_py.json ../../src/nursd nursd.conf
+NURS_PYSON=consumer_py.json ../../src/nursd py.conf
 ```
-head *.conf file under examples directories.
+Or with go,
+```
+../../src/nursd go.conf
+```
+
+see *.conf files under examples directories.
 
 
 Python
@@ -172,16 +177,16 @@ memo
 <pre>
 stack = "src, f1, f2, ...
 
-    +------------------------------                +----
- ---+ nurs_ioset      .list -----------------------+ nurs_ioset: .list -- (for pool)
-    |                 .size: byte size             |
+    +------------------------------              +--------
+ ---+ nurs_ioset      .list ---------------------+ nurs_ioset: .list -- (for pool)
+    |                 .size: byte size           |
     |                 .len:  array len
     +-----------------.base ----
- 0: | src.output: .len: 4, .keys ----------------/              stack.element.0.odx = 0
+ 0: | src.output: .len: 4, .keys ----------------/          stack.element.0.odx = 0
     +------------------------------             /
- 1: | f1.input:   .len: 3, .keys -------------------------/                   1.idx = 1
+ 1: | f1.input:   .len: 3, .keys -------------------------/               1.idx = 1
     +------------------------------           /          /
- 2: | f1.output:  .len: 2,                   /          /                     1.odx = 2
+ 2: | f1.output:  .len: 2,                   /          /                 1.odx = 2
     +------------------------------         /          /
     .                                      /          /
     .                                     v          /
