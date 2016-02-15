@@ -21,6 +21,17 @@
 
 #include "internal.h"
 
+/**
+ * \defgroup nurs plugin registeration by json
+ * @{
+ *
+ * Plugins can be registered not only C struct but also JSON string. Nurs is
+ * aimed to access its input and output from other language. This JSON
+ * registeration is introduced since it's bothersome to write struct type for
+ * each other languages.
+ *
+ */
+
 #define ccmp(s, t) do { if (strncmp(s, (#t), strlen(#t)) == 0) return (t); } while (0)
 
 static int key_type(const char *const type)
@@ -670,6 +681,17 @@ static int parse_input_key_def(json_t *json, char *pname, size_t index,
  * {s:s%,    s:s%,    s?i,          s?o,    s:o,    s?s%,     s?s%,        s?s%,  s?s%  s?s%}
  *  version, name,    context_size, config, output, organize, disorganize, start, stop, signal
  */
+
+/**
+ * nurs_producer_register_json - register a producer by JSON, jansson object
+ * \param json jansson json object
+ * \param context_size context size in byte for this producer
+ * \param enlist register this producer or just check json representation
+ *
+ * This function registers a producer by JSON jansson object and returns
+ * producer definition on success, or NULL on error. Or just returns producer
+ * definition in case of enlist param is false.
+ */
 struct nurs_producer_def *
 nurs_producer_register_json(json_t *json, uint16_t context_size, bool enlist)
 {
@@ -784,6 +806,16 @@ EXPORT_SYMBOL(nurs_producer_register_json);
  *   signal: string, optional
  * {s:s%,    s:s%,    s?i,          s?b,    s?o,    s:o,   s:o,    s?s%,     s?s%,        s?s%,  s?s%, s?s%    s?s%}
  *  version, name,    context_size, mtsafe, config, input, output, organize, disorganize, start, stop, interp, signal
+ */
+/**
+ * nurs_filter_register_json - register filter by JSON, jansson object
+ * \param json jansson json object
+ * \param context_size context size in byte for this filter
+ * \param enlist register this filter or just check json representation
+ *
+ * This function registers a filter by JSON jansson object and returns filter
+ * definition on success, or NULL on error. Or just returns filter definition in
+ * case of enlist param is false.
  */
 struct nurs_filter_def *
 nurs_filter_register_json(json_t *json, uint16_t context_size, bool enlist)
@@ -926,6 +958,16 @@ EXPORT_SYMBOL(nurs_filter_register_json);
  * {s:s%,    s:s%,    s?i,          s?b,    s?o,    s:o,   s?s,      s?s,         s?s,   s?s,  s?s,    s?s}
  *  version, name,    context_size, mtsafe, config, input, organize, disorganize, start, stop, interp, signal
  */
+/**
+ * nurs_consumer_register_json - register consumer by JSON, jansson object
+ * \param json jansson json object
+ * \param context_size context size in byte for this consumer
+ * \param enlist register this consumer or just check json representation
+ *
+ * This function registers a consumer by JSON jansson object and returns
+ * consumer definition on success, or NULL on error. Or just returns consumer
+ * definition in case of enlist param is false.
+ */
 struct nurs_consumer_def *
 nurs_consumer_register_json(json_t *json, uint16_t context_size, bool enlist)
 {
@@ -1046,6 +1088,16 @@ EXPORT_SYMBOL(nurs_consumer_register_json);
  *   signal: string, optional
  * {s:s%,    s:s%,    s?i,          s?b,    s?o,    s?s%      s?s%         s?s%   s?s%, s?s%,   s?s%}
  *  version, name,    context_size, mtsafe, config, organize, disorganize, start, stop, interp, signal
+ */
+/**
+ * nurs_coveter_register_json - register coveter by JSON, jansson object
+ * \param json jansson json object
+ * \param context_size context size in byte for this coveter
+ * \param enlist register this coveter or just check json representation
+ *
+ * This function registers a coveter by JSON jansson object and returns coveter
+ * definition on success, or NULL on error. Or just returns coveter definition
+ * in case of enlist param is false.
  */
 struct nurs_coveter_def *
 nurs_coveter_register_json(json_t *json, uint16_t context_size, bool enlist)
@@ -1180,6 +1232,15 @@ fail_decref:
 		def;							\
 	})
 
+/**
+ * nurs_producer_register_jsons - register producer by JSON encoded string.
+ * \param JSON encoded string
+ * \param context_size context size in byte for this coveter
+ *
+ * This function registers a producer by JSON string and returns producer
+ * definition on success, or NULL on error. It's a wrapper of
+ * nurs_producer_register_json()
+ */
 struct nurs_producer_def *
 nurs_producer_register_jsons(const char *input, uint16_t context_size)
 {
@@ -1187,6 +1248,14 @@ nurs_producer_register_jsons(const char *input, uint16_t context_size)
 }
 EXPORT_SYMBOL(nurs_producer_register_jsons);
 
+/**
+ * nurs_filter_register_jsons - register filter by JSON encoded string.
+ * \param JSON encoded string
+ * \param context_size context size in byte for this filter
+ *
+ * This function registers a filter by JSON string and returns filter definition
+ * on success, or NULL on error. It's a wrapper of nurs_filter_register_json()
+ */
 struct nurs_filter_def *
 nurs_filter_register_jsons(const char *input, uint16_t context_size)
 {
@@ -1194,6 +1263,15 @@ nurs_filter_register_jsons(const char *input, uint16_t context_size)
 }
 EXPORT_SYMBOL(nurs_filter_register_jsons);
 
+/**
+ * nurs_consumer_register_jsons - register consumer by JSON encoded string.
+ * \param JSON encoded string
+ * \param context_size context size in byte for this consumer
+ *
+ * This function registers a consumer by JSON string and returns consumer
+ * definition on success, or NULL on error. It's a wrapper of
+ * nurs_consumer_register_json()
+ */
 struct nurs_consumer_def *
 nurs_consumer_register_jsons(const char *input, uint16_t context_size)
 {
@@ -1201,6 +1279,15 @@ nurs_consumer_register_jsons(const char *input, uint16_t context_size)
 }
 EXPORT_SYMBOL(nurs_consumer_register_jsons);
 
+/**
+ * nurs_coveter_register_jsons - register coveter by JSON encoded string.
+ * \param JSON encoded string
+ * \param context_size context size in byte for this consumer
+ *
+ * This function registers a coveter by JSON string and returns coveter
+ * definition on success, or NULL on error. It's a wrapper of
+ * nurs_coveter_register_json()
+ */
 struct nurs_coveter_def *
 nurs_coveter_register_jsons(const char *input, uint16_t context_size)
 {
@@ -1208,6 +1295,15 @@ nurs_coveter_register_jsons(const char *input, uint16_t context_size)
 }
 EXPORT_SYMBOL(nurs_coveter_register_jsons);
 
+/**
+ * nurs_producer_register_jsons - register producer from JSON file
+ * \param fname file name
+ * \param context_size context size in byte for this consumer
+ *
+ * This function registers a producer from a file and returns producer
+ * definition on success, or NULL on error. It's a wrapper of
+ * nurs_producer_register_json()
+ */
 struct nurs_producer_def *
 nurs_producer_register_jsonf(const char *fname, uint16_t context_size)
 {
@@ -1215,6 +1311,14 @@ nurs_producer_register_jsonf(const char *fname, uint16_t context_size)
 }
 EXPORT_SYMBOL(nurs_producer_register_jsonf);
 
+/**
+ * nurs_filter_register_jsons - register filter from JSON file
+ * \param fname file name
+ * \param context_size context size in byte for this consumer
+ *
+ * This function registers a filter from a file and returns filter definition on
+ * success, or NULL on error. It's a wrapper of nurs_filter_register_json()
+ */
 struct nurs_filter_def *
 nurs_filter_register_jsonf(const char *fname, uint16_t context_size)
 {
@@ -1222,6 +1326,15 @@ nurs_filter_register_jsonf(const char *fname, uint16_t context_size)
 }
 EXPORT_SYMBOL(nurs_filter_register_jsonf);
 
+/**
+ * nurs_consumer_register_jsons - register consumer from JSON file
+ * \param fname file name
+ * \param context_size context size in byte for this consumer
+ *
+ * This function registers a consumer from a file and returns consumer
+ * definition on success, or NULL on error. It's a wrapper of
+ * nurs_consumer_register_json()
+ */
 struct nurs_consumer_def *
 nurs_consumer_register_jsonf(const char *fname, uint16_t context_size)
 {
@@ -1229,6 +1342,14 @@ nurs_consumer_register_jsonf(const char *fname, uint16_t context_size)
 }
 EXPORT_SYMBOL(nurs_consumer_register_jsonf);
 
+/**
+ * nurs_coveter_register_jsons - register coveter from JSON file
+ * \param fname file name
+ * \param context_size context size in byte for this consumer
+ *
+ * This function registers a coveter from a file and returns coveter definition
+ * on success, or NULL on error. It's a wrapper of nurs_coveter_register_json()
+ */
 struct nurs_coveter_def *
 nurs_coveter_register_jsonf(const char *fname, uint16_t context_size)
 {
@@ -1253,24 +1374,52 @@ static const char *name_in_json(json_t *json)
 	return name;
 }
 
+/**
+ * nurs_producer_unregister_json - unregister producer by jansson JSON
+ * \param json jansson JSON object
+ *
+ * This function unregisters a producer by jansson JSON object, looks only its
+ * name. Returns 0 on success or -1 on error.
+ */
 int nurs_producer_unregister_json(json_t *json)
 {
 	return nurs_producer_unregister_name(name_in_json(json));
 }
 EXPORT_SYMBOL(nurs_producer_unregister_json);
 
+/**
+ * nurs_filter_unregister_json - unregister filter by jansson JSON
+ * \param json jansson JSON object
+ *
+ * This function unregisters a filter by jansson JSON object, looks only its
+ * name. Returns 0 on success or -1 on error.
+ */
 int nurs_filter_unregister_json(json_t *json)
 {
 	return nurs_filter_unregister_name(name_in_json(json));
 }
 EXPORT_SYMBOL(nurs_filter_unregister_json);
 
+/**
+ * nurs_consumer_unregister_json - unregister consumer by jansson JSON
+ * \param json jansson JSON object
+ *
+ * This function unregisters a consumer by jansson JSON object, looks only its
+ * name. Returns 0 on success or -1 on error.
+ */
 int nurs_consumer_unregister_json(json_t *json)
 {
 	return nurs_consumer_unregister_name(name_in_json(json));
 }
 EXPORT_SYMBOL(nurs_consumer_unregister_json);
 
+/**
+ * nurs_coveter_unregister_json - unregister coveter by jansson JSON
+ * \param json jansson JSON object
+ *
+ * This function unregisters a coveter by jansson JSON object, looks only its
+ * name. Returns 0 on success or -1 on error.
+ */
 int nurs_coveter_unregister_json(json_t *json)
 {
 	return nurs_coveter_unregister_name(name_in_json(json));
@@ -1370,14 +1519,32 @@ decref:
 	return ret;
 }
 
+/**
+ * nurs_plugins_register_json - register plugins by JSON file.
+ * \param fname JSON file name
+ *
+ * This function registers plugins by jansson JSON object. Each plugin is
+ * represented by key, named 'producer', 'filter', 'consumer' and 'coveter'.
+ */
 int nurs_plugins_register_jsonf(const char *fname)
 {
 	return nurs_plugins_op_jsonf(true, fname);
 }
 EXPORT_SYMBOL(nurs_plugins_register_jsonf);
 
+/**
+ * nurs_plugins_unregister_json - unregister plugins by JSON file.
+ * \param fname JSON file name
+ *
+ * This function unregisters plugins by jansson JSON object. Each plugin is
+ * represented by key, named 'producer', 'filter', 'consumer' and 'coveter'.
+ */
 int nurs_plugins_unregister_jsonf(const char *fname)
 {
 	return nurs_plugins_op_jsonf(false, fname);
 }
 EXPORT_SYMBOL(nurs_plugins_unregister_jsonf);
+
+/**
+ * @}
+ */

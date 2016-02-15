@@ -516,13 +516,21 @@ struct nurs_coveter_def *
 int nurs_plugins_register_jsonf(const char *fname);
 int nurs_plugins_unregister_jsonf(const char *fname);
 
-enum nurs_return_t
-	nurs_propagate(struct nurs_producer *producer,
-		       struct nurs_output *output);
 void *nurs_producer_context(const struct nurs_producer *producer);
 void *nurs_plugin_context(const struct nurs_plugin *plugin);
 const struct nurs_config *nurs_producer_config(const struct nurs_producer *producer);
 const struct nurs_config *nurs_plugin_config(const struct nurs_plugin *plugin);
+
+/**
+ *  no doxygen comment below
+ */
+
+/*
+ * worker
+ */
+enum nurs_return_t
+	nurs_propagate(struct nurs_producer *producer,
+		       struct nurs_output *output);
 
 /*
  * ioset
