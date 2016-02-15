@@ -20,6 +20,61 @@
 #include <nurs/list.h>
 #include "internal.h"
 
+/**
+ * \defgroup nurs plugin interface
+ * @{
+ * Plugin type is classified in three:
+ *
+ * - Producer
+ *   This plugin acts data source. They get data from somewhere outside of
+ *   nursd, and convert it into a input for succeeding plugins.
+ *
+ * - Filter
+ *   Filter plugins interpret and/or filter data that was received from the
+ *   Producer or Filter Plugin and create a input for succeeding plugins.
+ *
+ * - Consumer / Coveter
+ *   This plugins describe how and where to put the information gained by the
+ *   Producer Plugin and processed by one or more Filter Plugins. Coveter is
+ *   special Consumer, which is not specify input but accepts all inputs in a
+ *   stack sequense as optional. i.e. handles wildcard input.
+ *
+ * Plugins are defined by struct named with suffix _def, its common fields are:
+ *
+ * - version: current nurs version string
+ * - name: the name, can be seemed as class name
+ * - context_size: the mem size which nurs allocating for each plugin instance.
+ * - config_def: its configuration definition.
+ *
+ * Additionaly, plugin has callbacks which nursd core calls. These callback
+ * arguments vary depending on plugin type. It will be called:
+ *
+ * - organize
+ *   The first function which nursd will call. Plugins may open socket, files to
+ *   prepare start callback will be called.
+ *
+ * - disorganize
+ *   The last callback, will be called just before nurs will exit. Resources
+ *   allocated at organize needs to be released.
+ *
+ * - start
+ *   It will be called literally to start. Producer may register their fds and
+ *   timers.
+ *
+ * - stop
+ *   This will be called before disorganize callback. It's not implemented but
+ *   restart faculty may call it combined with start.
+ *
+ * - signal
+ *   This callback will be called when signal arrived. Signals currently
+ *   delivered is - SIGCHLD, SIGALRM, SIGUSR1 and SIGUSR2. And SIGINT and
+ *   SIGTERM will be delivered just before nursd will exit.
+ *
+ * - interp (filter, consumer and coveter only)
+ *   Main callback for filter and consumer. Producer propagates its output, then
+ *   filter and consumer accept it as argument of this callback.
+ */
+
 bool nurs_show_pluginfo; /* main.c */
 
 static LIST_HEAD(nurs_plugins);
@@ -92,6 +147,13 @@ static struct nurs_plugin *find_plugin(const char *id)
 	return NULL;
 }
 
+/**
+ * nurs_producer_context - obtail private data
+ * \param producer passed by callbacks
+ *
+ * This function returns allocated memory, specific for a instance and its size
+ * is specified in definition struct, context_size field.
+ */
 void *nurs_producer_context(const struct nurs_producer *producer)
 {
 	/* plugin NULL check? */
@@ -99,6 +161,13 @@ void *nurs_producer_context(const struct nurs_producer *producer)
 }
 EXPORT_SYMBOL(nurs_producer_context);
 
+/**
+ * nurs_plugin_context - obtail private data
+ * \param plugin passed by callbacks
+ *
+ * This function returns allocated memory, specific for a instance and its size
+ * is specified in definition struct, context_size field.
+ */
 void *nurs_plugin_context(const struct nurs_plugin *plugin)
 {
 	/* plugin NULL check? */
@@ -120,6 +189,12 @@ void *nurs_plugin_context(const struct nurs_plugin *plugin)
 }
 EXPORT_SYMBOL(nurs_plugin_context);
 
+/**
+ * nurs_producer_context - obtail private data
+ * \param producer passed by callbacks
+ *
+ * This function returns struct nurs_config from producer.
+ */
 const struct nurs_config *
 nurs_producer_config(const struct nurs_producer *producer)
 {
@@ -128,6 +203,12 @@ nurs_producer_config(const struct nurs_producer *producer)
 }
 EXPORT_SYMBOL(nurs_producer_config);
 
+/**
+ * nurs_producer_context - obtail private data
+ * \param plugin passed by callbacks
+ *
+ * This function returns struct nurs_config from plugin.
+ */
 const struct nurs_config *
 nurs_plugin_config(const struct nurs_plugin *plugin)
 {
@@ -829,6 +910,14 @@ static int plugin_resolve_cb(struct nurs_plugin_def *def)
 /*
  * plugin specific
  */
+
+/**
+ * nurs_producer_register - register producer by definition
+ * \param producer producer definition
+ *
+ * This function register producer class by struct nurs_producer_def, returns 0
+ * on success or -1 on error.
+ */
 int nurs_producer_register(struct nurs_producer_def *producer)
 {
 	enum nurs_plugin_type type = NURS_PLUGIN_T_PRODUCER;
@@ -844,6 +933,13 @@ int nurs_producer_register(struct nurs_producer_def *producer)
 }
 EXPORT_SYMBOL(nurs_producer_register);
 
+/**
+ * nurs_producer_unregister - unregister producer by definition
+ * \param producer producer definition
+ *
+ * This function unregister producer class by name in struct nurs_producer_def,
+ * returns 0 on success or -1 on error.
+ */
 int nurs_producer_unregister(struct nurs_producer_def *def)
 {
 	if (!def) {
@@ -854,12 +950,26 @@ int nurs_producer_unregister(struct nurs_producer_def *def)
 }
 EXPORT_SYMBOL(nurs_producer_unregister);
 
+/**
+ * nurs_producer_unregister_name - unregister producer by name
+ * \param name producer name
+ *
+ * This function unregister producer class by name, returns 0 on success or -1
+ * on error.
+ */
 int nurs_producer_unregister_name(const char *name)
 {
 	return plugin_unregister(NURS_PLUGIN_T_PRODUCER, name);
 }
 EXPORT_SYMBOL(nurs_filter_unregister_name);
 
+/**
+ * nurs_filter_register - register filter by definition
+ * \param filter filter definition
+ *
+ * This function register filter class by struct nurs_filter_def, returns 0 on
+ * success or -1 on error.
+ */
 int nurs_filter_register(struct nurs_filter_def *filter)
 {
 	enum nurs_plugin_type type = NURS_PLUGIN_T_FILTER;
@@ -875,6 +985,13 @@ int nurs_filter_register(struct nurs_filter_def *filter)
 }
 EXPORT_SYMBOL(nurs_filter_register);
 
+/**
+ * nurs_filter_unregister - unregister filter by definition
+ * \param filter filter definition
+ *
+ * This function unregister filter class by name in struct nurs_filter_def,
+ * returns 0 on success or -1 on error.
+ */
 int nurs_filter_unregister(struct nurs_filter_def *def)
 {
 	if (!def) return -1;
@@ -882,12 +999,26 @@ int nurs_filter_unregister(struct nurs_filter_def *def)
 }
 EXPORT_SYMBOL(nurs_filter_unregister);
 
+/**
+ * nurs_filter_unregister_name - unregister filter by name
+ * \param name filter name
+ *
+ * This function unregister filter class by name, returns 0 on success or -1 on
+ * error.
+ */
 int nurs_filter_unregister_name(const char *name)
 {
 	return plugin_unregister(NURS_PLUGIN_T_FILTER, name);
 }
 EXPORT_SYMBOL(nurs_filter_unregister_name);
 
+/**
+ * nurs_consumer_register - register consumer by definition
+ * \param consumer consumer definition
+ *
+ * This function register consumer class by struct nurs_consumer_def, returns 0
+ * on success or -1 on error.
+ */
 int nurs_consumer_register(struct nurs_consumer_def *def)
 {
 	enum nurs_plugin_type type = NURS_PLUGIN_T_CONSUMER;
@@ -903,6 +1034,13 @@ int nurs_consumer_register(struct nurs_consumer_def *def)
 }
 EXPORT_SYMBOL(nurs_consumer_register);
 
+/**
+ * nurs_consumer_unregister - unregister consumer by definition
+ * \param consumer consumer definition
+ *
+ * This function unregister consumer class by name in struct nurs_consumer_def,
+ * returns 0 on success or -1 on error.
+ */
 int nurs_consumer_unregister(struct nurs_consumer_def *def)
 {
 	if (!def) return -1;
@@ -910,12 +1048,26 @@ int nurs_consumer_unregister(struct nurs_consumer_def *def)
 }
 EXPORT_SYMBOL(nurs_consumer_unregister);
 
+/**
+ * nurs_consumer_unregister_name - unregister consumer by name
+ * \param name consumer name
+ *
+ * This function unregister consumer class by name, returns 0 on success or -1
+ * on error.
+ */
 int nurs_consumer_unregister_name(const char *name)
 {
 	return plugin_unregister(NURS_PLUGIN_T_CONSUMER, name);
 }
 EXPORT_SYMBOL(nurs_consumer_unregister_name);
 
+/**
+ * nurs_coveter_register - register coveter by definition
+ * \param coveter coveter definition
+ *
+ * This function register covter class by struct nurs_coveter_def, returns 0 on
+ * success or -1 on error.
+ */
 int nurs_coveter_register(struct nurs_coveter_def *def)
 {
 	enum nurs_plugin_type type = NURS_PLUGIN_T_COVETER;
@@ -931,6 +1083,13 @@ int nurs_coveter_register(struct nurs_coveter_def *def)
 }
 EXPORT_SYMBOL(nurs_coveter_register);
 
+/**
+ * nurs_producer_unregister - unregister coveter by definition
+ * \param coveter coveter definition
+ *
+ * This function unregister coveter class by name in struct nurs_coveter_def,
+ * returns 0 on success or -1 on error.
+ */
 int nurs_coveter_unregister(struct nurs_coveter_def *def)
 {
 	if (!def) return -1;
@@ -938,6 +1097,13 @@ int nurs_coveter_unregister(struct nurs_coveter_def *def)
 }
 EXPORT_SYMBOL(nurs_coveter_unregister);
 
+/**
+ * nurs_coveter_unregister_name - unregister coveter by name
+ * \param name coveter name
+ *
+ * This function unregister coveter class by name, returns 0 on success or -1 on
+ * error.
+ */
 int nurs_coveter_unregister_name(const char *name)
 {
 	return plugin_unregister(NURS_PLUGIN_T_COVETER, name);
@@ -1533,3 +1699,7 @@ void plugins_order_group(void)
 
 	list_replace(&ordered, &nurs_plugins);
 }
+
+/**
+ * @}
+ */

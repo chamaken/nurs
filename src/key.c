@@ -19,7 +19,7 @@
 #include "internal.h"
 
 /**
- * \defgroup nurs config
+ * \defgroup nurs input / output
  * @{
  * struct nurs_input is defined by struct nurs_input_def and
  * and struct nurs_output is by struct nurs_output_def in plugin definition.
