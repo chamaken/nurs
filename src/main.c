@@ -78,7 +78,7 @@ static int nurs(char *cfname)
 {
 	struct nurs_config *config;
 	int nworkers, niosets;
-	bool validate_output;
+	bool validate_output, organized = false, started = false;
 	int ret = EXIT_SUCCESS;
 
 	nurs_log(NURS_INFO, "initialize plugins\n");
@@ -170,12 +170,15 @@ static int nurs(char *cfname)
 		ret = EXIT_FAILURE;
 		goto stop_workers;
 	}
+	organized = true;
+
 	nurs_log(NURS_INFO, "start plugins\n");
 	if (plugins_start()) {
 		nurs_log(NURS_FATAL, "failed to start plugins\n");
 		ret = EXIT_FAILURE;
-		goto disorganize_plugin;
+		goto stop_workers;
 	}
+	started = true;
 
 	nurs_log(NURS_INFO, "enter main loop\n");
 	if (nfd_loop()) {
@@ -184,14 +187,21 @@ static int nurs(char *cfname)
 		ret = EXIT_FAILURE;
 	}
 
+stop_workers:
+	nurs_log(NURS_INFO, "stop workers\n");
+	if (workers_stop()) {
+		nurs_log(NURS_ERROR, "failed to stop workers\n");
+		ret = EXIT_FAILURE;
+	}
+
 	nurs_log(NURS_INFO, "stop plugins\n");
-	if (plugins_stop(true)) {
+	if (started && plugins_stop(true)) {
 		nurs_log(NURS_ERROR, "failed to stop plugins\n");
 		ret = EXIT_FAILURE;
 	}
-disorganize_plugin:
+
 	nurs_log(NURS_INFO, "disorganize plugins\n");
-	if (plugins_disorganize(true)) {
+	if (organized && plugins_disorganize(true)) {
 		nurs_log(NURS_ERROR, "failed to disorganize plugins\n");
 		ret = EXIT_FAILURE;
 	}
@@ -199,12 +209,6 @@ disorganize_plugin:
 	nurs_log(NURS_INFO, "fini nssocket\n");
 	nurs_fini_nssocket(true);
 
-stop_workers:
-	nurs_log(NURS_INFO, "stop workers\n");
-	if (workers_stop()) {
-		nurs_log(NURS_ERROR, "failed to stop workers\n");
-		ret = EXIT_FAILURE;
-	}
 unsettle_stack:
 	nurs_log(NURS_INFO, "unsettle stacks\n");
 	if (stack_unsettle()) {
