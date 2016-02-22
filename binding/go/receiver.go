@@ -175,14 +175,6 @@ func (producer *Producer) Propagate(output *Output) (ReturnType, error) {
 	return nursPropagate(producer, output)
 }
 
-func (producer *Producer) Context() unsafe.Pointer {
-	return nursProducerContext(producer)
-}
-
-func (plugin *Plugin) Context() unsafe.Pointer {
-	return nursPluginContext(plugin)
-}
-
 func (producer *Producer) Config() *Config {
 	return nursProducerConfig(producer)
 }
