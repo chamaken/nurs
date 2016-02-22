@@ -176,7 +176,7 @@ static struct nurs_output_def nfct_output = {
 		},
 		[NFCT_CT]	= {
 			.type	= NURS_KEY_T_POINTER,
-			.flags	= NURS_OKEY_F_OPTIONAL,
+			.flags	= NURS_OKEY_F_ALWAYS,
 			.name	= "nfct",
 		},
 		[NFCT_DESTROY_CT] = {
