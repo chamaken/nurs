@@ -392,17 +392,10 @@ func nursPropagate(producer *Producer, output *Output) (ReturnType, error) {
 	return ReturnType(ret), err
 }
 
+// disable using plugin instance private area. see:
+//     https://golang.org/cmd/cgo/#hdr-Passing_pointers
 // void *nurs_producer_context(const struct nurs_producer *producer);
-func nursProducerContext(producer *Producer) unsafe.Pointer {
-	ret, _ := C.nurs_producer_context((*C.struct_nurs_producer)(producer))
-	return ret
-}
-
 // void *nurs_plugin_context(const struct nurs_plugin *plugin);
-func nursPluginContext(plugin *Plugin) unsafe.Pointer {
-	ret, _ := C.nurs_plugin_context((*C.struct_nurs_plugin)(plugin))
-	return ret
-}
 
 // const struct nurs_config *nurs_producer_config(const struct nurs_producer *producer);
 func nursProducerConfig(producer *Producer) *Config {
