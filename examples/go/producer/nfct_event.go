@@ -34,6 +34,8 @@ type nfctPriv struct {
 	fd	*nurs.Fd
 }
 
+var privs = make(map[*nurs.Producer] *nfctPriv)
+
 var (
 	idx_ct_event,
 	idx_oob_family,
@@ -142,7 +144,7 @@ func dataCb(nlh *mnl.Nlmsghdr, data interface{}) (int, syscall.Errno) {
 
 func fdCb(fd int, when nurs.FdEvent, data interface{}) nurs.ReturnType {
 	producer := data.(*nurs.Producer)
-	priv := (*nfctPriv)(producer.Context())
+	priv := privs[producer]
 	buf := make([]byte, mnl.MNL_SOCKET_BUFFER_SIZE)
 
 	nrecv, err := priv.nl.Recvfrom(buf)
@@ -161,7 +163,7 @@ func fdCb(fd int, when nurs.FdEvent, data interface{}) nurs.ReturnType {
 func organize(cproducer *C.struct_nurs_producer) C.enum_nurs_return_t {
 	var err error
 	producer := (*nurs.Producer)(cproducer)
-	priv := (*nfctPriv)(producer.Context())
+	priv := &nfctPriv{}
 
 	priv.nl, err = mnl.NewSocket(C.NETLINK_NETFILTER)
 	if err != nil {
@@ -182,6 +184,7 @@ func organize(cproducer *C.struct_nurs_producer) C.enum_nurs_return_t {
 		return C.enum_nurs_return_t(nurs.RET_ERROR)
 	}
 
+	privs[producer] = priv
 	return C.enum_nurs_return_t(nurs.RET_OK)
 }
 
@@ -189,7 +192,7 @@ func organize(cproducer *C.struct_nurs_producer) C.enum_nurs_return_t {
 func disorganize(cproducer *C.struct_nurs_producer) C.enum_nurs_return_t {
 	var err error
 	producer := (*nurs.Producer)(cproducer)
-	priv := (*nfctPriv)(producer.Context())
+	priv := privs[producer]
 	failed := false
 
 	priv.fd.Destroy()
@@ -201,13 +204,15 @@ func disorganize(cproducer *C.struct_nurs_producer) C.enum_nurs_return_t {
 	if failed {
 		return C.enum_nurs_return_t(nurs.RET_ERROR)
 	}
+
+	delete(privs, producer)
 	return C.enum_nurs_return_t(nurs.RET_OK)
 }
 
 //export start
 func start(cproducer *C.struct_nurs_producer) C.enum_nurs_return_t {
 	producer := (*nurs.Producer)(cproducer)
-	priv := (*nfctPriv)(producer.Context())
+	priv := privs[producer]
 
 	if err := priv.fd.Register(fdCb, producer); err != nil {
 		nurs.Log(nurs.ERROR, "failed to register fd: %s\n", err)
@@ -220,7 +225,7 @@ func start(cproducer *C.struct_nurs_producer) C.enum_nurs_return_t {
 //export stop
 func stop(cproducer *C.struct_nurs_producer) C.enum_nurs_return_t {
 	producer := (*nurs.Producer)(cproducer)
-	priv := (*nfctPriv)(producer.Context())
+	priv := privs[producer]
 
 	if err := priv.fd.Unregister(); err != nil {
 		nurs.Log(nurs.ERROR, "failed to unregister fd: %s\n", err)
@@ -298,7 +303,6 @@ var jsonrc = `{
 
 
 func init() {
-	var priv nfctPriv
 	defkeys, err := nurs.ParseJsonKeys(jsonrc)
 	if err != nil {
 		nurs.Log(nurs.ERROR, "failed to parse json rc: %s\n", err);
@@ -318,7 +322,7 @@ func init() {
 	idx_orig_ip6_daddr, err	= defkeys.OutputIndex("orig.ip6.daddr")
 	idx_nfct, err		= defkeys.OutputIndex("nfct")
 
-	nurs.ProducerRegisterJsons(jsonrc, uint16(unsafe.Sizeof(priv)))
+	nurs.ProducerRegisterJsons(jsonrc, 0)
 }
 
 func main() {}

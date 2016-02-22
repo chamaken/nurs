@@ -17,7 +17,6 @@ import "C"
 import (
 	"os"
 	"log"
-	"unsafe"
 
 	nfct "github.com/chamaken/cgolmnfct"
 	nurs "../../../binding/go"
@@ -28,11 +27,13 @@ type nfctPriv struct {
 	log	*log.Logger
 }
 
+var privs = make(map[*nurs.Plugin] *nfctPriv)
+
 //export organize
 func organize(cplugin *C.struct_nurs_plugin) C.enum_nurs_return_t {
 	plugin := (*nurs.Plugin)(cplugin)
 	config := plugin.Config()
-	priv := (*nfctPriv)(plugin.Context())
+	priv := &nfctPriv{}
 	var err error
 
 	fname, _ := config.String(0)
@@ -41,28 +42,32 @@ func organize(cplugin *C.struct_nurs_plugin) C.enum_nurs_return_t {
 		nurs.Log(nurs.ERROR, "failed to open file %s: %s\n", fname, err)
 		return C.enum_nurs_return_t(nurs.RET_ERROR)
 	}
+
 	priv.log = log.New(priv.file, "", log.LstdFlags)
 
+	privs[plugin] = priv;
 	return C.enum_nurs_return_t(nurs.RET_OK)
 }
 
 //export disorganize
 func disorganize(cplugin *C.struct_nurs_plugin) C.enum_nurs_return_t {
 	plugin := (*nurs.Plugin)(cplugin)
-	priv := (*nfctPriv)(plugin.Context())
+	priv := privs[plugin]
 
 	priv.log = log.New(os.Stderr, "", log.LstdFlags)
 	if err := priv.file.Close(); err != nil {
 		nurs.Log(nurs.ERROR, "failed to close logfile: %s\n", err)
 		return C.enum_nurs_return_t(nurs.RET_ERROR)
 	}
+
+	delete(privs, plugin)
 	return C.enum_nurs_return_t(nurs.RET_OK)
 }
 
 //export interp
 func interp(cplugin *C.struct_nurs_plugin, cinput *C.struct_nurs_input) C.enum_nurs_return_t {
 	plugin := (*nurs.Plugin)(cplugin)
-	priv := (*nfctPriv)(plugin.Context())
+	priv := privs[plugin]
 	input := (*nurs.Input)(cinput)
 	buf := make([]byte, 4096)
 
@@ -111,8 +116,7 @@ var jsonrc = `{
 }`
 
 func init() {
-	var priv nfctPriv
-	nurs.ConsumerRegisterJsons(jsonrc, uint16(unsafe.Sizeof(priv)))
+	nurs.ConsumerRegisterJsons(jsonrc, 0)
 }
 
 func main() {}
