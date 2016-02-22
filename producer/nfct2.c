@@ -169,7 +169,7 @@ static struct nurs_output_def nfct_output = {
 		NFCT_OUTPUT_KEYS_DEFAULT,
 		[NFCT_CT]	= {
 			.type	= NURS_KEY_T_POINTER,
-			.flags	= NURS_OKEY_F_ACTIVE | NURS_OKEY_F_DESTRUCT,
+			.flags	= NURS_OKEY_F_ALWAYS | NURS_OKEY_F_DESTRUCT,
 			.name	= "nfct",
 			.destructor = (void (*)(void *))nfct_destroy,
 		},

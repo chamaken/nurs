@@ -258,7 +258,7 @@
 	<term>validate_output (boolean)</term>
 	<listitem>
 	  <para>
-	    Check output values, which flag is NURS_OKEY_F_ACTIVE, is valid or
+	    Check output values, which flag is NURS_OKEY_F_ALWAYS, is valid or
 	    not at runtime, for debugging purpose.
 	  </para>
 	</listitem>

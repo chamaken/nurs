@@ -40,12 +40,12 @@ static struct nurs_output_def tick_output = {
 		[TICK_OUTPUT_COUNTER] = {
 			.name	= "counter",
 			.type	= NURS_KEY_T_UINT64,
-			.flags	= NURS_OKEY_F_ACTIVE,
+			.flags	= NURS_OKEY_F_ALWAYS,
 		},
 		[TICK_OUTPUT_MYNAME] = {
 			.name	= "producer.name",
 			.type	= NURS_KEY_T_STRING,
-			.flags	= NURS_OKEY_F_ACTIVE,
+			.flags	= NURS_OKEY_F_ALWAYS,
 			.len	= 32,
 		},
 	},

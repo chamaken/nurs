@@ -83,23 +83,23 @@ static struct nurs_output_def nfacct_output = {
 		[NFACCT_OUTPUT_NAME] = {
 			.name	= "sum.name",
 			.type	= NURS_KEY_T_STRING,
-			.flags	= NURS_OKEY_F_ACTIVE,
+			.flags	= NURS_OKEY_F_ALWAYS,
 			.len	= NFACCT_NAME_MAX,
 		},
 		[NFACCT_OUTPUT_PKTS] = {
 			.name	= "sum.pkts",
 			.type	= NURS_KEY_T_UINT64,
-			.flags	= NURS_OKEY_F_ACTIVE,
+			.flags	= NURS_OKEY_F_ALWAYS,
 		},
 		[NFACCT_OUTPUT_BYTES] = {
 			.name	= "sum.bytes",
 			.type	= NURS_KEY_T_UINT64,
-			.flags	= NURS_OKEY_F_ACTIVE,
+			.flags	= NURS_OKEY_F_ALWAYS,
 		},
 		[NFACCT_OUTPUT_RAW] = {
 			.name	= "nfacct",
 			.type	= NURS_KEY_T_EMBED,
-			.flags	= NURS_OKEY_F_ACTIVE,
+			.flags	= NURS_OKEY_F_ALWAYS,
 			.len	= 4096, /* XXX: sizeof struct nfacct */
 		},
 		[NFACCT_OUTPUT_TIME_SEC] = {

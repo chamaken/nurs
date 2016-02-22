@@ -70,7 +70,7 @@ static int output_key_flag(const char *const flag)
 		return -1;
 	}
 
-	ccmp(flag, NURS_OKEY_F_ACTIVE);
+	ccmp(flag, NURS_OKEY_F_ALWAYS);
 	ccmp(flag, NURS_OKEY_F_FREE);
 	ccmp(flag, NURS_OKEY_F_DESTRUCT);
 	ccmp(flag, NURS_OKEY_F_OPTIONAL);

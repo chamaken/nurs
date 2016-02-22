@@ -292,7 +292,7 @@ static struct nurs_output_def nflog_output = {
 		[NFLOG_OUTPUT_OOB_HOOK] = {
 			.name	= "oob.hook",
 			.type	= NURS_KEY_T_UINT8,
-			.flags	= NURS_OKEY_F_ACTIVE, /* from NFULA_PACKET_HDR */
+			.flags	= NURS_OKEY_F_ALWAYS, /* from NFULA_PACKET_HDR */
 			.ipfix	= {
 				.vendor   = IPFIX_VENDOR_NETFILTER,
 				.field_id = IPFIX_NF_hook,
@@ -329,12 +329,12 @@ static struct nurs_output_def nflog_output = {
 		[NFLOG_OUTPUT_OOB_FAMILY] = {
 			.name	= "oob.family",
 			.type	= NURS_KEY_T_UINT8,
-			.flags	= NURS_OKEY_F_ACTIVE,
+			.flags	= NURS_OKEY_F_ALWAYS,
 		},
 		[NFLOG_OUTPUT_OOB_PROTOCOL] = {
 			.name	= "oob.protocol",
 			.type	= NURS_KEY_T_UINT16,
-			.flags	= NURS_OKEY_F_ACTIVE, /* from NFULA_PACKET_HDR */
+			.flags	= NURS_OKEY_F_ALWAYS, /* from NFULA_PACKET_HDR */
 		},
 		[NFLOG_OUTPUT_OOB_UID] = {
 			.name	= "oob.uid",
@@ -360,7 +360,7 @@ static struct nurs_output_def nflog_output = {
 			/* struct nlattr *attr[NFULA_MAX+1] = {}; */
 			.name	= "nflog.attrs",
 			.type	= NURS_KEY_T_EMBED,
-			.flags	= NURS_OKEY_F_ACTIVE,
+			.flags	= NURS_OKEY_F_ALWAYS,
 			.len	= sizeof(struct nlattr *) * (NFULA_MAX + 1),
 		},
 		[NFLOG_OUTPUT_FRAME] = {

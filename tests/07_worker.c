@@ -47,12 +47,12 @@ static struct nurs_output_def producer_output = {
 		[PRODUCER_OKEY_0] = {
 			.name = "key.1",
 			.type	= NURS_KEY_T_BOOL,
-			.flags	= NURS_OKEY_F_ACTIVE,
+			.flags	= NURS_OKEY_F_ALWAYS,
 		},
 		[PRODUCER_OKEY_1] = {
 			.name = "key.2",
 			.type	= NURS_KEY_T_BOOL,
-			.flags	= NURS_OKEY_F_ACTIVE,
+			.flags	= NURS_OKEY_F_ALWAYS,
 		},
 	},
 };

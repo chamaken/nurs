@@ -49,7 +49,7 @@
 	},							\
 	[NFCT_ORIG_IP_PROTOCOL]	= {				\
 		.type	= NURS_KEY_T_UINT8,			\
-		.flags	= NURS_OKEY_F_ACTIVE,			\
+		.flags	= NURS_OKEY_F_ALWAYS,			\
 		.name	= "orig.ip.protocol",			\
 		.ipfix	= {					\
 			.vendor   = IPFIX_VENDOR_IETF,		\
@@ -112,7 +112,7 @@
 	},							\
 	[NFCT_REPLY_IP_PROTOCOL]	= {			\
 		.type	= NURS_KEY_T_UINT8,			\
-		.flags	= NURS_OKEY_F_ACTIVE,			\
+		.flags	= NURS_OKEY_F_ALWAYS,			\
 		.name	= "reply.ip.protocol",			\
 		/* dup to "orig.ip.protocol"			\
 		 * .ipfix	= {				\
@@ -195,7 +195,7 @@
 	},						    	\
 	[NFCT_CT_EVENT]	= {				    	\
 		.type	= NURS_KEY_T_UINT32,		    	\
-		.flags	= NURS_OKEY_F_ACTIVE,		    	\
+		.flags	= NURS_OKEY_F_ALWAYS,		    	\
 		.name	= "ct.event",			    	\
 	},						    	\
 	[NFCT_FLOW_START_SEC]	= {			    	\
@@ -228,7 +228,7 @@
 	},						    	\
 	[NFCT_OOB_FAMILY]	= {			    	\
 		.type	= NURS_KEY_T_UINT8,		    	\
-		.flags	= NURS_OKEY_F_ACTIVE,		    	\
+		.flags	= NURS_OKEY_F_ALWAYS,		    	\
 		.name	= "oob.family",			    	\
 	},						    	\
 	[NFCT_ORIG_IP6_SADDR]	= {				\

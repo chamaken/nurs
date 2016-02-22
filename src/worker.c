@@ -669,7 +669,7 @@ static int really_validate_output(const char *id,
 	int ret = 0;
 
 	for (i = 0; i < output->len; i++) {
-		if (!(output->keys[i].def->flags & NURS_OKEY_F_ACTIVE))
+		if (!(output->keys[i].def->flags & NURS_OKEY_F_ALWAYS))
 			continue;
 		if (!(output->keys[i].flags & NURS_KEY_F_VALID)) {
 			nurs_log(NURS_ERROR, "not valid active output: %s@%s\n",

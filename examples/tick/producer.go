@@ -101,10 +101,10 @@ const jsonrc = `{
     "output" : [
 	{ "name": "counter",
 	  "type": "NURS_KEY_T_UINT64",
-	  "flags": ["NURS_OKEY_F_ACTIVE"] },
+	  "flags": ["NURS_OKEY_F_ALWAYS"] },
 	{ "name": "producer.name",
 	  "type": "NURS_KEY_T_STRING",
-	  "flags": ["NURS_OKEY_F_ACTIVE"],
+	  "flags": ["NURS_OKEY_F_ALWAYS"],
 	  "len":  32 }
     ],
     "organize":		"tickOrganize",
