@@ -13,7 +13,6 @@ package main
 // #cgo CFLAGS: -I../../include
 // #include <nurs/nurs.h>
 import "C"
-import "unsafe"
 import nurs "../../binding/go"
 
 type tickPriv struct {
@@ -22,9 +21,11 @@ type tickPriv struct {
 	myname	string
 }
 
+var privs = make(map[*nurs.Producer] *tickPriv)
+
 func timerCb(timer *nurs.Timer, data interface{}) nurs.ReturnType {
 	producer := data.(*nurs.Producer)
-	priv := (*tickPriv)(producer.Context())
+	priv := privs[producer]
 	output, _ := producer.GetOutput()
 
 	output.SetU64(0, priv.counter)
@@ -39,7 +40,7 @@ func timerCb(timer *nurs.Timer, data interface{}) nurs.ReturnType {
 func tickOrganize(cproducer *C.struct_nurs_producer) C.enum_nurs_return_t {
 	var err error
 	producer := (*nurs.Producer)(cproducer)
-	priv := (*tickPriv)(producer.Context())
+	priv := &tickPriv{}
 
 	if priv.timer, err = nurs.NewTimer(timerCb, producer); err != nil {
 		nurs.Log(nurs.ERROR, "failed to create timer\n")
@@ -48,26 +49,29 @@ func tickOrganize(cproducer *C.struct_nurs_producer) C.enum_nurs_return_t {
 
 	config := producer.Config()
 	priv.myname, _ = config.String(0)
+
+	privs[producer] = priv
 	return C.enum_nurs_return_t(nurs.RET_OK)
 }
 
 //export tickDisorganize
 func tickDisorganize(cproducer *C.struct_nurs_producer) C.enum_nurs_return_t {
 	producer := (*nurs.Producer)(cproducer)
-	priv := (*tickPriv)(producer.Context())
+	priv := privs[producer]
 
 	if err := priv.timer.Destroy(); err != nil {
 		nurs.Log(nurs.ERROR, "failed to destroy timer\n")
 		return C.enum_nurs_return_t(nurs.RET_ERROR)
 	}
 
+	delete(privs, producer)
 	return C.enum_nurs_return_t(nurs.RET_OK)
 }
 
 //export tickStart
 func tickStart(cproducer *C.struct_nurs_producer) C.enum_nurs_return_t {
 	producer := (*nurs.Producer)(cproducer)
-	priv := (*tickPriv)(producer.Context())
+	priv := privs[producer]
 
 	if err := priv.timer.AddInterval(1, 1); err != nil {
 		nurs.Log(nurs.ERROR, "failed to add itimer\n")
@@ -80,7 +84,7 @@ func tickStart(cproducer *C.struct_nurs_producer) C.enum_nurs_return_t {
 //export tickStop
 func tickStop(cproducer *C.struct_nurs_producer) C.enum_nurs_return_t {
 	producer := (*nurs.Producer)(cproducer)
-	priv := (*tickPriv)(producer.Context())
+	priv := privs[producer]
 
 	if err := priv.timer.Del(); err != nil {
 		nurs.Log(nurs.ERROR, "failed to del timer\n")
@@ -114,8 +118,7 @@ const jsonrc = `{
 }`
 
 func init() {
-	var priv tickPriv
-	nurs.ProducerRegisterJsons(jsonrc, uint16(unsafe.Sizeof(priv)))
+	nurs.ProducerRegisterJsons(jsonrc, 0)
 }
 
 func main() {}
