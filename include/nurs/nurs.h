@@ -107,14 +107,14 @@ enum nurs_key_type {
 };
 
 enum nurs_ikey_flag {
-	NURS_IKEY_F_REQUIRED	= (1<<1),	/* & OKEY_F_ACTIVE */
+	NURS_IKEY_F_REQUIRED	= (1<<1),	/* & OKEY_F_ALWAYS */
 	NURS_IKEY_F_OPTIONAL	= (1<<2),
 	NURS_IKEY_F_ANY		= (1<<3),
 };
 
 enum nurs_okey_flag {
 	/* no flags means the value is scalar and will always be set */
-	NURS_OKEY_F_ACTIVE	= (0x0100<<0),	/* always contains valid result */
+	NURS_OKEY_F_ALWAYS	= (0x0100<<0),	/* always contains valid result */
 	NURS_OKEY_F_FREE	= (0x0100<<1),	/* ptr needs to be free()d */
 	NURS_OKEY_F_DESTRUCT	= (0x0100<<2),	/* call destructor, .type must be POINTER */
 	NURS_OKEY_F_OPTIONAL	= (0x0100<<3),	/* this key is optional */

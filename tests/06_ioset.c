@@ -73,12 +73,12 @@ static struct nurs_output_def producer1_output = {
 		[PRODUCER1_OKEY_0] = {
 			.name = "key.11",
 			.type	= NURS_KEY_T_BOOL,
-			.flags	= NURS_OKEY_F_ACTIVE,
+			.flags	= NURS_OKEY_F_ALWAYS,
 		},
 		[PRODUCER1_OKEY_1] = {
 			.name = "key.12",
 			.type	= NURS_KEY_T_BOOL,
-			.flags	= NURS_OKEY_F_ACTIVE,
+			.flags	= NURS_OKEY_F_ALWAYS,
 		},
 	},
 };
@@ -88,12 +88,12 @@ static struct nurs_output_def producer2_output = {
 		[PRODUCER2_OKEY_0] = {
 			.name = "key.21",
 			.type	= NURS_KEY_T_BOOL,
-			.flags	= NURS_OKEY_F_ACTIVE,
+			.flags	= NURS_OKEY_F_ALWAYS,
 		},
 		[PRODUCER2_OKEY_1] = {
 			.name = "key.22",
 			.type	= NURS_KEY_T_BOOL,
-			.flags	= NURS_OKEY_F_ACTIVE,
+			.flags	= NURS_OKEY_F_ALWAYS,
 		},
 	},
 };
@@ -119,12 +119,12 @@ static struct nurs_output_def filter1_output = {
 		[FILTER1_OKEY_0] = {
 			.name	= "key.31",
 			.type	= NURS_KEY_T_BOOL,
-			.flags	= NURS_OKEY_F_ACTIVE,
+			.flags	= NURS_OKEY_F_ALWAYS,
 		},
 		[FILTER1_OKEY_1] = {
 			.name	= "key.32",
 			.type	= NURS_KEY_T_BOOL,
-			.flags	= NURS_OKEY_F_ACTIVE,
+			.flags	= NURS_OKEY_F_ALWAYS,
 		},
 	},
 };
@@ -150,12 +150,12 @@ static struct nurs_output_def filter2_output = {
 		[FILTER2_OKEY_0] = {
 			.name	= "key.12",
 			.type	= NURS_KEY_T_BOOL,
-			.flags	= NURS_OKEY_F_ACTIVE,
+			.flags	= NURS_OKEY_F_ALWAYS,
 		},
 		[FILTER2_OKEY_1] = {
 			.name	= "key.32",
 			.type	= NURS_KEY_T_BOOL,
-			.flags	= NURS_OKEY_F_ACTIVE,
+			.flags	= NURS_OKEY_F_ALWAYS,
 		},
 	},
 };

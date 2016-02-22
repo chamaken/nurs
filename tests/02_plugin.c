@@ -125,8 +125,8 @@ static void test_producer_register(const void *data)
 	assertf(nurs_producer_register(&producer) == -1,
 		"should fail to register no output flag producer");
 
-	output->keys[TEST_OKEY_0].flags = NURS_OKEY_F_ACTIVE;
-	output->keys[TEST_OKEY_1].flags = NURS_OKEY_F_ACTIVE;
+	output->keys[TEST_OKEY_0].flags = NURS_OKEY_F_ALWAYS;
+	output->keys[TEST_OKEY_1].flags = NURS_OKEY_F_ALWAYS;
 	assertf(nurs_producer_register(&producer) == 0,
 		"should success to register minimal producer");
 
@@ -173,7 +173,7 @@ static void test_producer_register(const void *data)
 		"should success to unregister valid producer");
 
 	output->keys[TEST_OKEY_0].flags
-		= NURS_OKEY_F_ACTIVE | NURS_OKEY_F_OPTIONAL;
+		= NURS_OKEY_F_ALWAYS | NURS_OKEY_F_OPTIONAL;
 	assertf(nurs_producer_register(&producer) == -1,
 		"should fail to register multiple value setting means");
 
@@ -229,8 +229,8 @@ static void test_filter_register(const void *data)
 	assertf(nurs_filter_register(&filter) == -1,
 		"should fail to register no output flag filter");
 
-	output->keys[TEST_OKEY_0].flags = NURS_OKEY_F_ACTIVE;
-	output->keys[TEST_OKEY_1].flags = NURS_OKEY_F_ACTIVE;
+	output->keys[TEST_OKEY_0].flags = NURS_OKEY_F_ALWAYS;
+	output->keys[TEST_OKEY_1].flags = NURS_OKEY_F_ALWAYS;
 	assertf(nurs_filter_register(&filter) == -1,
 		"should fail to register no input filter");
 
@@ -300,7 +300,7 @@ static void test_filter_register(const void *data)
 		"should success to unregister valid filter");
 
 	output->keys[TEST_OKEY_0].flags
-		= NURS_OKEY_F_ACTIVE | NURS_OKEY_F_OPTIONAL;
+		= NURS_OKEY_F_ALWAYS | NURS_OKEY_F_OPTIONAL;
 	assertf(nurs_filter_register(&filter) == -1,
 		"should fail to register filter with multiple value setting means");
 

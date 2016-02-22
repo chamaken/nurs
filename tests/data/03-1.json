@@ -28,7 +28,7 @@
 	{
             "name"      : "output.0",
             "type"      : "NURS_KEY_T_BOOL",
-            "flags"     : ["NURS_OKEY_F_ACTIVE", "NURS_OKEY_F_DESTRUCT"],
+            "flags"     : ["NURS_OKEY_F_ALWAYS", "NURS_OKEY_F_DESTRUCT"],
             "len"       : 32,
             "ipfix_vendor"  : "IPFIX_VENDOR_NETFILTER",
             "ipfix_field_id": "IPFIX_octetDeltaCount",
@@ -38,7 +38,7 @@
 	{
             "name"      : "output.0",
             "type"      : "NURS_KEY_T_BOOL",
-            "flags"     : ["NURS_OKEY_F_ACTIVE", "NURS_OKEY_F_DESTRUCT"],
+            "flags"     : ["NURS_OKEY_F_ALWAYS", "NURS_OKEY_F_DESTRUCT"],
             "len"       : 32,
             "ipfix_vendor"  : "IPFIX_VENDOR_NETFILTER",
             "ipfix_field_id": "IPFIX_octetDeltaCount",

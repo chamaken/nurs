@@ -44,12 +44,12 @@ static struct nurs_output_def output = {
 		[OUTPUT_0] = {
 			.name = "output.0",
 			.type	= NURS_KEY_T_BOOL,
-			.flags	= NURS_OKEY_F_ACTIVE,
+			.flags	= NURS_OKEY_F_ALWAYS,
 		},
 		[OUTPUT_1] = {
 			.name = "output.1",
 			.type	= NURS_KEY_T_BOOL,
-			.flags	= NURS_OKEY_F_ACTIVE,
+			.flags	= NURS_OKEY_F_ALWAYS,
 		},
 	},
 };

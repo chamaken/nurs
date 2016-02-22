@@ -106,13 +106,13 @@ static int check_input(const struct nurs_producer *producer,
 
 		/* check flags */
 		if ((inkey->flags & NURS_IKEY_F_REQUIRED) &&
-		    !(outkey->flags & NURS_OKEY_F_ACTIVE)) {
+		    !(outkey->flags & NURS_OKEY_F_ALWAYS)) {
 			nurs_log(NURS_ERROR, "not an active key: %s - %s\n",
 				 outkey->name, name);
 			return -1;
 		}
 		if ((inkey->flags & NURS_IKEY_F_OPTIONAL) &&
-		    (!(outkey->flags & NURS_OKEY_F_ACTIVE) &&
+		    (!(outkey->flags & NURS_OKEY_F_ALWAYS) &&
 		     !(outkey->flags & NURS_OKEY_F_OPTIONAL))) {
 			nurs_log(NURS_ERROR, "not an optional key: %s - %s\n",
 				 outkey->name, name);

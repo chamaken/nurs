@@ -329,7 +329,7 @@ static int show_keyinfo(const struct nurs_key_def *key, bool input)
 		if (f & NURS_IKEY_F_OPTIONAL)
 			printf(" OPTIONAL");
 	} else {
-		if (f & NURS_OKEY_F_ACTIVE)
+		if (f & NURS_OKEY_F_ALWAYS)
 			printf(" ACTIVE");
 		if (f & NURS_OKEY_F_FREE)
 			printf(" FREE");
@@ -554,9 +554,9 @@ int plugin_check_output(const char *plname,
 
 		/* only one of them must be valid */
 		flag = k->flags &
-			(NURS_OKEY_F_ACTIVE |
+			(NURS_OKEY_F_ALWAYS |
 			 NURS_OKEY_F_OPTIONAL);
-		if (flag != NURS_OKEY_F_ACTIVE &&
+		if (flag != NURS_OKEY_F_ALWAYS &&
 		    flag != NURS_OKEY_F_OPTIONAL) {
 			nurs_log(NURS_ERROR, "plugin: %s, invalid flags: %s\n",
 				 plname, k->name);

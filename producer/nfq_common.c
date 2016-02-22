@@ -113,23 +113,23 @@ struct nurs_output_def nfq_output = {
 			/* struct nlattr *attr[NFQA_MAX+1] = {}; */
 			.name	= "nfq.attrs",
 			.type	= NURS_KEY_T_EMBED,
-			.flags	= NURS_OKEY_F_ACTIVE,
+			.flags	= NURS_OKEY_F_ALWAYS,
 			.len	= sizeof(struct nlattr *) * (NFQA_MAX + 1),
 		},
 		[NFQ_OUTPUT_FAMILY] = {
 			.name	= "oob.family",
 			.type	= NURS_KEY_T_UINT8,
-			.flags	= NURS_OKEY_F_ACTIVE,
+			.flags	= NURS_OKEY_F_ALWAYS,
 		},
 		[NFQ_OUTPUT_RES_ID] = {
 			.name	= "nfq.res_id",
 			.type	= NURS_KEY_T_UINT16,
-			.flags	= NURS_OKEY_F_ACTIVE,
+			.flags	= NURS_OKEY_F_ALWAYS,
 		},
 		[NFQ_OUTPUT_FRAME] = {
 			.name	= "nfq.frame",
 			.type	= NURS_KEY_T_POINTER,
-			.flags	= NURS_OKEY_F_ACTIVE | NURS_OKEY_F_DESTRUCT,
+			.flags	= NURS_OKEY_F_ALWAYS | NURS_OKEY_F_DESTRUCT,
 			.destructor = frame_destructor,
 		},
 	}

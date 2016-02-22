@@ -20,7 +20,7 @@
 		{
 		    "name": "producer1.output1",
 		    "type": "NURS_KEY_T_EMBED",
-		    "flags": ["NURS_OKEY_F_ACTIVE"],
+		    "flags": ["NURS_OKEY_F_ALWAYS"],
 		    "len": 32,
 		    "ipfix_vendor": "IPFIX_VENDOR_IETF",
 		    "ipfix_field_id": "",
@@ -60,7 +60,7 @@
 		{
 		    "name": "producer2.output1",
 		    "type": "NURS_KEY_T_INT16",
-		    "flags": ["NURS_OKEY_F_ACTIVE"],
+		    "flags": ["NURS_OKEY_F_ALWAYS"],
 		    "len": 0,
 		    "ipfix_vendor": "IPFIX_VENDOR_REVERSE",
 		    "ipfix_field_id": "",
@@ -169,7 +169,7 @@
 		{
 		    "name": "filter2.output1",
 		    "type": "NURS_KEY_T_POINTER",
-		    "flags": ["NURS_OKEY_F_ACTIVE", "NURS_OKEY_F_FREE"],
+		    "flags": ["NURS_OKEY_F_ALWAYS", "NURS_OKEY_F_FREE"],
 		    "len": 0,
 		    "ipfix_vendor": "",
 		    "ipfix_field_id": "",

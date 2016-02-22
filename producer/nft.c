@@ -122,7 +122,7 @@ static struct nurs_output_def nftnl_output = {
 		[NFTNL_OUTPUT_NFTNL_EVENT]	= {
 			.name	= "nft.event",
 			.type	= NURS_KEY_T_UINT32,
-			.flags	= NURS_OKEY_F_ACTIVE,
+			.flags	= NURS_OKEY_F_ALWAYS,
 		},
 		[NFTNL_OUTPUT_TABLE_OBJECT]	= {
 			.name	= "nft.table.object",

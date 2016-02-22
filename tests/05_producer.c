@@ -55,7 +55,7 @@ static struct nurs_output_def producer_output_def = {
 		[PRODUCER_OKEY_0] = {
 			.name = "test.0",
 			.type	= NURS_KEY_T_BOOL,
-			.flags	= NURS_OKEY_F_ACTIVE,
+			.flags	= NURS_OKEY_F_ALWAYS,
 		},
 		[PRODUCER_OKEY_1] = {
 			.name = "test.1",
@@ -82,7 +82,7 @@ static struct nurs_output_def filter_output_def = {
 		[FILTER_OKEY_2] = {
 			.name	= "test.2",
 			.type	= NURS_KEY_T_IN6ADDR,
-			.flags	= NURS_OKEY_F_ACTIVE,
+			.flags	= NURS_OKEY_F_ALWAYS,
 		},
 	},
 };
