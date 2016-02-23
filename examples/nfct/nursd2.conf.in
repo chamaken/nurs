@@ -12,6 +12,7 @@ iosets	= 12
 # plugin:
 # 1. load the plugins _first_ from the global section
 # 2. options for each plugin in seperate section below
+plugin	= "/usr/local/lib/nurs/nurs_producer_NFCT.so"
 plugin	= "@pkglibdir@/nurs_PYTHON.so"
 plugin	= "@gonurs@/producer/nfct_event.gso"
 plugin	= "@gonurs@/consumer/nfct_log.gso"
@@ -22,6 +23,11 @@ stack	= "event1:PY_NFCT, log1:PY_NFCT_LOG"
 stack	= "event2:GO_NFCT, log2:PY_NFCT_LOG"
 #stack	= "event1:PY_NFCT, log3:GO_NFCT_LOG"
 stack	= "event2:GO_NFCT, log4:GO_NFCT_LOG"
+stack	= "nfct:NFCT, log5:GO_NFCT_LOG"
+
+[nfct]
+hash_enable = 0
+pollinterval = 0
 
 [event1]
 path = "@pynurs@/producer"
@@ -43,3 +49,6 @@ logfile = "@cwd@/consumer3.log"
 
 [log4]
 logfile = "@cwd@/consumer4.log"
+
+[log5]
+logfile = "@cwd@/consumer5.log"
