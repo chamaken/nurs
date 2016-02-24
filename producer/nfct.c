@@ -757,10 +757,9 @@ dump_reset_handler(enum nf_conntrack_msg_type type,
 	return ret;
 }
 
-static void get_ctr_zero(const struct nurs_producer *producer)
+static void get_ctr_zero(struct nurs_producer *producer)
 {
 	struct nfct_priv *priv = nurs_producer_context(producer);
-	void *cbdata = (void *)((uintptr_t)producer);
 	struct nfct_handle *h;
 
 	h = nfct_open(CONNTRACK, 0);
@@ -768,7 +767,7 @@ static void get_ctr_zero(const struct nurs_producer *producer)
 		nurs_log(NURS_FATAL, "Cannot dump and reset counters\n");
 		return;
 	}
-	nfct_callback_register(h, NFCT_T_ALL, &dump_reset_handler, cbdata);
+	nfct_callback_register(h, NFCT_T_ALL, &dump_reset_handler, producer);
 	if (nfct_query(h, NFCT_Q_DUMP_FILTER_RESET, priv->filter_dump) == -1)
 		nurs_log(NURS_FATAL, "Cannot dump and reset counters\n");
 
@@ -859,11 +858,9 @@ overrun_timeout(struct nurs_timer *a, void *data)
 	return NURS_RET_OK;
 }
 
-static enum nurs_return_t
-nfct_organize_events(const struct nurs_producer *producer)
+static enum nurs_return_t nfct_organize_events(struct nurs_producer *producer)
 {
 	struct nfct_priv *priv = nurs_producer_context(producer);
-	void *cbdata = (void *)((uintptr_t)producer);
 	int on = 1;
 
 	priv->cth = nfct_open(NFNL_SUBSYS_CTNETLINK,
@@ -927,7 +924,7 @@ nfct_organize_events(const struct nurs_producer *producer)
 			goto close_ovh;
 		}
 
-		priv->ov_timer = nurs_timer_create(overrun_timeout, cbdata);
+		priv->ov_timer = nurs_timer_create(overrun_timeout, producer);
 		if (!priv->ov_timer) {
 			nurs_log(NURS_FATAL, "failed to create ov timer\n");
 			goto destroy_ovh;
@@ -959,11 +956,9 @@ close_cth:
 	return NURS_RET_ERROR;
 }
 
-static enum nurs_return_t
-nfct_organize_polling(const struct nurs_producer *producer)
+static enum nurs_return_t nfct_organize_polling(struct nurs_producer *producer)
 {
 	struct nfct_priv *priv = nurs_producer_context(producer);
-	void *cbdata = (void *)((uintptr_t)producer);
 
 	if (!config_usehash(producer)) {
 		nurs_log(NURS_FATAL, "NFCT polling mode requires "
@@ -994,7 +989,7 @@ nfct_organize_polling(const struct nurs_producer *producer)
 		goto close_pgh;
 	}
 
-	priv->timer = nurs_timer_create(polling_timer_cb, cbdata);
+	priv->timer = nurs_timer_create(polling_timer_cb, producer);
 	if (!priv->timer) {
 		nurs_log(NURS_FATAL, "failed to create polling timer\n");
 		goto destroy_hashtable;
@@ -1009,8 +1004,7 @@ close_pgh:
 	return NURS_RET_ERROR;
 }
 
-static enum nurs_return_t
-nfct_organize(const struct nurs_producer *producer)
+static enum nurs_return_t nfct_organize(struct nurs_producer *producer)
 {
 	struct nfct_priv *priv = nurs_producer_context(producer);
 	enum nurs_return_t ret;
@@ -1036,7 +1030,7 @@ nfct_organize(const struct nurs_producer *producer)
 }
 
 static enum nurs_return_t
-nfct_disorganize_events(const struct nurs_producer *producer)
+nfct_disorganize_events(struct nurs_producer *producer)
 {
 	struct nfct_priv *priv = nurs_producer_context(producer);
 	int ret = 0;
@@ -1069,7 +1063,7 @@ nfct_disorganize_events(const struct nurs_producer *producer)
 }
 
 static enum nurs_return_t
-nfct_disorganize_polling(const struct nurs_producer *producer)
+nfct_disorganize_polling(struct nurs_producer *producer)
 {
 	struct nfct_priv *priv = nurs_producer_context(producer);
 	int ret = 0;
@@ -1089,8 +1083,7 @@ nfct_disorganize_polling(const struct nurs_producer *producer)
 	return NURS_RET_OK;
 }
 
-static enum nurs_return_t
-nfct_disorganize(const struct nurs_producer *producer)
+static enum nurs_return_t nfct_disorganize(struct nurs_producer *producer)
 {
 	struct nfct_priv *priv = nurs_producer_context(producer);
 	enum nurs_return_t ret;
@@ -1105,25 +1098,23 @@ nfct_disorganize(const struct nurs_producer *producer)
 	return ret;
 }
 
-static enum nurs_return_t
-nfct_start_events(const struct nurs_producer *producer)
+static enum nurs_return_t nfct_start_events(struct nurs_producer *producer)
 {
 	struct nfct_priv *priv = nurs_producer_context(producer);
-	void *cbdata = (void *)((uintptr_t)producer);
 
 	if (config_usehash(producer) &&
 	    nfct_callback_register(priv->cth, NFCT_T_ALL,
-				   &event_handler_hashtable, cbdata)) {
+				   &event_handler_hashtable, producer)) {
 		nurs_log(NURS_FATAL, "failed to register hashtable handler\n");
 		return NURS_RET_ERROR;
 	} else if (nfct_callback_register(priv->cth, NFCT_T_ALL,
 					  &event_handler_no_hashtable,
-					  cbdata)) {
+					  producer)) {
 		nurs_log(NURS_FATAL, "failed to register no hashtable handler\n");
 		return NURS_RET_ERROR;
 	}
 
-	if (nurs_fd_register(priv->nfct_fd, &read_cb_nfct, cbdata)) {
+	if (nurs_fd_register(priv->nfct_fd, &read_cb_nfct, producer)) {
 		nurs_log(NURS_FATAL, "failed to register nurs fd\n");
 		goto unregister_cth;
 	}
@@ -1141,20 +1132,20 @@ nfct_start_events(const struct nurs_producer *producer)
 		}
 		/* XXX: error check */
 		nfct_callback_register(h, NFCT_T_ALL,
-				       &event_handler_hashtable, cbdata);
+				       &event_handler_hashtable, producer);
 		nfct_query(h, NFCT_Q_DUMP_FILTER, priv->filter_dump);
 		nfct_close(h);
 
 		/* the overrun handler only make sense with the hashtable,
 		 * if we hit overrun, we resync with ther kernel table. */
 		if (nfct_callback_register(priv->ovh, NFCT_T_ALL,
-					   &overrun_handler, cbdata)) {
+					   &overrun_handler, producer)) {
 			nurs_log(NURS_FATAL, "failed to register overrun"
 				 " handler\n");
 			goto unregister_nfd;
 		}
 
-		if (nurs_fd_register(priv->nfct_ov, read_cb_ovh, cbdata)) {
+		if (nurs_fd_register(priv->nfct_ov, read_cb_ovh, producer)) {
 			nurs_log(NURS_FATAL, "failed to register overrun"
 				 " nurs fd\n");
 			goto unregister_ovh;
@@ -1174,14 +1165,12 @@ unregister_cth:
 	return NURS_RET_ERROR;
 }
 
-static enum nurs_return_t
-nfct_start_polling(const struct nurs_producer *producer)
+static enum nurs_return_t nfct_start_polling(struct nurs_producer *producer)
 {
 	struct nfct_priv *priv = nurs_producer_context(producer);
-	void *cbdata = (void *)((uintptr_t)producer);
 
 	if (nfct_callback_register(priv->pgh, NFCT_T_ALL,
-				   &polling_handler, cbdata)) {
+				   &polling_handler, producer)) {
 		nurs_log(NURS_FATAL, "failed to register pgh\n");
 		return NURS_RET_ERROR;
 	}
@@ -1200,8 +1189,7 @@ unregister_pgh:
 	return NURS_RET_ERROR;
 }
 
-static enum nurs_return_t
-nfct_start(const struct nurs_producer *producer)
+static enum nurs_return_t nfct_start(struct nurs_producer *producer)
 {
 	if (config_pollint(producer) == 0) {
 		/* listen to ctnetlink events. */
@@ -1215,8 +1203,7 @@ nfct_start(const struct nurs_producer *producer)
 	return -1;
 }
 
-static enum nurs_return_t
-nfct_stop_events(const struct nurs_producer *producer)
+static enum nurs_return_t nfct_stop_events(struct nurs_producer *producer)
 {
 	struct nfct_priv *priv = nurs_producer_context(producer);
 	int ret = 0;
@@ -1242,8 +1229,7 @@ nfct_stop_events(const struct nurs_producer *producer)
 	return NURS_RET_OK;
 }
 
-static enum nurs_return_t
-nfct_stop_polling(const struct nurs_producer *producer)
+static enum nurs_return_t nfct_stop_polling(struct nurs_producer *producer)
 {
 	struct nfct_priv *priv = nurs_producer_context(producer);
 
@@ -1252,8 +1238,7 @@ nfct_stop_polling(const struct nurs_producer *producer)
 	return NURS_RET_OK;
 }
 
-static enum nurs_return_t
-nfct_stop(const struct nurs_producer *producer)
+static enum nurs_return_t nfct_stop(struct nurs_producer *producer)
 {
 	if (config_pollint(producer))
 		return nfct_stop_polling(producer);
@@ -1261,7 +1246,7 @@ nfct_stop(const struct nurs_producer *producer)
 }
 
 static enum nurs_return_t
-nfct_signal(const struct nurs_producer *producer, uint32_t signal)
+nfct_signal(struct nurs_producer *producer, uint32_t signal)
 {
 	switch (signal) {
 	case SIGUSR2:

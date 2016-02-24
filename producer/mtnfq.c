@@ -163,7 +163,7 @@ static int fini_pthread(struct mtnfq_priv *priv)
 	return ret;
 }
 
-static enum nurs_return_t mtnfq_organize(const struct nurs_producer *producer)
+static enum nurs_return_t mtnfq_organize(struct nurs_producer *producer)
 {
 	struct mtnfq_priv *priv = nurs_producer_context(producer);
 
@@ -173,7 +173,7 @@ static enum nurs_return_t mtnfq_organize(const struct nurs_producer *producer)
 }
 
 static enum nurs_return_t
-mtnfq_disorganize(const struct nurs_producer *producer)
+mtnfq_disorganize(struct nurs_producer *producer)
 {
 	struct mtnfq_priv *priv = nurs_producer_context(producer);
 	enum nurs_return_t ret = NURS_RET_OK;
@@ -186,16 +186,15 @@ mtnfq_disorganize(const struct nurs_producer *producer)
 	return ret;
 }
 
-static enum nurs_return_t mtnfq_start(const struct nurs_producer *producer)
+static enum nurs_return_t mtnfq_start(struct nurs_producer *producer)
 {
 	struct mtnfq_priv *priv = nurs_producer_context(producer);
-	void *arg = (void *)(uintptr_t)producer;
 	int ret;
 
 	if (config_nfq(producer))
 		return NURS_RET_ERROR;
 
-	ret = pthread_create(&priv->tid, NULL, start_routine, arg);
+	ret = pthread_create(&priv->tid, NULL, start_routine, producer);
 	if (ret) {
 		nurs_log(NURS_ERROR, "failed to pthread_create: %s\n",
 			 strerror(ret));
@@ -205,7 +204,7 @@ static enum nurs_return_t mtnfq_start(const struct nurs_producer *producer)
 	return NURS_RET_OK;
 }
 
-static enum nurs_return_t mtnfq_stop(const struct nurs_producer *producer)
+static enum nurs_return_t mtnfq_stop(struct nurs_producer *producer)
 {
 	struct mtnfq_priv *priv = nurs_producer_context(producer);
 	uint64_t u = 1;
@@ -240,7 +239,7 @@ fail_unlock:
 }
 
 static enum nurs_return_t
-mtnfq_signal(const struct nurs_producer *producer, uint32_t signal)
+mtnfq_signal(struct nurs_producer *producer, uint32_t signal)
 {
 	struct mtnfq_priv *priv = nurs_producer_context(producer);
 	struct nl_mmap_hdr *frame, *sentinel;

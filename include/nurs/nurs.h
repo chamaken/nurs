@@ -241,25 +241,25 @@ struct nurs_producer;
 typedef enum nurs_return_t
 	(*nurs_start_t)(const struct nurs_plugin *plugin);
 typedef enum nurs_return_t
-	(*nurs_producer_start_t)(const struct nurs_producer *producer);
+	(*nurs_producer_start_t)(struct nurs_producer *producer);
 
 typedef enum nurs_return_t
 	(*nurs_stop_t)(const struct nurs_plugin *plugin);
 typedef enum nurs_return_t
-	(*nurs_producer_stop_t)(const struct nurs_producer *producer);
+	(*nurs_producer_stop_t)(struct nurs_producer *producer);
 /*
  * typedef enum nurs_return_t
  *	(*nurs_signal_t)(const struct nurs_plugin *plugin,
  *			 uint32_t signum, void *cdata);
  * typedef enum nurs_return_t
- *	(*nurs_producer_signal_t)(const struct nurs_producer *producer,
+ *	(*nurs_producer_signal_t)(struct nurs_producer *producer,
  *				  uint32_t signum, void *cdata);
  */
 
 typedef enum nurs_return_t
 	(*nurs_signal_t)(const struct nurs_plugin *plugin, uint32_t signum);
 typedef enum nurs_return_t
-	(*nurs_producer_signal_t)(const struct nurs_producer *producer, uint32_t signum);
+	(*nurs_producer_signal_t)(struct nurs_producer *producer, uint32_t signum);
 
 
 typedef enum nurs_return_t
@@ -268,12 +268,12 @@ typedef enum nurs_return_t
 	(*nurs_coveter_organize_t)(const struct nurs_plugin *plugin,
 				   const struct nurs_input *template);
 typedef enum nurs_return_t
-	(*nurs_producer_organize_t)(const struct nurs_producer *producer);
+	(*nurs_producer_organize_t)(struct nurs_producer *producer);
 
 typedef enum nurs_return_t
 	(*nurs_disorganize_t)(const struct nurs_plugin *plugin);
 typedef enum nurs_return_t
-	(*nurs_producer_disorganize_t)(const struct nurs_producer *producer);
+	(*nurs_producer_disorganize_t)(struct nurs_producer *producer);
 
 typedef enum nurs_return_t
 	(*nurs_filter_interp_t)(const struct nurs_plugin *plugin,

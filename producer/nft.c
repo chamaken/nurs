@@ -563,7 +563,7 @@ static int nftnl_fd_cb(int fd, uint16_t what, void *param)
 	return NURS_RET_OK;
 }
 
-static int nftnl_organize(const struct nurs_producer *producer)
+static int nftnl_organize(struct nurs_producer *producer)
 {
 	struct nftnl_priv *priv = nurs_producer_context(producer);
 
@@ -593,7 +593,7 @@ err_exit:
 	return NURS_RET_ERROR;
 }
 
-static int nftnl_disorganize(const struct nurs_producer *producer)
+static int nftnl_disorganize(struct nurs_producer *producer)
 {
 	struct nftnl_priv *priv = nurs_producer_context(producer);
 
@@ -607,12 +607,11 @@ static int nftnl_disorganize(const struct nurs_producer *producer)
 	return NURS_RET_OK;
 }
 
-static int nftnl_start(const struct nurs_producer *producer)
+static int nftnl_start(struct nurs_producer *producer)
 {
 	struct nftnl_priv *priv = nurs_producer_context(producer);
-	void *cbdata = (void *)(uintptr_t)producer; /* remove const qualifier */
 
-	if (nurs_fd_register(priv->fd, nftnl_fd_cb, cbdata)) {
+	if (nurs_fd_register(priv->fd, nftnl_fd_cb, producer)) {
 		nurs_log(NURS_ERROR, "nurs_fd_register failed: %s\n",
 			 strerror(errno));
 		return NURS_RET_ERROR;
@@ -621,7 +620,7 @@ static int nftnl_start(const struct nurs_producer *producer)
 	return NURS_RET_OK;
 }
 
-static int nftnl_stop(const struct nurs_producer *producer)
+static int nftnl_stop(struct nurs_producer *producer)
 {
 	struct nftnl_priv *priv = nurs_producer_context(producer);
 

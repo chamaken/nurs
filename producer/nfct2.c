@@ -842,13 +842,11 @@ error_close:
 	return NURS_RET_ERROR;
 }
 
-static enum nurs_return_t
-nfct_organize(const struct nurs_producer *producer)
+static enum nurs_return_t nfct_organize(struct nurs_producer *producer)
 {
 	struct nfct_priv *priv = nurs_producer_context(producer);
 	int event_bufsiz, event_bufmax;
 	socklen_t socklen = sizeof(int);
-	void *cbdata = (void *)(uintptr_t)producer; /* remove const qualifier */
 
 	if (open_event_socket(producer))
 		return NURS_RET_ERROR;
@@ -886,7 +884,7 @@ nfct_organize(const struct nurs_producer *producer)
 	if (open_dump_socket(producer))
 		goto error_close_event;
 
-	priv->timer = nurs_timer_create(&nfct_itimer_cb, cbdata);
+	priv->timer = nurs_timer_create(&nfct_itimer_cb, producer);
 	if (!priv->timer) {
 		nurs_log(NURS_ERROR, "nurs_timer_create: %s\n",
 			 strerror(errno));
@@ -904,8 +902,7 @@ error_close_event:
 	return NURS_RET_ERROR;
 }
 
-static enum nurs_return_t
-nfct_disorganize(const struct nurs_producer *producer)
+static enum nurs_return_t nfct_disorganize(struct nurs_producer *producer)
 {
 	struct nfct_priv *priv = nurs_producer_context(producer);
 
@@ -923,14 +920,12 @@ nfct_disorganize(const struct nurs_producer *producer)
 	return NURS_RET_OK;
 }
 
-static enum nurs_return_t
-nfct_start(const struct nurs_producer *producer)
+static enum nurs_return_t nfct_start(struct nurs_producer *producer)
 {
 	struct nfct_priv *priv = nurs_producer_context(producer);
 	time_t interval = config_pollint(producer);
-	void *cbdata = (void *)(uintptr_t)producer; /* remove const qualifier */
 
-	if (nurs_fd_register(priv->event_fd, nfct_event_cb, cbdata)) {
+	if (nurs_fd_register(priv->event_fd, nfct_event_cb, producer)) {
 		nurs_log(NURS_ERROR, "nurs_fd_register failed: %s\n",
 			 strerror(errno));
 		return NURS_RET_ERROR;
@@ -939,7 +934,7 @@ nfct_start(const struct nurs_producer *producer)
 	if (config_destroy_only(producer))
 		return NURS_RET_OK;
 
-	if (nurs_fd_register(priv->dump_fd, nfct_dump_cb, cbdata)) {
+	if (nurs_fd_register(priv->dump_fd, nfct_dump_cb, producer)) {
 		nurs_log(NURS_ERROR, "nurs_register_fd: %s\n",
 			 strerror(errno));
 		goto error_unregister_event;
@@ -961,8 +956,7 @@ error_unregister_event:
 	return NURS_RET_ERROR;
 }
 
-static enum nurs_return_t
-nfct_stop(const struct nurs_producer *producer)
+static enum nurs_return_t nfct_stop(struct nurs_producer *producer)
 {
 	struct nfct_priv *priv = nurs_producer_context(producer);
 	int ret = NURS_RET_OK;
@@ -989,7 +983,7 @@ nfct_stop(const struct nurs_producer *producer)
 }
 
 static enum nurs_return_t
-nfct_signal(const struct nurs_producer *producer, uint32_t signal)
+nfct_signal(struct nurs_producer *producer, uint32_t signal)
 {
 	switch (signal) {
 	default:

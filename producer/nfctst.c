@@ -238,13 +238,12 @@ static enum nurs_return_t nfctst_timer_cb(struct nurs_timer *t, void *data)
 	return NURS_RET_OK;
 }
 
-static enum nurs_return_t nfctst_organize(const struct nurs_producer *producer)
+static enum nurs_return_t nfctst_organize(struct nurs_producer *producer)
 {
 	struct nfctst_priv *priv = nurs_producer_context(producer);
 	int pollint = config_pollint(producer);
 	struct nlmsghdr *nlh;
 	struct nfgenmsg *nfh;
-	void *cbdata = (void *)(uintptr_t)producer;
 
 	if (pollint <= 0) {
 		nurs_log(NURS_FATAL, "invalid pollinterval: %d\n",
@@ -276,7 +275,7 @@ static enum nurs_return_t nfctst_organize(const struct nurs_producer *producer)
 	nfh->version = NFNETLINK_V0;
 	nfh->res_id = 0;
 
-	priv->timer = nurs_timer_create(nfctst_timer_cb, cbdata);
+	priv->timer = nurs_timer_create(nfctst_timer_cb, producer);
 	if (!priv->timer) {
 		nurs_log(NURS_ERROR, "failed to create timer: %s\n",
 			 strerror(errno));
@@ -299,8 +298,7 @@ err_exit:
 	return NURS_RET_ERROR;
 }
 
-static enum nurs_return_t
-nfctst_disorganize(const struct nurs_producer *producer)
+static enum nurs_return_t nfctst_disorganize(struct nurs_producer *producer)
 {
 	struct nfctst_priv *priv = nurs_producer_context(producer);
 	int ret = 0;
@@ -314,13 +312,12 @@ nfctst_disorganize(const struct nurs_producer *producer)
 	return NURS_RET_OK;
 }
 
-static enum nurs_return_t nfctst_start(const struct nurs_producer *producer)
+static enum nurs_return_t nfctst_start(struct nurs_producer *producer)
 {
 	struct nfctst_priv *priv = nurs_producer_context(producer);
 	int pollint = config_pollint(producer);
-	void *cbdata = (void *)(uintptr_t)producer;
 
-	if (nurs_fd_register(priv->fd, nfctst_read_cb, cbdata)) {
+	if (nurs_fd_register(priv->fd, nfctst_read_cb, producer)) {
 		nurs_log(NURS_ERROR, "failed to register fd: %s\n",
 			 strerror(errno));
 		goto err_exit;
@@ -340,7 +337,7 @@ err_exit:
 	return NURS_RET_ERROR;
 }
 
-static enum nurs_return_t nfctst_stop(const struct nurs_producer *producer)
+static enum nurs_return_t nfctst_stop(struct nurs_producer *producer)
 {
 	struct nfctst_priv *priv = nurs_producer_context(producer);
 	int ret = 0;
