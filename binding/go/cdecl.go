@@ -345,19 +345,19 @@ type Producer C.struct_nurs_producer
 // typedef enum nurs_return_t (*nurs_start_t)(const struct nurs_plugin *plugin);
 type StartCb func(*Plugin) ReturnType
 
-// typedef enum nurs_return_t (*nurs_producer_start_t)(const struct nurs_producer *producer);
+// typedef enum nurs_return_t (*nurs_producer_start_t)(struct nurs_producer *producer);
 type ProducerStartCb func(*Producer) ReturnType
 
 // typedef enum nurs_return_t (*nurs_stop_t)(const struct nurs_plugin *plugin);
 type StopCb func(*Plugin) ReturnType
 
-// typedef enum nurs_return_t (*nurs_producer_stop_t)(const struct nurs_producer *producer);
+// typedef enum nurs_return_t (*nurs_producer_stop_t)(struct nurs_producer *producer);
 type ProducerStopCb func(*Producer) ReturnType
 
 // typedef enum nurs_return_t (*nurs_signal_t)(const struct nurs_plugin *plugin, uint32_t signum);
 type SignalCb func(*Plugin, uint32) ReturnType
 
-// typedef enum nurs_return_t (*nurs_producer_signal_t)(const struct nurs_producer *producer, uint32_t signum);
+// typedef enum nurs_return_t (*nurs_producer_signal_t)(struct nurs_producer *producer, uint32_t signum);
 type ProducerSignalCb func(*Producer, uint32) ReturnType
 
 // typedef enum nurs_return_t (*nurs_organize_t)(const struct nurs_plugin *plugin);
@@ -367,13 +367,13 @@ type OrganizeCb func(*Plugin) ReturnType
 //				const struct nurs_input *template);
 type CoveterOrganizeCb func(*Plugin, *Input) ReturnType
 
-// typedef enum nurs_return_t (*nurs_producer_organize_t)(const struct nurs_producer *producer);
+// typedef enum nurs_return_t (*nurs_producer_organize_t)(struct nurs_producer *producer);
 type ProducerOrganizeCb func(*Producer) ReturnType
 
 // typedef enum nurs_return_t (*nurs_disorganize_t)(const struct nurs_plugin *plugin);
 type DisorganizeCb func(*Plugin) ReturnType
 
-// typedef enum nurs_return_t (*nurs_producer_disorganize_t)(const struct nurs_producer *producer);
+// typedef enum nurs_return_t (*nurs_producer_disorganize_t)(struct nurs_producer *producer);
 type ProducerDisorganizeCb func(*Producer) ReturnType
 
 // typedef enum nurs_return_t (*nurs_filter_interp_t)(const struct nurs_plugin *plugin,

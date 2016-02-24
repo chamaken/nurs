@@ -31,7 +31,7 @@ struct nfq_priv {
 	struct nurs_fd		*fd;
 };
 
-static enum nurs_return_t nfq_organize(const struct nurs_producer *producer)
+static enum nurs_return_t nfq_organize(struct nurs_producer *producer)
 {
 	struct nfq_priv *priv = nurs_producer_context(producer);
 
@@ -50,7 +50,7 @@ fail:
 
 }
 
-static enum nurs_return_t nfq_disorganize(const struct nurs_producer *producer)
+static enum nurs_return_t nfq_disorganize(struct nurs_producer *producer)
 {
 	struct nfq_priv *priv = nurs_producer_context(producer);
 
@@ -58,15 +58,14 @@ static enum nurs_return_t nfq_disorganize(const struct nurs_producer *producer)
 	return nfq_common_disorganize(producer);
 }
 
-static enum nurs_return_t nfq_start(const struct nurs_producer *producer)
+static enum nurs_return_t nfq_start(struct nurs_producer *producer)
 {
 	struct nfq_priv *priv = nurs_producer_context(producer);
-	void *cbdata = (void *)(uintptr_t)producer; /* remove const qual */
 
 	if (config_nfq(producer))
 		return NURS_RET_ERROR;
 
-	if (nurs_fd_register(priv->fd, nfq_read_cb, cbdata)) {
+	if (nurs_fd_register(priv->fd, nfq_read_cb, producer)) {
 		nurs_log(NURS_ERROR, "nurs_fd_register failed: %s\n",
 			 strerror(errno));
 		return NURS_RET_ERROR;
@@ -75,7 +74,7 @@ static enum nurs_return_t nfq_start(const struct nurs_producer *producer)
 	return NURS_RET_OK;
 }
 
-static enum nurs_return_t nfq_stop(const struct nurs_producer *producer)
+static enum nurs_return_t nfq_stop(struct nurs_producer *producer)
 {
 	struct nfq_priv *priv = nurs_producer_context(producer);
 
@@ -86,7 +85,7 @@ static enum nurs_return_t nfq_stop(const struct nurs_producer *producer)
 }
 
 static enum nurs_return_t
-nfq_signal(const struct nurs_producer *producer, uint32_t signal)
+nfq_signal(struct nurs_producer *producer, uint32_t signal)
 {
 	struct nfq_priv *priv = nurs_producer_context(producer);
 	struct nl_mmap_hdr *frame, *sentinel;;

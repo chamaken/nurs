@@ -604,7 +604,7 @@ static int check_config_response(struct nflog_priv *priv)
 	return 0;
 }
 
-static int become_system_logging(const struct nurs_producer *producer,
+static int become_system_logging(struct nurs_producer *producer,
 				 uint8_t family)
 {
 	struct nflog_priv *priv = nurs_producer_context(producer);
@@ -655,7 +655,7 @@ static int become_system_logging(const struct nurs_producer *producer,
 	return 0;
 }
 
-static int config_nflog(const struct nurs_producer *producer)
+static int config_nflog(struct nurs_producer *producer)
 {
 	struct nflog_priv *priv = nurs_producer_context(producer);
 	char buf[MNL_SOCKET_BUFFER_SIZE];
@@ -849,8 +849,7 @@ batch_stop:
 	return ret;
 }
 
-static enum nurs_return_t
-nflog_organize(const struct nurs_producer *producer)
+static enum nurs_return_t nflog_organize(struct nurs_producer *producer)
 {
 	struct nflog_priv *priv = nurs_producer_context(producer);
 
@@ -908,8 +907,7 @@ error_close_sock:
 	return NURS_RET_ERROR;
 }
 
-static enum nurs_return_t
-nflog_disorganize(const struct nurs_producer *producer)
+static enum nurs_return_t nflog_disorganize(struct nurs_producer *producer)
 {
 	struct nflog_priv *priv = nurs_producer_context(producer);
 	int ret = 0;
@@ -929,13 +927,11 @@ nflog_disorganize(const struct nurs_producer *producer)
 	return NURS_RET_OK;
 }
 
-static enum nurs_return_t
-nflog_start(const struct nurs_producer *producer)
+static enum nurs_return_t nflog_start(struct nurs_producer *producer)
 {
 	struct nflog_priv *priv = nurs_producer_context(producer);
-	void *cbdata = (void *)(uintptr_t)producer; /* remove const qual */
 
-	if (nurs_fd_register(priv->fd, nflog_read_cb, cbdata)) {
+	if (nurs_fd_register(priv->fd, nflog_read_cb, producer)) {
 		nurs_log(NURS_ERROR, "nurs_fd_register failed: %s\n",
 			 strerror(errno));
 		return NURS_RET_ERROR;
@@ -949,8 +945,7 @@ nflog_start(const struct nurs_producer *producer)
 	return NURS_RET_OK;
 }
 
-static enum nurs_return_t
-nflog_stop(const struct nurs_producer *producer)
+static enum nurs_return_t nflog_stop(struct nurs_producer *producer)
 {
 	struct nflog_priv *priv = nurs_producer_context(producer);
 	char buf[MNL_SOCKET_BUFFER_SIZE];
@@ -982,7 +977,7 @@ nflog_stop(const struct nurs_producer *producer)
 }
 
 static enum nurs_return_t
-nflog_signal(const struct nurs_producer *producer, uint32_t signal)
+nflog_signal(struct nurs_producer *producer, uint32_t signal)
 {
 	switch (signal) {
 	default:

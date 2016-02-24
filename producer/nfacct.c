@@ -191,7 +191,7 @@ static enum nurs_return_t nfacct_read_cb(int fd, uint16_t when, void *data)
 	return NURS_RET_OK;
 }
 
-static int nfacct_send_request(const struct nurs_producer *producer)
+static int nfacct_send_request(struct nurs_producer *producer)
 {
 	struct nfacct_priv *priv = nurs_producer_context(producer);
 	struct nlmsghdr *nlh;
@@ -229,10 +229,9 @@ static enum nurs_return_t nfacct_timer_cb(struct nurs_timer *t, void *data)
 	return NURS_RET_OK;
 }
 
-static enum nurs_return_t nfacct_organize(const struct nurs_producer *producer)
+static enum nurs_return_t nfacct_organize(struct nurs_producer *producer)
 {
 	struct nfacct_priv *priv = nurs_producer_context(producer);
-	void *cbdata = (void *)(uintptr_t)producer;
 
 	if (config_pollint(producer) <= 0) {
 		nurs_log(NURS_ERROR, "You have to set pollint\n");
@@ -260,7 +259,7 @@ static enum nurs_return_t nfacct_organize(const struct nurs_producer *producer)
 		goto err_close;
 	}
 
-	priv->timer = nurs_timer_create(nfacct_timer_cb, cbdata);
+	priv->timer = nurs_timer_create(nfacct_timer_cb, producer);
 	if (!priv->timer) {
 		nurs_log(NURS_ERROR, "failed to create timer: %s\n",
 			 strerror(errno));
@@ -277,8 +276,7 @@ err_exit:
 	return NURS_RET_ERROR;
 }
 
-static enum nurs_return_t
-nfacct_disorganize(const struct nurs_producer *producer)
+static enum nurs_return_t nfacct_disorganize(struct nurs_producer *producer)
 {
 	struct nfacct_priv *priv = nurs_producer_context(producer);
 	int ret = 0;
@@ -292,13 +290,12 @@ nfacct_disorganize(const struct nurs_producer *producer)
 	return NURS_RET_OK;
 }
 
-static enum nurs_return_t nfacct_start(const struct nurs_producer *producer)
+static enum nurs_return_t nfacct_start(struct nurs_producer *producer)
 {
 	struct nfacct_priv *priv = nurs_producer_context(producer);
 	int pollint = config_pollint(producer);
-	void *cbdata = (void *)(uintptr_t)producer;
 
-	if (nurs_fd_register(priv->fd, nfacct_read_cb, cbdata)) {
+	if (nurs_fd_register(priv->fd, nfacct_read_cb, producer)) {
 		nurs_log(NURS_ERROR, "failed to register fd: %s\n",
 			 strerror(errno));
 		goto err_exit;
@@ -318,7 +315,7 @@ err_exit:
 	return NURS_RET_ERROR;
 }
 
-static enum nurs_return_t nfacct_stop(const struct nurs_producer *producer)
+static enum nurs_return_t nfacct_stop(struct nurs_producer *producer)
 {
 	struct nfacct_priv *priv = nurs_producer_context(producer);
 	int ret = 0;
@@ -333,7 +330,7 @@ static enum nurs_return_t nfacct_stop(const struct nurs_producer *producer)
 }
 
 static enum nurs_return_t
-nfacct_signal(const struct nurs_producer *producer, uint32_t signum)
+nfacct_signal(struct nurs_producer *producer, uint32_t signum)
 {
 	switch (signum) {
 	case SIGUSR2:

@@ -71,13 +71,11 @@ tick_timer_cb(struct nurs_timer *timer, void *data)
 	return nurs_propagate(producer, output);
 }
 
-static enum nurs_return_t
-tick_organize(const struct nurs_producer *producer)
+static enum nurs_return_t tick_organize(struct nurs_producer *producer)
 {
 	struct tick_priv *priv = nurs_producer_context(producer);
-	void *cbdata = (void *)((uintptr_t)producer);
 
-	priv->timer = nurs_timer_create(tick_timer_cb, cbdata);
+	priv->timer = nurs_timer_create(tick_timer_cb, producer);
 	if (!priv->timer) {
 		nurs_log(NURS_ERROR, "failed to create timer\n");
 		return NURS_RET_ERROR;
@@ -88,7 +86,7 @@ tick_organize(const struct nurs_producer *producer)
 }
 
 static enum nurs_return_t
-tick_disorganize(const struct nurs_producer *producer)
+tick_disorganize(struct nurs_producer *producer)
 {
 	struct tick_priv *priv = nurs_producer_context(producer);
 
@@ -100,8 +98,7 @@ tick_disorganize(const struct nurs_producer *producer)
 	return NURS_RET_OK;
 }
 
-static enum nurs_return_t
-tick_start(const struct nurs_producer *producer)
+static enum nurs_return_t tick_start(struct nurs_producer *producer)
 {
 	struct tick_priv *priv = nurs_producer_context(producer);
 
@@ -113,8 +110,7 @@ tick_start(const struct nurs_producer *producer)
 	return NURS_RET_OK;
 }
 
-static enum nurs_return_t
-tick_stop(const struct nurs_producer *producer)
+static enum nurs_return_t tick_stop(struct nurs_producer *producer)
 {
 	struct tick_priv *priv = nurs_producer_context(producer);
 

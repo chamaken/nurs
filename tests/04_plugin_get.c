@@ -33,7 +33,7 @@ consumer_interp(const struct nurs_plugin *plugin,
 }
 
 static enum nurs_return_t
-producer_organize(const struct nurs_producer *producer)
+producer_organize(struct nurs_producer *producer)
 {
 	return NURS_RET_OK;
 }

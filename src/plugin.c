@@ -1315,7 +1315,7 @@ producer_cb(const char *name,
 static enum nurs_return_t
 disorganize_cb(struct nurs_plugin *plugin, void *data)
 {
-	const struct nurs_producer *producer;	/* nurs_producer_disorganize_t */
+	struct nurs_producer *producer;		/* nurs_producer_disorganize_t */
 	const struct nurs_filter *filter;	/* nurs_disorganize_t */
 	const struct nurs_consumer *consumer;	/* nurs_disorganize_t */
 	const struct nurs_coveter *coveter;	/* nurs_disorganize_t */
@@ -1325,7 +1325,7 @@ disorganize_cb(struct nurs_plugin *plugin, void *data)
 
 	switch (plugin->type) {
 	case NURS_PLUGIN_T_PRODUCER:
-		producer = (const struct nurs_producer *)plugin;
+		producer = (struct nurs_producer *)plugin;
 		producer_disorganize = producer->def->disorganize;
 		if (!producer_disorganize)
 			return NURS_RET_OK;
@@ -1364,7 +1364,7 @@ int plugins_disorganize(bool force)
 static enum nurs_return_t
 organize_cb(struct nurs_plugin *plugin, void *data)
 {
-	const struct nurs_producer *producer;	/* nurs_producer_organize_t */
+	struct nurs_producer *producer;		/* nurs_producer_organize_t */
 	const struct nurs_filter *filter;	/* nurs_organize_t */
 	const struct nurs_consumer *consumer;	/* nurs_organize_t */
 	const struct nurs_coveter *coveter;	/* nurs_coveter_organize_t */
@@ -1374,7 +1374,7 @@ organize_cb(struct nurs_plugin *plugin, void *data)
 
 	switch (plugin->type) {
 	case NURS_PLUGIN_T_PRODUCER:
-		producer = (const struct nurs_producer *)plugin;
+		producer = (struct nurs_producer *)plugin;
 		producer_organize = producer->def->organize;
 		if (!producer_organize)
 			return NURS_RET_OK;
@@ -1439,7 +1439,7 @@ int plugins_organize(const char *fname)
 static enum nurs_return_t
 stop_cb(struct nurs_plugin *plugin, void *data)
 {
-	const struct nurs_producer *producer;
+	struct nurs_producer *producer;
 	const struct nurs_filter *filter;
 	const struct nurs_consumer *consumer;
 	const struct nurs_coveter *coveter;
@@ -1448,7 +1448,7 @@ stop_cb(struct nurs_plugin *plugin, void *data)
 
 	switch (plugin->type) {
 	case NURS_PLUGIN_T_PRODUCER:
-		producer = (const struct nurs_producer *)plugin;
+		producer = (struct nurs_producer *)plugin;
 		producer_stop = producer->def->stop;
 		if (!producer_stop)
 			return NURS_RET_OK;
@@ -1487,7 +1487,7 @@ int plugins_stop(bool force)
 static enum nurs_return_t
 start_cb(struct nurs_plugin *plugin, void *data)
 {
-	const struct nurs_producer *producer;
+	struct nurs_producer *producer;
 	const struct nurs_filter *filter;
 	const struct nurs_consumer *consumer;
 	const struct nurs_coveter *coveter;
@@ -1496,7 +1496,7 @@ start_cb(struct nurs_plugin *plugin, void *data)
 
 	switch (plugin->type) {
 	case NURS_PLUGIN_T_PRODUCER:
-		producer = (const struct nurs_producer *)plugin;
+		producer = (struct nurs_producer *)plugin;
 		producer_start = producer->def->start;
 		if (!producer_start)
 			return NURS_RET_OK;
@@ -1564,7 +1564,7 @@ resume_workers:
 static enum nurs_return_t
 signal_cb(struct nurs_plugin *plugin, void *data)
 {
-	const struct nurs_producer *producer;
+	struct nurs_producer *producer;
 	const struct nurs_filter *filter;
 	const struct nurs_consumer *consumer;
 	const struct nurs_coveter *coveter;
@@ -1574,7 +1574,7 @@ signal_cb(struct nurs_plugin *plugin, void *data)
 
 	switch (plugin->type) {
 	case NURS_PLUGIN_T_PRODUCER:
-		producer = (const struct nurs_producer *)plugin;
+		producer = (struct nurs_producer *)plugin;
 		producer_signal = producer->def->signal;
 		if (!producer_signal)
 			return NURS_RET_OK;

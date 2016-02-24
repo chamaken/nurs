@@ -198,7 +198,7 @@ pysvr_start(const struct nurs_plugin *plugin)
 }
 
 static enum nurs_return_t
-pysvr_producer_start(const struct nurs_producer *producer)
+pysvr_producer_start(struct nurs_producer *producer)
 {
 	return _talk_active(nurs_producer_context(producer),
 			    NURS_PYIPC_T_REQ_PRODUCER_START,
@@ -216,7 +216,7 @@ pysvr_stop(const struct nurs_plugin *plugin)
 }
 
 static enum nurs_return_t
-pysvr_producer_stop(const struct nurs_producer *producer)
+pysvr_producer_stop(struct nurs_producer *producer)
 {
 	return _talk_active(nurs_producer_context(producer),
 			    NURS_PYIPC_T_REQ_PRODUCER_STOP,
@@ -234,7 +234,7 @@ pysvr_signal(const struct nurs_plugin *plugin, uint32_t signum)
 }
 
 static enum nurs_return_t
-pysvr_producer_signal(const struct nurs_producer *producer, uint32_t signum)
+pysvr_producer_signal(struct nurs_producer *producer, uint32_t signum)
 {
 	return _talk_active(nurs_producer_context(producer),
 			    NURS_PYIPC_T_REQ_PRODUCER_SIGNAL,
@@ -342,7 +342,7 @@ pysvr_coveter_organize(const struct nurs_plugin *plugin,
 }
 
 static enum nurs_return_t
-pysvr_producer_organize(const struct nurs_producer *producer)
+pysvr_producer_organize(struct nurs_producer *producer)
 {
 	const struct nurs_config *config = nurs_producer_config(producer);
 	struct py_priv *priv = nurs_producer_context(producer);
@@ -376,7 +376,7 @@ pysvr_disorganize(const struct nurs_plugin *plugin)
 }
 
 static enum nurs_return_t
-pysvr_producer_disorganize(const struct nurs_producer *producer)
+pysvr_producer_disorganize(struct nurs_producer *producer)
 {
 	struct py_priv *priv = nurs_producer_context(producer);
 	enum nurs_return_t ret
