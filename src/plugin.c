@@ -961,7 +961,7 @@ int nurs_producer_unregister_name(const char *name)
 {
 	return plugin_unregister(NURS_PLUGIN_T_PRODUCER, name);
 }
-EXPORT_SYMBOL(nurs_filter_unregister_name);
+EXPORT_SYMBOL(nurs_producer_unregister_name);
 
 /**
  * nurs_filter_register - register filter by definition
@@ -1108,7 +1108,7 @@ int nurs_coveter_unregister_name(const char *name)
 {
 	return plugin_unregister(NURS_PLUGIN_T_COVETER, name);
 }
-EXPORT_SYMBOL(nurs_consumer_unregister_name);
+EXPORT_SYMBOL(nurs_coveter_unregister_name);
 
 struct nurs_producer *
 plugin_producer_get(const char *name, const char *id)
