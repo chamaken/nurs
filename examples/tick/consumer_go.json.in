@@ -15,5 +15,6 @@
 	  "flags": ["NURS_IKEY_F_REQUIRED"] }
     ],
     "organize":	"tickOrganize",
+    "disorganize": "tickDisorganize",
     "interp":	"tickInterp"
 }
