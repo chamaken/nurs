@@ -76,6 +76,8 @@ Optional
 * libnftnl (http://www.netfilter.org/projects/libnftnl/)
 * python3 (I use debian jessie which has 3.4)  
   - cpylmnl (https://github.com/chamaken/cpylmnl)
+* Go 1.6
+  - cgolmnl (https://github.com/chamaken/cgolmnl)
 
 
 Installation
@@ -110,41 +112,6 @@ Python
   Python plugin forks at organize callback, can read only pre-allocated  
   mmaped area just before organize call back.
 
-
-Go
-==
-1.6 is required because of:  
-https://github.com/golang/go/commit/fbdfa99246ecbb04954a042a5809c4748415574d  
-
-I do not understand Go's GC. tick examples seems to work but another examples  
-need GOGC=off, useless for real use at all. This GC related problem still  
-exists at 1.6rc2, but resolved after 1.6rc2? I have probably not tried:  
-https://github.com/golang/go/issues/13372
-
-<pre>
-runtime: free list of span 0x7f4fef181438:
-0x1c820018140 -> 0x1c9200181de (BAD)
-fatal error: free list corrupted
-
-runtime stack:
-runtime.throw(0x7f4fea5d7510, 0x13)
-        /usr/local/go/src/runtime/panic.go:530 +0x92
-runtime.(*mspan).sweep(0x7f4fef181438, 0x300000000, 0x1c800000001)
-        /usr/local/go/src/runtime/mgcsweep.go:201 +0x856
-runtime.sweepone(0x0)
-        /usr/local/go/src/runtime/mgcsweep.go:112 +0x242
-runtime.gosweepone.func1()
-        /usr/local/go/src/runtime/mgcsweep.go:124 +0x23
-runtime.systemstack(0x7f4fea0e2e20)
-        /usr/local/go/src/runtime/asm_amd64.s:307 +0xa1
-runtime.gosweepone(0x7f4fea68e1e8)
-        /usr/local/go/src/runtime/mgcsweep.go:125 +0x3f
-runtime.deductSweepCredit(0x2000, 0x0)
-        /usr/local/go/src/runtime/mgcsweep.go:384 +0xc8
-...
-</pre>
-
-To disable go extension examples, run configure without go in PATH env.
 
 
 TODO
