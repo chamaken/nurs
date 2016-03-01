@@ -1,5 +1,5 @@
 # example configuration for nursd. run at this dir
-# ../../src/nursd nursd.conf
+# ../../src/nursd go.conf
 
 [global]
 
