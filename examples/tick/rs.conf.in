@@ -1,0 +1,33 @@
+# example configuration for nursd. run at this dir
+# ../../src/nursd rs.conf
+
+[global]
+
+# plugin:
+# 1. load the plugins _first_ from the global section
+# 2. options for each plugin in seperate section below
+plugin	= "@pkglibdir@/nurs_producer_TICK.so"
+plugin	= "@cwd@/consumer.rs/target/debug/libconsumer.so"
+plugin	= "@cwd@/producer.rs/target/debug/libproducer.so"
+
+# stack
+# each element represented id:name, separated by ,
+stack	= "tick:TICK, rs_consumer:RS_TICK_CONSUMER"
+stack	= "rs_producer:TICK, rs_consumer:RS_TICK_CONSUMER"
+
+# number of workers
+workers	= 8
+
+# number of iosets per stack
+iosets	= 8
+
+# each pluginstance settings
+
+[tick]
+myname = "C producer"
+
+[rs_consumer]
+myname = "Rust consumer"
+
+[rs_producer]
+myname = "Rust producer"

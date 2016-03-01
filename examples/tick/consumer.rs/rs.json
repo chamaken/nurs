@@ -1,0 +1,18 @@
+{
+    "version": "0.1",
+    "name": "RS_TICK_CONSUMER",
+    "config": [
+	{ "name": "myname",
+	  "type": "NURS_CONFIG_T_STRING",
+	  "flags": ["NURS_CONFIG_F_MANDATORY"]}
+    ],
+    "input" : [
+	{ "name": "counter",
+	  "type": "NURS_KEY_T_UINT64",
+	  "flags": ["NURS_IKEY_F_REQUIRED"] },
+	{ "name": "producer.name",
+	  "type": "NURS_KEY_T_STRING",
+	  "flags": ["NURS_IKEY_F_REQUIRED"] }
+    ],
+    "interp":	"callback"
+}
