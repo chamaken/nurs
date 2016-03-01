@@ -152,11 +152,11 @@ static int nfq_mnl_cb(const struct nlmsghdr *nlh, void *data)
 	if (nfq_nlmsg_parse(nlh, attrs) < 0) {
 		nurs_log(NURS_ERROR, "failed to parse nfq message: %s\n",
 			 strerror(errno));
-		nurs_put_output(producer, output);
+		nurs_put_output(output);
 		return MNL_CB_ERROR;
 	}
 	nurs_output_set_valid(output, NFQ_OUTPUT_NLATTRS);
-	return nurs_propagate(producer, output);
+	return nurs_publish(output);
 
 	return MNL_CB_OK;
 }

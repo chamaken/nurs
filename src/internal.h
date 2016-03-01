@@ -90,12 +90,15 @@ struct nurs_input {
 	struct nurs_output_key	**keys;
 };
 
+struct nurs_producer;
+
 /*
  * ioset
  */
 struct nurs_ioset {
 	struct list_head	list;	/* head: producer.iosets */
 	size_t			size;	/* for munmap */
+	struct nurs_producer	*producer;
 
 	int			refcnt;
 	pthread_mutex_t		refcnt_mutex;
@@ -113,9 +116,6 @@ struct nurs_ioset {
 	uint8_t			len;
 	struct nurs_output	base[];
 };
-
-struct nurs_producer;
-
 
 struct nurs_input *ioset_input(struct nurs_ioset *ioset, uint8_t idx);
 struct nurs_output *ioset_output(struct nurs_ioset *ioset, uint8_t idx);
@@ -170,7 +170,7 @@ struct nurs_producer {
 	struct nurs_config		*config;
 	struct nurs_producer_def	*def;	/* reference, not copy */
 
-	struct list_head	plist;
+	struct list_head	plist;		/* producers list */
 	struct list_head	iosets;		/* struct nurs_ioset */
 	size_t			iosets_size;	/* for munmap */
 	pthread_mutex_t		iosets_mutex;

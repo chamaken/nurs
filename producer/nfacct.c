@@ -144,7 +144,7 @@ propagate_nfacct(struct nurs_producer *producer,
 				    (uint32_t)priv->tv.tv_usec);
 	}
 
-	return nurs_propagate(producer, output);
+	return nurs_publish(output);
 }
 
 static int nlmsg_cb(const struct nlmsghdr *nlh, void *data)
@@ -157,7 +157,7 @@ static int nlmsg_cb(const struct nlmsghdr *nlh, void *data)
 	if (nfacct_nlmsg_parse_payload(nlh, nfacct)) {
 		nurs_log(NURS_ERROR, "failed to parse nfacct message: %s\n",
 			 strerror(errno));
-		nurs_put_output(producer, output);
+		nurs_put_output(output);
 		return MNL_CB_ERROR;
 	}
 	nurs_output_set_valid(output, NFACCT_OUTPUT_RAW);

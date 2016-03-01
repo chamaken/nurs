@@ -385,10 +385,9 @@ type FilterInterpCb func(*Plugin, *Input, *Output) ReturnType
 //				const struct nurs_input *input);
 type ConsumerInterpCb func(*Plugin, *Input, *Output) ReturnType
 
-// enum nurs_return_t nurs_propagate(struct nurs_producer *producer, struct nurs_output *output);
-func nursPropagate(producer *Producer, output *Output) (ReturnType, error) {
-	ret, err := C.nurs_propagate((*C.struct_nurs_producer)(producer),
-		(*C.struct_nurs_output)(output))
+// enum nurs_return_t nurs_publish(struct nurs_output *output);
+func nursPublish(output *Output) (ReturnType, error) {
+	ret, err := C.nurs_publish((*C.struct_nurs_output)(output))
 	return ReturnType(ret), err
 }
 
@@ -479,10 +478,9 @@ func nursGetOutput(producer *Producer) (*Output, error) {
 	return (*Output)(ret), err
 }
 
-// int nurs_put_output(struct nurs_producer *producer, struct nurs_output *output);
-func nursPutOutput(producer *Producer, output *Output) error {
-	_, err := C.nurs_put_output((*C.struct_nurs_producer)(producer),
-		(*C.struct_nurs_output)(output))
+// int nurs_put_output(struct nurs_output *output);
+func nursPutOutput(output *Output) error {
+	_, err := C.nurs_put_output((*C.struct_nurs_output)(output))
 	return err
 }
 

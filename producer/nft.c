@@ -482,7 +482,7 @@ static int name##_cb(struct nurs_producer *producer,			\
 	nurs_output_set_u32(_output, NFTNL_OUTPUT_NFTNL_EVENT, event);	\
 	nurs_output_set_pointer(_output, keyidx, _t);			\
 	set_##name##_keys(_output, _t);					\
-	if (nurs_propagate(producer, _output) == 0)			\
+	if (nurs_publish(_output) == 0)					\
 		return MNL_CB_OK;					\
 free:									\
 	nurs_output_set_pointer(_output, keyidx, NULL);			\

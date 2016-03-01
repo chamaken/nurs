@@ -80,7 +80,7 @@ func dataCb(nlh *mnl.Nlmsghdr, data interface{}) (int, syscall.Errno) {
 	if _, err := ct.NlmsgParse(nlh); err != nil {
 		nurs.Log(nurs.ERROR, "failed to parse nfct nlmsg\n");
 		ct.Destroy()
-		producer.PutOutput(output)
+		output.Put()
 		return mnl.MNL_CB_ERROR, err.(syscall.Errno)
 	}
 
@@ -134,7 +134,7 @@ func dataCb(nlh *mnl.Nlmsghdr, data interface{}) (int, syscall.Errno) {
 
 	output.SetPointer(idx_nfct, unsafe.Pointer(ct))
 
-	if _, err = producer.Propagate(output); err != nil {
+	if _, err = output.Publish(); err != nil {
 		nurs.Log(nurs.ERROR, "failed to propagate: %s\n", err)
 		return mnl.MNL_CB_ERROR, err.(syscall.Errno)
 	}

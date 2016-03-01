@@ -171,8 +171,12 @@ func (output *Output) SetValid(idx uint16) error {
 	return nursOutputSetValid(output, idx)
 }
 
-func (producer *Producer) Propagate(output *Output) (ReturnType, error) {
-	return nursPropagate(producer, output)
+func (output *Output) Publish() (ReturnType, error) {
+	return nursPublish(output)
+}
+
+func (output *Output) Put() error {
+	return nursPutOutput(output)
 }
 
 func (producer *Producer) Config() *Config {
@@ -185,10 +189,6 @@ func (plugin *Plugin) Config() *Config {
 
 func (producer *Producer) GetOutput() (*Output, error) {
 	return nursGetOutput(producer)
-}
-
-func (producer *Producer) PutOutput(output *Output) error {
-	return nursPutOutput(producer, output)
 }
 
 func NewFd(fd int, when FdEvent) (*Fd, error) {

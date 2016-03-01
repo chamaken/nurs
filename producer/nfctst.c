@@ -216,7 +216,7 @@ static enum nurs_return_t nfctst_read_cb(int fd, uint16_t when, void *data)
 	for (i = NFCTST_OUTPUT_STATS_SEARCHED; i < NFCTST_OUTPUT_MAX; i++)
 		nurs_output_set_u32(output, i, tb[i]);
 
-	if (nurs_propagate(producer, output))
+	if (nurs_publish(output))
 		return NURS_RET_ERROR;
 
 	return NURS_RET_OK;

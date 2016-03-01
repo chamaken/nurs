@@ -356,16 +356,16 @@ exit:
 
 /* set pthread related errno and returns NURS_RET_ERROR on error */
 static enum nurs_return_t
-nurs_publish_ioset(struct nurs_producer *producer,
-		   struct nurs_output *output)
+nurs_publish_ioset(struct nurs_output *output)
 {
 	struct nurs_ioset *ioset
 		= container_of((struct nurs_output (*)[])output,
 			       struct nurs_ioset, base);
+	struct nurs_producer *producer = ioset->producer;
 	struct nurs_worker *worker;
 
 	if (validate_output(producer->id, output)) {
-		nurs_put_output(producer, output);
+		nurs_put_output(output);
 		errno = EIO;
 		return NURS_RET_ERROR;
 	}
@@ -402,17 +402,17 @@ fail:
 /* set pthread related errno and returns NURS_RET_ERROR on error */
 __attribute__ ((unused))
 static enum nurs_return_t
-nurs_publish_stack(struct nurs_producer *producer,
-		   struct nurs_output *output)
+nurs_publish_stack(struct nurs_output *output)
 {
 	struct nurs_ioset *ioset
 		= container_of((struct nurs_output (*)[])output,
 			       struct nurs_ioset, base);
+	struct nurs_producer *producer = ioset->producer;
 	struct nurs_stack *stack;
 	struct nurs_worker *worker;
 
 	if (validate_output(producer->id, output)) {
-		nurs_put_output(producer, output);
+		nurs_put_output(output);
 		errno = EIO;
 		return NURS_RET_ERROR;
 	}
@@ -451,10 +451,9 @@ fail:
 
 #ifdef THREAD_PER_STACK
 enum nurs_return_t
-nurs_propagate(struct nurs_producer *producer,
-	       struct nurs_output *output)
+nurs_publish(struct nurs_output *output)
 {
-	return nurs_publish_stack(producer, output);
+	return nurs_publish_stack(output);
 }
 static void *start_routine(void *arg)
 {
@@ -462,17 +461,16 @@ static void *start_routine(void *arg)
 }
 #else
 enum nurs_return_t
-nurs_propagate(struct nurs_producer *producer,
-	       struct nurs_output *output)
+nurs_publish(struct nurs_output *output)
 {
-	return nurs_publish_ioset(producer, output);
+	return nurs_publish_ioset(output);
 }
 static void *start_routine(void *arg)
 {
 	return ioset_routine(arg);
 }
 #endif
-EXPORT_SYMBOL(nurs_propagate);
+EXPORT_SYMBOL(nurs_publish);
 
 /* allocate workers and start it
  * return negative errno on error */
