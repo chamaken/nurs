@@ -499,13 +499,13 @@ static int handle_valid_frame(struct nurs_producer *producer,
 	/* __nfulnl_send set NLMSG_DONE, cause MNL_CB_STOP */
 	if (ret == MNL_CB_ERROR) {
 		frame->nm_status = NL_MMAP_STATUS_UNUSED;
-		nurs_put_output(producer, output);
+		nurs_put_output(output);
 		return NURS_RET_ERROR;
 	}
 	nurs_output_set_u8(output, NFLOG_OUTPUT_RAW_LABEL,
 			   config_label(producer));
 
-	if (nurs_propagate(producer, output)) {
+	if (nurs_publish(output)) {
 		frame->nm_status = NL_MMAP_STATUS_UNUSED;
 		return NURS_RET_ERROR;
 	}

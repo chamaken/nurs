@@ -88,11 +88,11 @@ def data_cb(nlh, producer):
                 output["orig.ip6.daddr"] = ct.get_attr_as(nfct.ATTR_ORIG_IPV6_DST, (ctypes.c_ubyte * 16))
     except Exception as e:
         log.error("failed to set output: %s", e)
-        producer.put_output(output)
+        output.put()
         return mnl.MNL_CB_ERROR
 
     try:
-        producer.propagate(output)
+        output.publish()
     except Exception as e:
         log.error("failed to propagate: %s", e)
         return mnl.MNL_CB_ERROR

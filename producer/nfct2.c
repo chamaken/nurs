@@ -314,7 +314,7 @@ static int propagate_ct(struct nurs_producer *producer,
 		nurs_output_set_u8(output, NFCT_FLOW_END_REASON,
 				   flowReasons[type]);
 
-	switch (nurs_propagate(producer, output)) {
+	switch (nurs_publish(output)) {
 	case NURS_RET_OK:
 		return MNL_CB_OK;
 	case NURS_RET_STOP:

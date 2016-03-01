@@ -32,7 +32,7 @@ func timerCb(timer *nurs.Timer, data interface{}) nurs.ReturnType {
 	priv.counter += 1
 	output.SetString(1, priv.myname)
 
-	ret, _ := producer.Propagate(output)
+	ret, _ := output.Publish()
 	return ret
 }
 

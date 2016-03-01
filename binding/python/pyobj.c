@@ -1063,6 +1063,29 @@ pynurs_output_set_value(struct pynurs_output *self,
 	return ret;
 }
 
+static PyObject *
+pynurs_publish(struct pynurs_output *output)
+{
+	if (pycli_publish(output->raw) != NURS_RET_OK) {
+		/* XXX: need errno */
+		PyErr_SetString(PyExc_Exception, "failed to publish");
+		return NULL;
+	}
+
+	Py_RETURN_NONE;
+}
+
+static PyObject *
+pynurs_put_output(struct pynurs_output *output)
+{
+	if (pycli_put_output(output->raw)) {
+		/* XXX: need errno */
+		PyErr_SetString(PyExc_Exception, "failed to put output");
+		return NULL;
+	}
+	Py_RETURN_NONE;
+}
+
 static PyMethodDef pynurs_output_methods[] = {
 	{ "__len__", (PyCFunction)pynurs_output_len, METH_NOARGS,
 	  "length", },
@@ -1070,6 +1093,10 @@ static PyMethodDef pynurs_output_methods[] = {
 	  "get type", },
 	{ "size", (PyCFunction)pynurs_output_get_size, METH_O,
 	  "get size", },
+	{ "publish", (PyCFunction)pynurs_publish, METH_NOARGS,
+	  "publish nurs.Output", },
+	{ "put", (PyCFunction)pynurs_put_output, METH_NOARGS,
+	  "put nurs.Output", },
 	{ NULL, },
 };
 
@@ -1168,45 +1195,6 @@ pynurs_producer_get_output(struct pynurs_producer *self)
 	return output_obj;
 }
 
-static PyObject *
-pynurs_producer_put_output(struct pynurs_producer *producer, PyObject *arg)
-{
-	struct pynurs_output *output;
-
-	if (!PyObject_TypeCheck(arg, &pynurs_output_type)) {
-		PyErr_SetString(PyExc_TypeError, "not a nurs.Output");
-		return NULL;
-	}
-
-	output = (struct pynurs_output *)arg;
-	if (pycli_put_output(producer->raw, output->raw)) {
-		/* XXX: need errno */
-		PyErr_SetString(PyExc_Exception, "failed to put output");
-		return NULL;
-	}
-	Py_RETURN_NONE;
-}
-
-static PyObject *
-pynurs_producer_propagate(struct pynurs_producer *producer, PyObject *arg)
-{
-	struct pynurs_output *output;
-
-	if (!PyObject_TypeCheck(arg, &pynurs_output_type)) {
-		PyErr_SetString(PyExc_TypeError, "not a nurs.Output");
-		return NULL;
-	}
-
-	output = (struct pynurs_output *)arg;
-	if (pycli_propagate(producer->raw, output->raw) != NURS_RET_OK) {
-		/* XXX: need errno */
-		PyErr_SetString(PyExc_Exception, "failed to propagate");
-		return NULL;
-	}
-
-	Py_RETURN_NONE;
-}
-
 static PyGetSetDef pynurs_producer_getseters[] = {
 	{
 		"config",
@@ -1221,10 +1209,6 @@ static PyGetSetDef pynurs_producer_getseters[] = {
 static PyMethodDef pynurs_producer_methods[] = {
 	{ "get_output", (PyCFunction)pynurs_producer_get_output, METH_NOARGS,
 	  "get nurs.Output", },
-	{ "put_output", (PyCFunction)pynurs_producer_put_output, METH_O,
-	  "put nurs.Output", },
-	{ "propagate", (PyCFunction)pynurs_producer_propagate, METH_O,
-	  "propagate nurs.Output", },
 	{ NULL, },
 };
 

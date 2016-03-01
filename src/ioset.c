@@ -217,6 +217,8 @@ ioset_create_template(struct nurs_producer *producer)
 
 	ioset->size = size;
 	ioset->len = ioset_len;
+	ioset->producer = producer;
+
 	ptr = (void *)((uintptr_t)ioset + ptr_offset);
 
 	output = ioset->base;
@@ -511,11 +513,12 @@ struct nurs_output *nurs_get_output(struct nurs_producer *producer)
 }
 EXPORT_SYMBOL(nurs_get_output);
 
-int nurs_put_output(struct nurs_producer *producer, struct nurs_output *output)
+int nurs_put_output(struct nurs_output *output)
 {
 	struct nurs_ioset *ioset
 		= container_of((struct nurs_output (*)[])output,
 			       struct nurs_ioset, base);
+	struct nurs_producer *producer = ioset->producer;
 
 	return ioset_put(producer, ioset);
 }

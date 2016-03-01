@@ -364,7 +364,7 @@ static int propagate_ct(struct nurs_producer *producer,
 	}
 	nurs_output_set_pointer(output, NFCT_CT, ct);
 	nurs_output_set_pointer(output, NFCT_DESTROY_CT, destroy_ct);
-	nurs_propagate(producer, output);
+	nurs_publish(output);
 
 	return 0;
 }

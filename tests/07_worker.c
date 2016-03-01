@@ -258,15 +258,15 @@ static void test_producer(void *data)
 		"should success to set p1 key.0 true");
 	assertf(!nurs_output_set_bool(output, 1, false),
 		"should success to set p1 key.1 false");
-	assertf(nurs_propagate(p1, output) == NURS_RET_OK,
-		"should success to propagate p1 output");
+	assertf(nurs_publish(output) == NURS_RET_OK,
+		"should success to publish p1 output");
 	usleep(10000);
 	assertf(!(output->keys[0].flags & NURS_KEY_F_VALID),
-		"should not key.0 is valid after propagate");
+		"should not key.0 is valid after publish");
 	assertf(!(output->keys[1].flags & NURS_KEY_F_VALID),
-		"should not key.1 is valid after propagate");
+		"should not key.1 is valid after publish");
 	assertf(!output->keys[1].b,
-		"should key.1 be false after propagate");
+		"should key.1 be false after publish");
 
 	confirm_2_workers();
 
@@ -276,15 +276,15 @@ static void test_producer(void *data)
 		"should success to set p2 key.0 true");
 	assertf(!nurs_output_set_bool(output, 1, false),
 		"should success to set p2 key.1 false");
-	assertf(nurs_propagate(p2, output) == NURS_RET_OK,
-		"should success to propagate p2 output");
+	assertf(nurs_publish(output) == NURS_RET_OK,
+		"should success to publish p2 output");
 	usleep(10000);
 	assertf(!(output->keys[0].flags & NURS_KEY_F_VALID),
-		"should not key.0 is valid after propagate");
+		"should not key.0 is valid after publish");
 	assertf(!(output->keys[1].flags & NURS_KEY_F_VALID),
-		"should not key.1 is valid after propagate");
+		"should not key.1 is valid after publish");
 	assertf(!output->keys[1].b,
-		"should key.1 be false after propagate");
+		"should key.1 be false after publish");
 
 	confirm_2_workers();
 

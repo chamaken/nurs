@@ -68,7 +68,7 @@ tick_timer_cb(struct nurs_timer *timer, void *data)
 			    priv->counter++);
 	nurs_output_set_string(output, TICK_OUTPUT_MYNAME, priv->myname);
 
-	return nurs_propagate(producer, output);
+	return nurs_publish(output);
 }
 
 static enum nurs_return_t tick_organize(struct nurs_producer *producer)

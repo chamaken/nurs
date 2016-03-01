@@ -642,20 +642,19 @@ static int pysvr_timer_pending(struct py_priv *priv, struct nlmsghdr *nlh, int f
 			   0, "I", nurs_timer_pending(ptimer->timer));
 }
 
-static int pysvr_propagate(struct py_priv *priv, struct nlmsghdr *nlh, int fd)
+static int pysvr_publish(struct py_priv *priv, struct nlmsghdr *nlh, int fd)
 {
-	struct nurs_producer *producer;
 	struct nurs_output *output;
 	int ret, rc;
 
-	if (unpack_nlmsg(nlh, "pp", &producer, &output)) {
-		svr_log(NURS_ERROR, priv, "failed to unpack propagate: %s\n",
+	if (unpack_nlmsg(nlh, "p", &output)) {
+		svr_log(NURS_ERROR, priv, "failed to unpack publish: %s\n",
 			_sys_errlist[errno]);
 		return -1;
 	}
 
-	rc = nurs_propagate(producer, output);
-	ret = priv->sendf(priv, NURS_PYIPC_T_ACK_PROPAGATE, NLM_F_ACK,
+	rc = nurs_publish(output);
+	ret = priv->sendf(priv, NURS_PYIPC_T_ACK_PUBLISH, NLM_F_ACK,
 			  0, "I", rc);
 
 	return ret;
@@ -679,17 +678,16 @@ static int pysvr_get_output(struct py_priv *priv, struct nlmsghdr *nlh, int fd)
 
 static int pysvr_put_output(struct py_priv *priv, struct nlmsghdr *nlh, int fd)
 {
-	struct nurs_producer *producer;
 	struct nurs_output *output;
 
-	if (unpack_nlmsg(nlh, "pp", &producer, &output)) {
+	if (unpack_nlmsg(nlh, "p", &output)) {
 		svr_log(NURS_ERROR, priv, "failed to unpack put producer: %s\n",
 			_sys_errlist[errno]);
 		return -1;
 	}
 
 	return priv->sendf(priv, NURS_PYIPC_T_ACK_PUT_OUTPUT, NLM_F_ACK,
-			   0, "I", nurs_put_output(producer, output));
+			   0, "I", nurs_put_output(output));
 }
 
 static int (*passive_funcs[NURS_PYIPC_T_REQ_MAX])
@@ -705,7 +703,7 @@ static int (*passive_funcs[NURS_PYIPC_T_REQ_MAX])
 	[NURS_PYIPC_T_REQ_ITIMER_ADD]		= pysvr_itimer_add,
 	[NURS_PYIPC_T_REQ_TIMER_DEL]		= pysvr_timer_del,
 	[NURS_PYIPC_T_REQ_TIMER_PENDING]	= pysvr_timer_pending,
-	[NURS_PYIPC_T_REQ_PROPAGATE]		= pysvr_propagate,
+	[NURS_PYIPC_T_REQ_PUBLISH]		= pysvr_publish,
 	[NURS_PYIPC_T_REQ_GET_OUTPUT]		= pysvr_get_output,
 	[NURS_PYIPC_T_REQ_PUT_OUTPUT]		= pysvr_put_output,
 };

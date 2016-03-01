@@ -57,7 +57,7 @@ enum pynus_nlmsg_type {
 	NURS_PYIPC_T_REQ_TIMER_PENDING,		/* c>p nurs_timer_pending */
 	NURS_PYIPC_T_REQ_TIMER_CALLBACK,	/* p>c nurs_timer_cb_t */
 
-	NURS_PYIPC_T_REQ_PROPAGATE,		/* c>p nurs_propagate */
+	NURS_PYIPC_T_REQ_PUBLISH,		/* c>p nurs_publish */
 	NURS_PYIPC_T_REQ_GET_OUTPUT,		/* c>p nurs_get_output */
 	NURS_PYIPC_T_REQ_PUT_OUTPUT,		/* c>p nurs_put_output */
 	NURS_PYIPC_T_REQ_FD_REGISTER,		/* c>p nurs_fd_register */
@@ -65,7 +65,7 @@ enum pynus_nlmsg_type {
 
 	NURS_PYIPC_T_REQ_MAX,			/* */
 
-	NURS_PYIPC_T_ACK_PROPAGATE,		/* p>c nurs_propagate return */
+	NURS_PYIPC_T_ACK_PUBLISH,		/* p>c nurs_publish return */
 	NURS_PYIPC_T_ACK_GET_OUTPUT,		/* p>c nurs_get_output return */
 	NURS_PYIPC_T_ACK_PUT_OUTPUT,		/* p>c nurs_put_output return */
 	NURS_PYIPC_T_ACK_FD_REGISTER,		/* p>c nurs_fd_register return */
@@ -191,9 +191,9 @@ int pycli_timer_add(struct py_timer *ptimer, timer_t sc);
 int pycli_itimer_add(struct py_timer *ptimer, timer_t sc, timer_t per);
 int pycli_timer_del(struct py_timer *ptimer);
 int pycli_timer_pending(struct py_timer *ptimer);
-int pycli_propagate(struct nurs_producer *producer, struct nurs_output *output);
+int pycli_publish(struct nurs_output *output);
 struct nurs_output *pycli_get_output(struct nurs_producer *producer);
-int pycli_put_output(struct nurs_producer *producer, struct nurs_output *output);
+int pycli_put_output(struct nurs_output *output);
 
 /*
  * pyobj

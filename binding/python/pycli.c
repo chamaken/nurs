@@ -445,15 +445,15 @@ int pycli_timer_pending(struct py_timer *ptimer)
 	return ret;
 }
 
-int pycli_propagate(struct nurs_producer *producer, struct nurs_output *output)
+int pycli_publish(struct nurs_output *output)
 {
 	int ret;
 
 	pycli_sendf(__func__,
-		    NURS_PYIPC_T_REQ_PROPAGATE, NLM_F_REQUEST,
-		    0, "pp", producer, output);
+		    NURS_PYIPC_T_REQ_PUBLISH, NLM_F_REQUEST,
+		    0, "p", output);
 	pycli_recvf(__func__,
-		    NURS_PYIPC_T_ACK_PROPAGATE, NLM_F_ACK,
+		    NURS_PYIPC_T_ACK_PUBLISH, NLM_F_ACK,
 		    NULL, "I", &ret);
 
 	return ret;
@@ -473,13 +473,13 @@ struct nurs_output *pycli_get_output(struct nurs_producer *producer)
 	return output;
 }
 
-int pycli_put_output(struct nurs_producer *producer, struct nurs_output *output)
+int pycli_put_output(struct nurs_output *output)
 {
 	int ret;
 
 	pycli_sendf(__func__,
 		    NURS_PYIPC_T_REQ_PUT_OUTPUT, NLM_F_REQUEST,
-		    0, "pp", producer, output);
+		    0, "p", output);
 	pycli_recvf(__func__,
 		    NURS_PYIPC_T_ACK_PUT_OUTPUT, NLM_F_ACK,
 		    NULL, "I", &ret);

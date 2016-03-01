@@ -529,15 +529,13 @@ const struct nurs_config *nurs_plugin_config(const struct nurs_plugin *plugin);
  * worker
  */
 enum nurs_return_t
-	nurs_propagate(struct nurs_producer *producer,
-		       struct nurs_output *output);
+nurs_publish(struct nurs_output *output);
 
 /*
  * ioset
  */
 struct nurs_output *nurs_get_output(struct nurs_producer *producer);
-int nurs_put_output(struct nurs_producer *producer,
-		    struct nurs_output *output);
+int nurs_put_output(struct nurs_output *output);
 
 /*
  * fd
