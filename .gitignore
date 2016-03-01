@@ -35,3 +35,7 @@ __pycache__/
 
 # doc
 /doc/*.8
+
+# rust
+Cargo.lock
+.fingerprint/

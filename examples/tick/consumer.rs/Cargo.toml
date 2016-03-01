@@ -1,0 +1,11 @@
+[package]
+name = "consumer"
+version = "0.1.0"
+authors = ["Ken-ichirou MATSUZAWA <chamas@h4.dion.ne.jp>"]
+
+[lib]
+crate-type = ["dylib"]
+
+[dependencies]
+libc = "0.2.0"
+nurs = { path = "../../../binding/rust" }
