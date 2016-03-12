@@ -1,4 +1,7 @@
 AM_CPPFLAGS = ${regular_CPPFLAGS} -I$(top_srcdir)/include
+if NLMMAP
+AM_CPPFLAGS += -DNLMMAP
+endif
 AM_CFLAGS = ${regular_CFLAGS}
 
 pkglib_LTLIBRARIES = nurs_producer_NFCTST.la
