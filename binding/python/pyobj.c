@@ -630,8 +630,8 @@ static PyObject *
 pynurs_input_get_size(struct pynurs_input *self, PyObject *arg)
 {
 	const struct nurs_input *input = self->raw;
+	uint32_t ksize;
 	uint16_t index;
-	uint16_t ksize;
 
 	index = input_index(input, arg);
 	if (index == UINT16_MAX)
@@ -929,8 +929,8 @@ static PyObject *
 pynurs_output_get_size(struct pynurs_output *self, PyObject *arg)
 {
 	const struct nurs_output *output = self->raw;
+	uint32_t ksize;
 	uint16_t index;
-	uint16_t ksize;
 
 	index = output_index(output, arg);
 	if (index == UINT16_MAX)

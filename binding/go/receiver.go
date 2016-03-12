@@ -43,7 +43,7 @@ func (input *Input) Len() uint16 {
 	return nursInputLen(input)
 }
 
-func (input *Input) Size(idx uint16) (uint16, error) {
+func (input *Input) Size(idx uint16) (uint32, error) {
 	return nursInputSize(input, idx)
 }
 
@@ -115,7 +115,7 @@ func (input *Input) CimName(idx uint16) (string, error) {
 	return nursInputCimName(input, idx)
 }
 
-func (output *Output) Size(idx uint16) (uint16, error) {
+func (output *Output) Size(idx uint16) (uint32, error) {
 	return nursOutputSize(output, idx)
 }
 

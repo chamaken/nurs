@@ -516,7 +516,8 @@ create_template(struct nflow9_priv *priv,
 	struct nflow9_sethdr *set_hdr;
 	uint16_t field_id, field_count = 0;
 	uintptr_t offset = 0;
-	uint16_t i, j, input_size, input_len = nurs_input_len(input);
+	uint32_t input_size;
+	uint16_t i, j, input_len = nurs_input_len(input);
 	const char *name;
         pthread_mutexattr_t attr;
 
