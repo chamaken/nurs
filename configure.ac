@@ -101,15 +101,20 @@ dnl Check by pkg-config
 PKG_CHECK_MODULES([LIBMNL], [libmnl >= 1.0.3])
 PKG_CHECK_MODULES([JANSSON], [jansson >= 2.6])
 
-AC_MSG_CHECKING([for enable mmaped netlink])
-AC_CACHE_VAL(ac_cv_mmaped_netlink,
-AC_TRY_COMPILE(
-    [ #include <linux/netlink.h>],
-    [ int i = NETLINK_RX_RING; ],
-    ac_cv_mmaped_netlink=yes,
-    ac_cv_mmaped_netlink=no))
-AC_MSG_RESULT($ac_cv_mmaped_netlink)
-AM_CONDITIONAL([HAVE_NLMMAP], [test "x$ac_cv_mmaped_netlink" = "xyes"])
+AC_ARG_ENABLE(nlmmap,
+       AS_HELP_STRING([--enable-nlmmap], [enable mmaped netlink socket [default=yes]]),[enable_nlmmap=$enableval],[enable_nlmmap=yes])
+AS_IF([test "x$enable_nlmmap" = "xyes"], [
+    AC_MSG_CHECKING([for enable mmaped netlink])
+    AC_CACHE_VAL(ac_cv_mmaped_netlink,
+    AC_TRY_COMPILE(
+        [ #include <linux/netlink.h>],
+        [ int i = NETLINK_RX_RING; ],
+        ac_cv_mmaped_netlink=yes,
+        ac_cv_mmaped_netlink=no))
+    AC_MSG_RESULT($ac_cv_mmaped_netlink)
+    AC_DEFINE([NLMMAP], [1], [enable mmaped netlink socket])
+])
+AM_CONDITIONAL([NLMMAP], [test "x$ac_cv_mmaped_netlink" = "xyes"])
 
 AC_ARG_ENABLE(nflog,
        AS_HELP_STRING([--enable-nflog], [enable nflog module [default=yes]]),[enable_nflog=$enableval],[enable_nflog=yes])
