@@ -187,8 +187,8 @@ create_template(struct ipfix_priv *priv,
 	uintptr_t tmpl_rec;
 	struct ipfix_sethdr *sethdr;
 	uint16_t field_id, field_count = 0;
-	uint32_t vendor;
-	uint16_t i, input_size, input_len = nurs_input_len(input);
+	uint32_t vendor, input_size;
+	uint16_t i, input_len = nurs_input_len(input);
         pthread_mutexattr_t attr;
 
 	tmpl = alloc_template(priv, input, bm);

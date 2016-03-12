@@ -15,7 +15,7 @@ package nurs
 // #include <arpa/inet.h>
 // #include <signal.h>
 // #include <string.h>
-// #include <nurs/nurs.h>
+// #include "nurs/nurs.h"
 // #include "helper.h"
 import "C"
 
@@ -103,10 +103,10 @@ func nursInputLen(input *Input) uint16 {
 	return uint16(ret)
 }
 
-// uint16_t nurs_input_size(const struct nurs_input *input, uint16_t idx);
-func nursInputSize(input *Input, idx uint16) (uint16, error) {
+// uint32_t nurs_input_size(const struct nurs_input *input, uint16_t idx);
+func nursInputSize(input *Input, idx uint16) (uint32, error) {
 	ret, err := C.nurs_input_size((*C.struct_nurs_input)(input), C.uint16_t(idx))
-	return uint16(ret), err
+	return uint32(ret), err
 }
 
 // const char *nurs_input_name(const struct nurs_input *input, uint16_t idx);
@@ -233,10 +233,10 @@ func nursOutputLen(output *Output) uint16 {
 	return uint16(ret)
 }
 
-// uint16_t nurs_output_size(const struct nurs_output *output, uint16_t idx);
-func nursOutputSize(output *Output, idx uint16) (uint16, error) {
+// uint32_t nurs_output_size(const struct nurs_output *output, uint16_t idx);
+func nursOutputSize(output *Output, idx uint16) (uint32, error) {
 	ret, err := C.nurs_output_size((*C.struct_nurs_output)(output), C.uint16_t(idx))
-	return uint16(ret), err
+	return uint32(ret), err
 }
 
 // uint16_t nurs_output_type(const struct nurs_output *output, uint16_t idx);

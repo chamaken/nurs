@@ -41,7 +41,7 @@ uint16_t nurs_input_len(const struct nurs_input *input)
 EXPORT_SYMBOL(nurs_input_len);
 
 /* return 0 on error */
-static uint16_t key_size(const struct nurs_output_key *key)
+static uint32_t key_size(const struct nurs_output_key *key)
 {
 	switch (key->def->type) {
 	case NURS_KEY_T_BOOL:
@@ -85,7 +85,7 @@ static uint16_t key_size(const struct nurs_output_key *key)
  * This function returns the input key size specified by idx.
  * On error, it returns 0 and errno is appropriately set.
  */
-uint16_t nurs_input_size(const struct nurs_input *input, uint16_t idx)
+uint32_t nurs_input_size(const struct nurs_input *input, uint16_t idx)
 {
 	if (idx >= input->len) {
 		errno = ERANGE;
@@ -499,7 +499,7 @@ EXPORT_SYMBOL(nurs_output_index);
  * This function returns the output key size specified by idx.
  * On error, it returns 0 and errno is appropriately set.
  */
-uint16_t nurs_output_size(const struct nurs_output *output, uint16_t idx)
+uint32_t nurs_output_size(const struct nurs_output *output, uint16_t idx)
 {
 	if (idx >= output->len) {
 		errno = ERANGE;
@@ -509,8 +509,8 @@ uint16_t nurs_output_size(const struct nurs_output *output, uint16_t idx)
 }
 EXPORT_SYMBOL(nurs_output_size);
 
-#define set_valid(_i) do {					\
-	output->keys[_i].flags |= (uint16_t)NURS_KEY_F_VALID; \
+#define set_valid(_i) do {						\
+		output->keys[_i].flags |= (uint16_t)NURS_KEY_F_VALID;	\
 	} while (0)
 
 #define check_output_type(_t, _ret) do {				\

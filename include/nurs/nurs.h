@@ -136,7 +136,7 @@ struct nurs_output_key_def {
 	uint16_t	flags;
 	char		name[NURS_NAME_LEN + 1];
 
-	uint16_t	len;
+	uint32_t	len;
 
 	/* IETF IPFIX attribute ID */
 	struct {
@@ -176,7 +176,7 @@ struct nurs_input;
  * input_len returns how many keys in input, and
  * input_size returns length of key specified by name */
 uint16_t nurs_input_len(const struct nurs_input *input);
-uint16_t nurs_input_size(const struct nurs_input *input, uint16_t idx);
+uint32_t nurs_input_size(const struct nurs_input *input, uint16_t idx);
 
 const char *nurs_input_name(const struct nurs_input *input, uint16_t idx);
 uint16_t nurs_input_type(const struct nurs_input *input, uint16_t idx);
@@ -200,7 +200,7 @@ const char *nurs_input_cim_name(const struct nurs_input *input, uint16_t idx);
 
 struct nurs_output;
 uint16_t nurs_output_len(const struct nurs_output *output);
-uint16_t nurs_output_size(const struct nurs_output *output, uint16_t idx);
+uint32_t nurs_output_size(const struct nurs_output *output, uint16_t idx);
 uint16_t nurs_output_type(const struct nurs_output *output, uint16_t idx);
 uint16_t nurs_output_index(const struct nurs_output *output, const char *name);
 
