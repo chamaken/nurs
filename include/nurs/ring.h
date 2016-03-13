@@ -44,6 +44,16 @@ struct nl_mmap_hdr *mnl_ring_get_frame(const struct mnl_ring *nlr);
 struct nl_mmap_hdr *mnl_ring_lookup_frame(struct mnl_ring *nlr,
 					  enum nl_mmap_status status);
 
+/* frame callbacks returns MNL_CB_ */
+typedef int(*mnl_frame_valid_cb)(struct nl_mmap_hdr *frame, void *data);
+typedef int(*mnl_frame_copy_cb)(struct nl_mmap_hdr *frame, void *data);
+typedef int(*mnl_frame_skip_cb)(struct nl_mmap_hdr *frame, void *data);
+
+int mnl_ring_cb_run(struct mnl_ring *ring,
+		    mnl_frame_valid_cb valid_cb,
+		    mnl_frame_copy_cb copy_cb,
+		    void *data);
+
 extern char *_frame_status_strlist[];
 
 #endif

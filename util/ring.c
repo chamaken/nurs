@@ -134,3 +134,40 @@ struct nl_mmap_hdr *mnl_ring_lookup_frame(struct mnl_ring *nlr,
 	return NULL;
 }
 EXPORT_SYMBOL(mnl_ring_lookup_frame);
+
+int mnl_ring_cb_run(struct mnl_ring *ring,
+		    mnl_frame_valid_cb valid_cb,
+		    mnl_frame_copy_cb copy_cb,
+		    void *data)
+{
+	struct nl_mmap_hdr *frame = mnl_ring_get_frame(ring);
+	int ret;
+
+	switch (frame->nm_status) {
+	case NL_MMAP_STATUS_VALID:
+		frame->nm_status = NL_MMAP_STATUS_SKIP;
+		ret = valid_cb(frame, data);
+		frame->nm_status = NL_MMAP_STATUS_UNUSED;
+		mnl_ring_advance(ring);
+		return ret;
+	case NL_MMAP_STATUS_COPY:
+		frame->nm_status = NL_MMAP_STATUS_SKIP;
+		ret = copy_cb(frame, data);
+		frame->nm_status = NL_MMAP_STATUS_UNUSED;
+		mnl_ring_advance(ring);
+		return ret;
+	case NL_MMAP_STATUS_SKIP:
+		nurs_log(NURS_NOTICE, "found SKIP frame?\n");
+		/* pass through */
+	case NL_MMAP_STATUS_RESERVED:
+	case NL_MMAP_STATUS_UNUSED:
+		return MNL_CB_OK;
+	default:
+		nurs_log(NURS_ERROR, "unknow frame status: %d\n",
+			 frame->nm_status);
+		return MNL_CB_ERROR;
+	}
+
+	return MNL_CB_ERROR;
+}
+EXPORT_SYMBOL(mnl_ring_cb_run);
