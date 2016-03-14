@@ -143,6 +143,10 @@ int mnl_ring_cb_run(struct mnl_ring *ring,
 	struct nl_mmap_hdr *frame = mnl_ring_get_frame(ring);
 	int ret;
 
+	if (!valid_cb) {
+		nurs_log(NURS_ERROR, "no valid callback\n");
+		return MNL_CB_ERROR;
+	}
 	switch (frame->nm_status) {
 	case NL_MMAP_STATUS_VALID:
 		frame->nm_status = NL_MMAP_STATUS_SKIP;
@@ -151,6 +155,11 @@ int mnl_ring_cb_run(struct mnl_ring *ring,
 		mnl_ring_advance(ring);
 		return ret;
 	case NL_MMAP_STATUS_COPY:
+		if (!copy_cb) {
+			nurs_log(NURS_ERROR, "found copy status,"
+				 " but no copy callback\n");
+			return MNL_CB_ERROR;
+		}
 		frame->nm_status = NL_MMAP_STATUS_SKIP;
 		ret = copy_cb(frame, data);
 		frame->nm_status = NL_MMAP_STATUS_UNUSED;
