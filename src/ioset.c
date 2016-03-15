@@ -448,25 +448,7 @@ struct nurs_ioset *ioset_get(struct nurs_producer *producer)
 }
 
 /* return errno */
-int ioset_put(struct nurs_producer *producer, struct nurs_ioset *ioset)
-{
-	if (nurs_mutex_lock(&producer->iosets_mutex))
-		return -1;
-
-	list_add(&ioset->list, &producer->iosets);
-
-	if (nurs_cond_broadcast(&producer->iosets_condv)) {
-		nurs_mutex_unlock(&producer->iosets_mutex);
-		return -1;
-	}
-	if (nurs_mutex_unlock(&producer->iosets_mutex))
-		return -1;
-
-	return 0;
-}
-
-/* return errno */
-int ioset_clear(struct nurs_ioset *ioset)
+static int ioset_clear(struct nurs_ioset *ioset)
 {
 	struct nurs_stack *stack;
 	struct nurs_stack_element *e;
@@ -504,6 +486,30 @@ int ioset_clear(struct nurs_ioset *ioset)
 			key->flags &= (uint16_t)~NURS_KEY_F_VALID;
 		}
 	}
+	return 0;
+}
+
+/* return errno */
+int ioset_put(struct nurs_producer *producer, struct nurs_ioset *ioset)
+{
+        int ret;
+
+        if ((ret = ioset_clear(ioset)))
+                nurs_log(NURS_ERROR, "failed to clear ioset: %s\n",
+                         _sys_errlist[ret]);
+
+        if (nurs_mutex_lock(&producer->iosets_mutex))
+		return -1;
+
+	list_add(&ioset->list, &producer->iosets);
+
+	if (nurs_cond_broadcast(&producer->iosets_condv)) {
+		nurs_mutex_unlock(&producer->iosets_mutex);
+		return -1;
+	}
+	if (nurs_mutex_unlock(&producer->iosets_mutex))
+		return -1;
+
 	return 0;
 }
 

@@ -224,11 +224,6 @@ static void *ioset_routine(void *arg)
 		}
 		assert(ioset->refcnt == 0); /* TODO: remove? or if error */
 
-		if ((ret = ioset_clear(ioset))) {
-			nurs_log(NURS_ERROR, "failed to clear ioset: %s\n",
-				 _sys_errlist[ret]);
-			goto exit;
-		}
 		if ((ret = ioset_put(producer, ioset))) {
 			nurs_log(NURS_ERROR, "failed to put ioset: %s\n",
 				 _sys_errlist[ret]);
@@ -254,7 +249,6 @@ static void *ioset_routine(void *arg)
 	if (ioset) {
 		nurs_log(NURS_NOTICE, "discard ioset: %p"
 			 " because of user stop request\n", ioset);
-		ioset_clear(ioset);
 		ioset_put(producer, ioset);
 		worker_put(worker);
 	}
@@ -311,9 +305,6 @@ static void *stack_routine(void *arg)
 				 worker->tid, ioset, stack->name, nret);
 		}
 		if (__sync_sub_and_fetch(&ioset->refcnt, 1) == 0) {
-			if ((ret = ioset_clear(ioset)))
-				nurs_log(NURS_ERROR, "failed to clear ioset:"
-					 " %s\n", _sys_errlist[ret]);
 			if ((ret = ioset_put(producer, ioset)))
 				nurs_log(NURS_FATAL,
 					 "failed to put ioset: %s\n",
@@ -334,7 +325,6 @@ static void *stack_routine(void *arg)
 	if (ioset) {
 		nurs_log(NURS_NOTICE, "discard ioset: %p"
 			 "because of user stop request\n", ioset);
-		ioset_clear(ioset);
 		ioset_put(producer, ioset);
 		worker_put(worker);
 	}
