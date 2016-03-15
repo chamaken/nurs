@@ -448,35 +448,22 @@ struct nurs_ioset *ioset_get(struct nurs_producer *producer)
 }
 
 /* return errno */
-int ioset_put(struct nurs_producer *producer, struct nurs_ioset *ioset)
+static int ioset_clear(struct nurs_ioset *ioset)
 {
-	if (nurs_mutex_lock(&producer->iosets_mutex))
-		return -1;
-
-	list_add(&ioset->list, &producer->iosets);
-
-	if (nurs_cond_broadcast(&producer->iosets_condv)) {
-		nurs_mutex_unlock(&producer->iosets_mutex);
-		return -1;
-	}
-	if (nurs_mutex_unlock(&producer->iosets_mutex))
-		return -1;
-
-	return 0;
-}
-
-/* return errno */
-int ioset_clear(struct nurs_ioset *ioset)
-{
+	struct nurs_stack *stack;
+	struct nurs_stack_element *e;
 	struct nurs_output *output;
 	struct nurs_output_key *key;
-	uint8_t i;
-	uint16_t j;
+	uint16_t i;
 
-	for (i = 0; i < ioset->len; i = (uint8_t)(i + 2)) {
-		output = ioset_output(ioset, i);
-		for (j = 0; j < output->len; j++) {
-			key = &output->keys[j];
+        for_each_stack_element(ioset->producer, stack, e) {
+                if (e->plugin->type != NURS_PLUGIN_T_PRODUCER &&
+                    e->plugin->type != NURS_PLUGIN_T_FILTER)
+                        continue;
+
+		output = ioset_output(ioset, e->odx);
+		for (i = 0; i < output->len; i++) {
+			key = &output->keys[i];
 
 			if (!(key->flags & NURS_KEY_F_VALID))
 				continue;
@@ -488,6 +475,7 @@ int ioset_clear(struct nurs_ioset *ioset)
 				   key->def->destructor &&
 				   key->ptr) {
 				key->def->destructor(key->ptr);
+                                key->ptr = NULL;
 			}
 			if (key->def->len) {
 				memset(key->ptr, 0, key->def->len);
@@ -498,6 +486,30 @@ int ioset_clear(struct nurs_ioset *ioset)
 			key->flags &= (uint16_t)~NURS_KEY_F_VALID;
 		}
 	}
+	return 0;
+}
+
+/* return errno */
+int ioset_put(struct nurs_producer *producer, struct nurs_ioset *ioset)
+{
+        int ret;
+
+        if ((ret = ioset_clear(ioset)))
+                nurs_log(NURS_ERROR, "failed to clear ioset: %s\n",
+                         _sys_errlist[ret]);
+
+        if (nurs_mutex_lock(&producer->iosets_mutex))
+		return -1;
+
+	list_add(&ioset->list, &producer->iosets);
+
+	if (nurs_cond_broadcast(&producer->iosets_condv)) {
+		nurs_mutex_unlock(&producer->iosets_mutex);
+		return -1;
+	}
+	if (nurs_mutex_unlock(&producer->iosets_mutex))
+		return -1;
+
 	return 0;
 }
 
