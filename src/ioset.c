@@ -488,6 +488,7 @@ int ioset_clear(struct nurs_ioset *ioset)
 				   key->def->destructor &&
 				   key->ptr) {
 				key->def->destructor(key->ptr);
+                                key->ptr = NULL;
 			}
 			if (key->def->len) {
 				memset(key->ptr, 0, key->def->len);
