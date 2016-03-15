@@ -64,7 +64,7 @@ static void _log_file(FILE *fd, int level, char *file, int line,
 {
 	time_t t;
 	char timestr[NURS_LOG_TIME_LEN + 1] = "";
-	char prefix[128]; /* non reasonable magic number */
+	char prefix[1024]; /* non reasonable magic number */
 	va_list ac;
 
 	if (nurs_log_time_format_len) {
@@ -72,13 +72,14 @@ static void _log_file(FILE *fd, int level, char *file, int line,
 		if (!strftime(timestr, NURS_LOG_TIME_LEN,
 			      nurs_log_time_format, localtime(&t)))
 			timestr[0] = '\0';
-		snprintf(prefix, 127, "%s %6s %s[%d] %s",
+		snprintf(prefix, 1023, "%s %6s %s[%d] %s",
 			 timestr, nurs_loglevel_string[level],
 			 file, line, format);
 	} else {
-		snprintf(prefix, 127, "%s %6s",
+		snprintf(prefix, 1023, "%s %6s",
 			 nurs_loglevel_string[level], format);
 	}
+        prefix[1023] = '\0';
 
 	va_copy(ac, ap);
 	vfprintf(fd, prefix, ap);
