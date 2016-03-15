@@ -468,15 +468,20 @@ int ioset_put(struct nurs_producer *producer, struct nurs_ioset *ioset)
 /* return errno */
 int ioset_clear(struct nurs_ioset *ioset)
 {
+	struct nurs_stack *stack;
+	struct nurs_stack_element *e;
 	struct nurs_output *output;
 	struct nurs_output_key *key;
-	uint8_t i;
-	uint16_t j;
+	uint16_t i;
 
-	for (i = 0; i < ioset->len; i = (uint8_t)(i + 2)) {
-		output = ioset_output(ioset, i);
-		for (j = 0; j < output->len; j++) {
-			key = &output->keys[j];
+        for_each_stack_element(ioset->producer, stack, e) {
+                if (e->plugin->type != NURS_PLUGIN_T_PRODUCER &&
+                    e->plugin->type != NURS_PLUGIN_T_FILTER)
+                        continue;
+
+		output = ioset_output(ioset, e->odx);
+		for (i = 0; i < output->len; i++) {
+			key = &output->keys[i];
 
 			if (!(key->flags & NURS_KEY_F_VALID))
 				continue;
