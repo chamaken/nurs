@@ -121,7 +121,6 @@ struct nurs_input *ioset_input(struct nurs_ioset *ioset, uint8_t idx);
 struct nurs_output *ioset_output(struct nurs_ioset *ioset, uint8_t idx);
 int ioset_create(struct nurs_producer *producer, size_t num);
 int ioset_destroy(struct nurs_producer *producer);
-int ioset_clear(struct nurs_ioset *ioset);
 struct nurs_ioset *ioset_get(struct nurs_producer *producer);
 int ioset_put(struct nurs_producer *producer, struct nurs_ioset *ioset);
 
