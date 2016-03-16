@@ -119,32 +119,24 @@ AM_CONDITIONAL([NLMMAP], [test "x$ac_cv_mmaped_netlink" = "xyes"])
 AC_ARG_ENABLE(nflog,
        AS_HELP_STRING([--enable-nflog], [enable nflog module [default=yes]]),[enable_nflog=$enableval],[enable_nflog=yes])
 AS_IF([test "x$enable_nflog" = "xyes"], [
-    PKG_CHECK_MODULES([LIBNETFILTER_LOG], [libnetfilter_log >= 1.0.0],
-                      AC_DEFINE([HAVE_LNFLOG], [1], [building nflog module]),
-                      enable_nflog="no")
+    PKG_CHECK_MODULES([LIBNETFILTER_LOG], [libnetfilter_log >= 1.0.1], [
+        AC_MSG_CHECKING([does libnetfilter_log have nflog_nlmsg_parse])
+        AC_CACHE_VAL(ac_cv_nflog_nlmsg_parse,
+            SAVE_LIBS=$LIBS
+            LIBS="$LIBS -lnetfilter_log -lmnl"
+            AC_TRY_LINK(
+                [ #include <stddef.h>
+                  #include <libnetfilter_log/libnetfilter_log.h> ],
+                [ return nflog_nlmsg_parse(NULL, NULL); ],
+                ac_cv_nflog_nlmsg_parse=yes,
+                ac_cv_nflog_nlmsg_parse=no)
+	    LIBS=$SAVE_LIBS)
+        AC_MSG_RESULT($ac_cv_nflog_nlmsg_parse)
+        AC_DEFINE([HAVE_LNFLOG], [1], [building nflog module])
+        ],
+        enable_nflog="no")
 ])
 AM_CONDITIONAL([HAVE_LNFLOG], [test "x$enable_nflog" = "xyes"])
-
-AC_ARG_ENABLE(nflog2,
-       AS_HELP_STRING([--enable-nflog2], [enable nflog2 module [default=yes]]),[enable_nflog2=$enableval],[enable_nflog2=yes])
-AS_IF([test "x$enable_nflog2" = "xyes"], [
-    AC_MSG_CHECKING([does libnetfilter_log have nflog_nlmsg_parse])
-    AC_CACHE_VAL(ac_cv_nflog_nlmsg_parse,
-        SAVE_LIBS=$LIBS
-        LIBS="$LIBS -lnetfilter_log -lmnl"
-        AC_TRY_LINK(
-	    [ #include <stddef.h>
-	      #include <libnetfilter_log/libnetfilter_log.h> ],
-            [ return nflog_nlmsg_parse(NULL, NULL); ],
-            ac_cv_nflog_nlmsg_parse=yes,
-            ac_cv_nflog_nlmsg_parse=no)
-	LIBS=$SAVE_LIBS)
-    AC_MSG_RESULT($ac_cv_nflog_nlmsg_parse)
-    AS_IF([test "x$ac_cv_mmaped_netlink" = "xyes" -a "x$ac_cv_nflog_nlmsg_parse" = "xyes" -a "x$enable_nflog2" = "xyes"],
-        AC_DEFINE([HAVE_LNFLOG2], [1], [building nflog2 module]),
-	enable_nflog2="no")
-])
-AM_CONDITIONAL([BUILD_NFLOG2], [test "x$enable_nflog2" = "xyes"])
 
 AC_ARG_ENABLE(nfct,
        AS_HELP_STRING([--enable-nfct], [enable nfct module [default=yes]]),[enable_nfct=$enableval],[enable_nfct=yes])
@@ -154,13 +146,6 @@ AS_IF([test "x$enable_nfct" = "xyes"], [
                       enable_nfct="no")
 ])
 AM_CONDITIONAL([HAVE_LNFCT], [test "x$enable_nfct" = "xyes"])
-
-AC_ARG_ENABLE(nfct2,
-       AS_HELP_STRING([--enable-nfct2], [enable nfct2 module [default=yes]]),[enable_nfct2=$enableval],[enable_nfct2=yes])
-AS_IF([test "x$enable_nfct2" = "xyes" -a "x$enable_nfct" = "xyes" -a "x$ac_cv_mmaped_netlink" = "xyes"],
-      AC_DEFINE([HAVE_LNFCT2], [1], [building nfct2 module]),
-      enable_nfct2="no")
-AM_CONDITIONAL([HAVE_LNFCT2], [test "x$enable_nfct2" = "xyes"])
 
 AC_ARG_ENABLE(nfacct,
        AS_HELP_STRING([--enable-nfacct], [enable nfacct module [default=yes]]),[enable_nfacct=$enableval],[enable_nfacct=yes])
@@ -259,7 +244,7 @@ echo "
 nurs configuration:
   Producer:
     use mmaped netlink			${enable_nlmmap}
-    NFLOG plugin:			${enable_nflog2}
+    NFLOG plugin:			${enable_nflog}
     NFCT plugin:			${enable_nfct}
     NFACCT plugin:			${enable_nfacct}
     NFQ plugin:				${enable_nfq}
