@@ -67,6 +67,8 @@ mnl_socket_mmap(struct mnl_socket *nls, struct nl_mmap_req *req,
 	if (nlr->ring == MAP_FAILED)
 		goto fail;
 
+        nlr->fd = mnl_socket_get_fd(nls);
+
 	return nlr;
 
 fail:
@@ -135,18 +137,22 @@ struct nl_mmap_hdr *mnl_ring_lookup_frame(struct mnl_ring *nlr,
 }
 EXPORT_SYMBOL(mnl_ring_lookup_frame);
 
-int mnl_ring_cb_run(struct mnl_ring *ring,
-		    mnl_frame_valid_cb valid_cb,
-		    mnl_frame_copy_cb copy_cb,
-		    void *data)
+int mnl_ring_get_fd(struct mnl_ring *nlr)
 {
-	struct nl_mmap_hdr *frame = mnl_ring_get_frame(ring);
+        return nlr->fd;
+}
+EXPORT_SYMBOL(mnl_ring_get_fd);
+
+enum nurs_return_t
+mnl_ring_cb_run(struct mnl_ring *ring,
+                mnl_frame_valid_cb valid_cb,
+                mnl_frame_copy_cb copy_cb,
+                void *data)
+{
+	struct nl_mmap_hdr *sentinel, *frame = mnl_ring_get_frame(ring);
 	int ret;
 
-	if (!valid_cb) {
-		nurs_log(NURS_ERROR, "no valid callback\n");
-		return MNL_CB_ERROR;
-	}
+handle_frame:
 	switch (frame->nm_status) {
 	case NL_MMAP_STATUS_VALID:
 		frame->nm_status = NL_MMAP_STATUS_SKIP;
@@ -155,28 +161,35 @@ int mnl_ring_cb_run(struct mnl_ring *ring,
 		mnl_ring_advance(ring);
 		return ret;
 	case NL_MMAP_STATUS_COPY:
-		if (!copy_cb) {
-			nurs_log(NURS_ERROR, "found copy status,"
-				 " but no copy callback\n");
-			return MNL_CB_ERROR;
-		}
 		frame->nm_status = NL_MMAP_STATUS_SKIP;
-		ret = copy_cb(frame, data);
+		ret = copy_cb(ring->fd, data);
 		frame->nm_status = NL_MMAP_STATUS_UNUSED;
 		mnl_ring_advance(ring);
 		return ret;
 	case NL_MMAP_STATUS_SKIP:
-		nurs_log(NURS_NOTICE, "found SKIP frame?\n");
-		/* pass through */
 	case NL_MMAP_STATUS_RESERVED:
 	case NL_MMAP_STATUS_UNUSED:
-		return MNL_CB_OK;
+                nurs_log(NURS_DEBUG, "found frame status: %d,"
+                         " scan all frames\n", frame->nm_status);
+                sentinel = frame;
+                do {
+                        mnl_ring_advance(ring);
+                        frame = mnl_ring_get_frame(ring);
+                } while (frame != sentinel &&
+                         (frame->nm_status == NL_MMAP_STATUS_UNUSED ||
+                          frame->nm_status == NL_MMAP_STATUS_SKIP ||
+                          frame->nm_status == NL_MMAP_STATUS_RESERVED));
+                if (frame != sentinel)
+                        goto handle_frame;
+                nurs_log(NURS_NOTICE, "no valid frame, might be alleviated by"
+                         " increasing ring params.\n");
+		return NURS_RET_ERROR;
 	default:
-		nurs_log(NURS_ERROR, "unknow frame status: %d\n",
+		nurs_log(NURS_ERROR, "unknown frame status: %d\n",
 			 frame->nm_status);
-		return MNL_CB_ERROR;
+		return NURS_RET_ERROR;
 	}
 
-	return MNL_CB_ERROR;
+	return NURS_RET_ERROR;
 }
 EXPORT_SYMBOL(mnl_ring_cb_run);

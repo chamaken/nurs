@@ -20,6 +20,7 @@
 struct mnl_ring {
 	unsigned int		head;
 	void			*ring;
+        int			fd;
 	unsigned int		frame_size;
 	unsigned int		frame_max;
 	unsigned int		block_size;
@@ -43,11 +44,12 @@ void mnl_ring_advance(struct mnl_ring *nlr);
 struct nl_mmap_hdr *mnl_ring_get_frame(const struct mnl_ring *nlr);
 struct nl_mmap_hdr *mnl_ring_lookup_frame(struct mnl_ring *nlr,
 					  enum nl_mmap_status status);
+int mnl_ring_get_fd(struct mnl_ring *nlr);
 
 /* frame callbacks returns MNL_CB_ */
 typedef int(*mnl_frame_valid_cb)(struct nl_mmap_hdr *frame, void *data);
-typedef int(*mnl_frame_copy_cb)(struct nl_mmap_hdr *frame, void *data);
-typedef int(*mnl_frame_skip_cb)(struct nl_mmap_hdr *frame, void *data);
+typedef int(*mnl_frame_copy_cb)(int fd, void *data);
+
 
 int mnl_ring_cb_run(struct mnl_ring *ring,
 		    mnl_frame_valid_cb valid_cb,
