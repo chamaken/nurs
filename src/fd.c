@@ -192,7 +192,7 @@ int nfd_loop(void)
 			if (flags & nfd->when) {
 				rc = nfd->cb(nfd->fd, flags, nfd->data);
 				if (rc != NURS_RET_OK)
-					nurs_log(NURS_ERROR, "callback is not OK"
+					nurs_log(NURS_DEBUG, "callback is not OK"
 						 ", but %d\n", rc);
 			}
 		}
