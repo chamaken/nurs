@@ -258,9 +258,9 @@ AC_OUTPUT
 echo "
 nurs configuration:
   Producer:
+    use mmaped netlink			${enable_nlmmap}
     NFLOG plugin:			${enable_nflog2}
     NFCT plugin:			${enable_nfct}
-    NFCT2 plugin:			${enable_nfct2}
     NFACCT plugin:			${enable_nfacct}
     NFQ plugin:				${enable_nfq}
     NFT plugin:				${enable_nft}

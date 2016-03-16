@@ -10,20 +10,17 @@ nurs_producer_NFCTST_la_LDFLAGS = -avoid-version -module
 nurs_producer_NFCTST_la_CFLAGS  = ${AM_CFLAGS} ${LIBMNL_CFLAGS}
 nurs_producer_NFCTST_la_LIBADD  = $(LIBMNL_LIBS)
 
-if HAVE_LNFCT2
-pkglib_LTLIBRARIES += nurs_producer_NFCT2.la
-nurs_producer_NFCT2_la_SOURCES = nfct.keydef nfct2.c nfnl_common.h nfnl_common.c
-nurs_producer_NFCT2_la_LDFLAGS = -avoid-version -module
-nurs_producer_NFCT2_la_CFLAGS  = ${AM_CFLAGS} ${LIBMNL_CFLAGS} ${LIBNETFILTER_CONNTRACK_CFLAGS}
-nurs_producer_NFCT2_la_LIBADD  = $(LIBMNL_LIBS) $(LIBNETFILTER_CONNTRACK_LIBS) ../util/libutil.la
-endif
-
 if HAVE_LNFCT
 pkglib_LTLIBRARIES += nurs_producer_NFCT.la
 nurs_producer_NFCT_la_SOURCES  = nfct.keydef nfct.c nfct_hash.c nfct_hash.h nfct_jhash.h
 nurs_producer_NFCT_la_LDFLAGS  = -avoid-version -module
 nurs_producer_NFCT_la_CFLAGS   = ${AM_CFLAGS} ${LIBMNL_CFLAGS} ${LIBNETFILTER_CONNTRACK_CFLAGS}
 nurs_producer_NFCT_la_LIBADD   = $(LIBMNL_LIBS) $(LIBNETFILTER_CONNTRACK_LIBS)
+pkglib_LTLIBRARIES += nurs_producer_NFCT2.la
+nurs_producer_NFCT2_la_SOURCES = nfct.keydef nfct2.c nfnl_common.h nfnl_common.c
+nurs_producer_NFCT2_la_LDFLAGS = -avoid-version -module
+nurs_producer_NFCT2_la_CFLAGS  = ${AM_CFLAGS} ${LIBMNL_CFLAGS} ${LIBNETFILTER_CONNTRACK_CFLAGS}
+nurs_producer_NFCT2_la_LIBADD  = $(LIBMNL_LIBS) $(LIBNETFILTER_CONNTRACK_LIBS) ../util/libutil.la
 endif
 
 if HAVE_LNFLOG
