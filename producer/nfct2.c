@@ -61,7 +61,6 @@ struct nfct_priv {
 	struct timeval		dump_prev;
 
 	struct nurs_timer	*timer;
-	bool			skipped;
 };
 
 enum nfct_conf {
@@ -464,35 +463,59 @@ nfct_event_cb(int fd, uint16_t when, void *data)
 	return NURS_RET_OK;
 }
 
-static enum nurs_return_t
-handle_valid_frame(struct nurs_producer *producer,
-		   struct nl_mmap_hdr *frame,
-		   struct timeval *tv)
+static enum nurs_return_t nurs_ret_from_mnl(int rc)
 {
-	struct nfct_priv *priv = nurs_producer_context(producer);
-	int ret;
-	struct mnl_cbarg cbarg = {
-		.producer	= producer,
-		.recent		= tv,
-	};
+        switch (rc) {
+        case MNL_CB_OK: return NURS_RET_OK;
+        case MNL_CB_STOP: return NURS_RET_STOP;
+        case MNL_CB_ERROR:
+		nurs_log(NURS_ERROR, "mnl_cb_run: [%d]%s\n",
+			 errno, strerror(errno));
+		return NURS_RET_ERROR;
+        default:
+                nurs_log(NURS_ERROR, "mnl_cb_run - unknown code: %d\n", rc);
+                return NURS_RET_ERROR;
+        }
+
+        return NURS_RET_ERROR;
+}
+
+static enum nurs_return_t
+handle_valid_frame(struct nl_mmap_hdr *frame, void *arg)
+{
+	struct mnl_cbarg *cbarg = arg;
+        struct nfct_priv *priv = nurs_producer_context(cbarg->producer);
 
 	if (!frame->nm_len) {
 		/* an error may occured in kernel */
 		return NURS_RET_OK;
 	}
 
-	ret = mnl_cb_run(MNL_FRAME_PAYLOAD(frame), frame->nm_len,
-			 priv->dump_request->nlmsg_seq, priv->dump_pid,
-			 mnl_data_cb, &cbarg);
-	if (ret == MNL_CB_ERROR) {
-		/* not != MNL_CB_OK
-		 * since dump returns NLMSG_DONE, then returns MNL_CB_STOP */
-		nurs_log(NURS_ERROR, "mnl_cb_run: [%d]%s\n",
-			 errno, strerror(errno));
-		return NURS_RET_ERROR;
-	}
+        return nurs_ret_from_mnl(
+                mnl_cb_run(MNL_FRAME_PAYLOAD(frame), frame->nm_len,
+                           priv->dump_request->nlmsg_seq, priv->dump_pid,
+                           mnl_data_cb, cbarg));
+}
 
-	return NURS_RET_OK;
+static enum nurs_return_t
+handle_copy_frame(int fd, void *arg)
+{
+	struct mnl_cbarg *cbarg = arg;
+	struct nfct_priv *priv = nurs_producer_context(cbarg->producer);
+        char buf[MNL_SOCKET_BUFFER_SIZE];
+        ssize_t nrecv;
+
+        nrecv = recv(fd, buf, sizeof(buf), MSG_DONTWAIT);
+        if (nrecv == -1) {
+                nurs_log(NURS_ERROR, "failed to recv COPY frame: %s\n",
+                         strerror(errno));
+                return NURS_RET_ERROR;
+        }
+
+        return nurs_ret_from_mnl(
+                mnl_cb_run(buf, (size_t)nrecv,
+                           priv->dump_request->nlmsg_seq, priv->dump_pid,
+                           mnl_data_cb, cbarg));
 }
 
 static enum nurs_return_t
@@ -500,68 +523,26 @@ nfct_dump_cb(int fd, uint16_t when, void *data)
 {
 	struct nurs_producer *producer = data;
 	struct nfct_priv *priv = nurs_producer_context(producer);
-	struct nl_mmap_hdr *frame;
 	struct timeval tv;
-	enum nurs_return_t ret = NURS_RET_OK;
-	ssize_t rc, nrecv;
-	char buf[MNL_SOCKET_BUFFER_SIZE];
+	enum nurs_return_t ret;
+        struct mnl_cbarg cbarg = {
+                .producer	= producer,
+                .recent		= &tv,
+        };
 
 	if (!(when & NURS_FD_F_READ))
 		return NURS_RET_OK;
 
 	gettimeofday(&tv, NULL);
-	while (1) {
-		frame = mnl_ring_get_frame(priv->nlr);
-		switch (frame->nm_status) {
-		case NL_MMAP_STATUS_VALID:
-			frame->nm_status = NL_MMAP_STATUS_SKIP;
-			ret = handle_valid_frame(producer, frame, &tv);
-			frame->nm_status = NL_MMAP_STATUS_UNUSED;
-			mnl_ring_advance(priv->nlr);
-			if (ret != NURS_RET_OK)
-				goto out;
-			break;
-		case NL_MMAP_STATUS_COPY:
-			/* XXX: only consuming message */
-			frame->nm_status = NL_MMAP_STATUS_SKIP;
-			nurs_log(NURS_ERROR, "exceeded the frame size: %d\n",
-				 frame->nm_len);
-			for (nrecv = 0; nrecv < frame->nm_len; ) {
-				rc = recv(fd, buf,
-					  (size_t)MNL_SOCKET_BUFFER_SIZE,
-					  MSG_DONTWAIT);
-				if (rc == -1) {
-					nurs_log(NURS_ERROR, "failed to recv COPY"
-						 " frame: %s\n", strerror(errno));
-					/* XXX: needs error handling? */
-					break;
-				}
-				nrecv += rc;
-			}
-			frame->nm_status = NL_MMAP_STATUS_UNUSED;
-			mnl_ring_advance(priv->nlr);
-			break;
-		case NL_MMAP_STATUS_SKIP:
-			if (!priv->skipped) {
-				priv->skipped = true;
-				nurs_log(NURS_ERROR, "found SKIP status"
-					 " frame, ENOBUFS maybe\n");
-			}
-			/* pass through */
-		case NL_MMAP_STATUS_RESERVED:
-		case NL_MMAP_STATUS_UNUSED:
-			goto out;
+        do {
+                ret = mnl_ring_cb_run(priv->nlr,
+                                      handle_valid_frame, handle_copy_frame,
+                                      &cbarg);
+        } while (ret == NURS_RET_OK);
 
-		default:
-			nurs_log(NURS_ERROR, "unknown frame_status: %d\n",
-				 frame->nm_status);
-			ret = NURS_RET_ERROR;
-			goto out;
-		}
-	}
-
-out:
 	priv->dump_prev = tv;
+        if (ret == NURS_RET_STOP)
+                return NURS_RET_OK;
 	return ret;
 }
 
@@ -786,7 +767,7 @@ error_close:
 	return NURS_RET_ERROR;
 }
 
-static int open_dump_socket(const struct nurs_producer *producer)
+static int mmap_dump_socket(const struct nurs_producer *producer)
 {
 	struct nfct_priv *priv = nurs_producer_context(producer);
 	struct nl_mmap_req req = {
@@ -797,7 +778,19 @@ static int open_dump_socket(const struct nurs_producer *producer)
 				  / config_frame_size(producer)
 				  * config_block_nr(producer),
 	};
+	priv->nlr = mnl_socket_rx_mmap(priv->dump_nl, &req, MAP_SHARED);
+	if (!priv->nlr) {
+		nurs_log(NURS_FATAL, "mnl_socket_mmap: %s\n",
+			 strerror(errno));
+                return -1;
+	}
 
+        return 0;
+}
+
+static int open_dump_socket(const struct nurs_producer *producer)
+{
+	struct nfct_priv *priv = nurs_producer_context(producer);
 	priv->dump_nl = nurs_mnl_socket(config_namespace(producer),
 					NETLINK_NETFILTER);
 	if (!priv->dump_nl) {
@@ -806,12 +799,8 @@ static int open_dump_socket(const struct nurs_producer *producer)
 		goto error_close;
 	}
 
-	priv->nlr = mnl_socket_rx_mmap(priv->dump_nl, &req, MAP_SHARED);
-	if (!priv->nlr) {
-		nurs_log(NURS_FATAL, "mnl_socket_mmap: %s\n",
-			 strerror(errno));
-		goto error_close;
-	}
+        if (mmap_dump_socket(producer))
+                goto error_close;
 
 	if (mnl_socket_bind(priv->dump_nl, 0, MNL_SOCKET_AUTOPID) == -1) {
 		nurs_log(NURS_ERROR, "mnl_sockt_bind: %s\n",
