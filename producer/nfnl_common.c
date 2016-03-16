@@ -39,3 +39,20 @@ struct mnl_socket *nurs_mnl_socket(const char *ns, int bus)
 
 	return mnl_socket_fdopen(fd);
 }
+
+enum nurs_return_t nurs_ret_from_mnl(int rc)
+{
+        switch (rc) {
+        case MNL_CB_OK: return NURS_RET_OK;
+        case MNL_CB_STOP: return NURS_RET_STOP;
+        case MNL_CB_ERROR:
+		nurs_log(NURS_ERROR, "mnl_cb_run: [%d]%s\n",
+			 errno, strerror(errno));
+		return NURS_RET_ERROR;
+        default:
+                nurs_log(NURS_ERROR, "mnl_cb_run - unknown code: %d\n", rc);
+                return NURS_RET_ERROR;
+        }
+
+        return NURS_RET_ERROR;
+}
