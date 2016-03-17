@@ -463,15 +463,9 @@ nfct_event_cb(int fd, uint16_t when, void *data)
 		return NURS_RET_ERROR;
 	}
 
-	ret = mnl_cb_run(buf, (size_t)nrecv, 0,
-			 priv->event_pid, nfct_mnl_cb, &cbarg);
-	if (ret == MNL_CB_ERROR) {
-		nurs_log(NURS_ERROR, "mnl_cb_run: [%d]%s\n",
-			 errno, strerror(errno));
-		return NURS_RET_ERROR;
-	}
-
-	return NURS_RET_OK;
+        return nurs_ret_from_mnl(
+		mnl_cb_run(buf, (size_t)nrecv, 0,
+                           priv->event_pid, nfct_mnl_cb, &cbarg));
 }
 
 static enum nurs_return_t
