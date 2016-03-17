@@ -164,7 +164,7 @@ static int nlattr_cb(const struct nlattr *attr, void *data)
 	return MNL_CB_OK;
 }
 
-static int nlmsg_cb(const struct nlmsghdr *nlh, void *data)
+static int nfctst_mnl_cb(const struct nlmsghdr *nlh, void *data)
 {
 	uint32_t *dst = data;
 	struct nfgenmsg *nfg = mnl_nlmsg_get_payload(nlh);
@@ -204,7 +204,7 @@ static enum nurs_return_t nfctst_read_cb(int fd, uint16_t when, void *data)
 			return NURS_RET_ERROR;
 		}
 		ret = mnl_cb_run(buf, (size_t)nrecv, priv->seq,
-				 priv->portid, nlmsg_cb, tb);
+				 priv->portid, nfctst_mnl_cb, tb);
 	} while (ret == MNL_CB_OK);
 	if (ret == MNL_CB_ERROR) {
 		nurs_log(NURS_ERROR, "mnl_cb_run: %s\n",
