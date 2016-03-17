@@ -394,7 +394,7 @@ struct mnl_cbarg {
         struct nurs_output	*output;
 };
 
-static int mnl_data_cb(const struct nlmsghdr *nlh, void *data)
+static int nflog_mnl_cb(const struct nlmsghdr *nlh, void *data)
 {
 	struct nfgenmsg *nfg = mnl_nlmsg_get_payload(nlh);
 	struct nurs_output *output = data;
@@ -501,7 +501,7 @@ static int mnl_data_cb(const struct nlmsghdr *nlh, void *data)
 }
 
 static enum nurs_return_t
-handle_copy_frame(int fd, void *arg)
+nflog_copy_frame(int fd, void *arg)
 {
         struct nurs_producer *producer = arg;
         struct nflog_priv *priv = nurs_producer_context(producer);
@@ -531,7 +531,7 @@ handle_copy_frame(int fd, void *arg)
         }
 
         if (mnl_cb_run(buf, (size_t)nrecv, 0,
-                       priv->portid, mnl_data_cb, output) == MNL_CB_ERROR) {
+                       priv->portid, nflog_mnl_cb, output) == MNL_CB_ERROR) {
                 nurs_log(NURS_ERROR, "failed to mnl_cb_run: %s\n",
                          strerror(errno));
                 goto fail;
@@ -555,7 +555,7 @@ fail:
 
 #ifdef NLMMAP
 static enum nurs_return_t
-handle_valid_frame(struct nl_mmap_hdr *frame, void *arg)
+nflog_valid_frame(struct nl_mmap_hdr *frame, void *arg)
 {
         struct nurs_producer *producer = arg;
 	struct nflog_priv *priv = nurs_producer_context(producer);
@@ -575,7 +575,7 @@ handle_valid_frame(struct nl_mmap_hdr *frame, void *arg)
         }
 
         if (mnl_cb_run(MNL_FRAME_PAYLOAD(frame), frame->nm_len, 0,
-                       priv->portid, mnl_data_cb, output) == MNL_CB_ERROR) {
+                       priv->portid, nflog_mnl_cb, output) == MNL_CB_ERROR) {
                 nurs_log(NURS_ERROR, "failed to mnl_cb_run: %s\n",
                          strerror(errno));
 		nurs_put_output(output);
@@ -606,7 +606,7 @@ nflog_read_cb(int fd, uint16_t when, void *data)
 		return NURS_RET_OK;
 
         ret = mnl_ring_cb_run(priv->nlr,
-                              handle_valid_frame, handle_copy_frame,
+                              nflog_valid_frame, nflog_copy_frame,
                               producer);
 
         if (ret == NURS_RET_STOP)
@@ -639,7 +639,7 @@ static int check_config_response(struct nflog_priv *priv)
 static enum nurs_return_t
 nflog_read_cb(int fd, uint16_t when, void *data)
 {
-        return handle_copy_frame(fd, data);
+        return nflog_copy_frame(fd, data);
 }
 
 static int check_config_response(struct nflog_priv *priv)

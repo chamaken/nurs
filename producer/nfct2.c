@@ -360,7 +360,7 @@ struct mnl_cbarg {
 	struct timeval		*recent;
 };
 
-static int mnl_data_cb(const struct nlmsghdr *nlh, void *data)
+static int nfct_mnl_cb(const struct nlmsghdr *nlh, void *data)
 {
 	struct mnl_cbarg *cbarg = data;
 	struct nf_conntrack *ct = nfct_new();
@@ -464,7 +464,7 @@ nfct_event_cb(int fd, uint16_t when, void *data)
 	}
 
 	ret = mnl_cb_run(buf, (size_t)nrecv, 0,
-			 priv->event_pid, mnl_data_cb, &cbarg);
+			 priv->event_pid, nfct_mnl_cb, &cbarg);
 	if (ret == MNL_CB_ERROR) {
 		nurs_log(NURS_ERROR, "mnl_cb_run: [%d]%s\n",
 			 errno, strerror(errno));
@@ -475,7 +475,7 @@ nfct_event_cb(int fd, uint16_t when, void *data)
 }
 
 static enum nurs_return_t
-handle_copy_frame(int fd, void *arg)
+nfct_copy_frame(int fd, void *arg)
 {
 	struct mnl_cbarg *cbarg = arg;
 	struct nfct_priv *priv = nurs_producer_context(cbarg->producer);
@@ -492,12 +492,12 @@ handle_copy_frame(int fd, void *arg)
         return nurs_ret_from_mnl(
                 mnl_cb_run(buf, (size_t)nrecv,
                            priv->dump_request->nlmsg_seq, priv->dump_pid,
-                           mnl_data_cb, cbarg));
+                           nfct_mnl_cb, cbarg));
 }
 
 #ifdef NLMMAP
 static enum nurs_return_t
-handle_valid_frame(struct nl_mmap_hdr *frame, void *arg)
+nfct_valid_frame(struct nl_mmap_hdr *frame, void *arg)
 {
 	struct mnl_cbarg *cbarg = arg;
         struct nfct_priv *priv = nurs_producer_context(cbarg->producer);
@@ -510,7 +510,7 @@ handle_valid_frame(struct nl_mmap_hdr *frame, void *arg)
         return nurs_ret_from_mnl(
                 mnl_cb_run(MNL_FRAME_PAYLOAD(frame), frame->nm_len,
                            priv->dump_request->nlmsg_seq, priv->dump_pid,
-                           mnl_data_cb, cbarg));
+                           nfct_mnl_cb, cbarg));
 }
 
 static enum nurs_return_t
@@ -531,7 +531,7 @@ nfct_dump_cb(int fd, uint16_t when, void *data)
 	gettimeofday(&tv, NULL);
         do {
                 ret = mnl_ring_cb_run(priv->nlr,
-                                      handle_valid_frame, handle_copy_frame,
+                                      nfct_valid_frame, nfct_copy_frame,
                                       &cbarg);
         } while (ret == NURS_RET_OK);
 
@@ -558,7 +558,7 @@ nfct_dump_cb(int fd, uint16_t when, void *data)
 
 	gettimeofday(&tv, NULL);
         do {
-                ret = handle_copy_frame(fd, &cbarg);
+                ret = nfct_copy_frame(fd, &cbarg);
         } while (ret == NURS_RET_OK);
 
 	priv->dump_prev = tv;

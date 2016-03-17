@@ -59,7 +59,7 @@ struct nurs_config_def nfq_config = {
 		[NFQ_CONFIG_COPY_RANGE] = {
 			.name	 = "copy_range",
 			.type	 = NURS_CONFIG_T_INTEGER,
-			.integer = 0xFFFF - NLA_HDRLEN,
+			.integer = 0xffff - NLA_HDRLEN,
 			},
 		[NFQ_CONFIG_FAIL_OPEN] = {
 			.name	 = "fail_open",
@@ -153,7 +153,7 @@ static int nfq_mnl_cb(const struct nlmsghdr *nlh, void *data)
 }
 
 static enum nurs_return_t
-handle_copy_frame(int fd, void *arg)
+nfq_copy_frame(int fd, void *arg)
 {
         struct nurs_producer *producer = arg;
         struct nfq_common_priv *priv = nurs_producer_context(producer);
@@ -203,7 +203,7 @@ fail:
 
 #ifdef NLMMAP
 static enum nurs_return_t
-handle_valid_frame(struct nl_mmap_hdr *frame, void *arg)
+nfq_valid_frame(struct nl_mmap_hdr *frame, void *arg)
 {
         struct nurs_producer *producer = arg;
 	struct nfq_common_priv *priv =	nurs_producer_context(producer);
@@ -228,7 +228,7 @@ enum nurs_return_t nfq_read_cb(int fd, uint16_t when, void *data)
 		return 0;
 
         ret = mnl_ring_cb_run(priv->nlr,
-                              handle_valid_frame, handle_copy_frame,
+                              nfq_valid_frame, nfq_copy_frame,
                               producer);
 
         if (ret == NURS_RET_STOP)
@@ -259,7 +259,7 @@ static int check_config_response(struct nfq_common_priv *priv)
 #else
 enum nurs_return_t nfq_read_cb(int fd, uint16_t when, void *data)
 {
-        return handle_copy_frame(fd, data);
+        return nfq_copy_frame(fd, data);
 }
 
 static int check_config_response(struct nfq_common_priv *priv)
