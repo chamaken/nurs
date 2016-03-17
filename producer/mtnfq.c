@@ -37,8 +37,9 @@ enum thread_status {
 struct mtnfq_priv {
 	struct mnl_socket	*nl;
 	uint32_t		portid;
+#ifdef NLMMAP
 	struct mnl_ring		*nlr;
-	bool			skipped;
+#endif
 
 	int			retval, statusfd;
 	enum thread_status	status_req;
@@ -242,25 +243,17 @@ static enum nurs_return_t
 mtnfq_signal(struct nurs_producer *producer, uint32_t signal)
 {
 	struct mtnfq_priv *priv = nurs_producer_context(producer);
-	struct nl_mmap_hdr *frame, *sentinel;
 
 	if (suspend_routine(priv)) {
 		nurs_log(NURS_ERROR, "failed to suspend\n");
 		return NURS_RET_ERROR;
 	}
+
 	switch (signal) {
-	case SIGUSR1:
-		sentinel = frame = mnl_ring_get_frame(priv->nlr);
-		do {
-			nurs_log(NURS_DEBUG, "---- frame status %p: %d\n",
-				  frame, frame->nm_status);
-			mnl_ring_advance(priv->nlr);
-			frame = mnl_ring_get_frame(priv->nlr);
-		} while (frame != sentinel);
-		break;
 	default:
 		nurs_log(NURS_DEBUG, "receive signal: %d\n", signal);
 	}
+
 	if (resume_routine(priv)) {
 		nurs_log(NURS_ERROR, "failed to resume\n");
 		return NURS_RET_ERROR;

@@ -15,7 +15,9 @@
 #include <string.h>
 
 #include <nurs/nurs.h>
+#ifdef NLMMAP
 #include <nurs/ring.h>
+#endif
 
 #include "nfq_common.h"
 
@@ -25,10 +27,11 @@ extern struct nurs_output_def nfq_output;
 struct nfq_priv {
 	struct mnl_socket	*nl;
 	uint32_t		portid;
+#ifdef NLMMAP
 	struct mnl_ring		*nlr;
-	bool			skipped;
+#endif
 
-	struct nurs_fd		*fd;
+        struct nurs_fd		*fd;
 };
 
 static enum nurs_return_t nfq_organize(struct nurs_producer *producer)
@@ -44,7 +47,9 @@ static enum nurs_return_t nfq_organize(struct nurs_producer *producer)
 		goto fail;
 	return NURS_RET_OK;
 fail:
+#ifdef NLMMAP
 	mnl_socket_unmap(priv->nlr);
+#endif
 	mnl_socket_close(priv->nl);
 	return NURS_RET_ERROR;
 
@@ -87,19 +92,7 @@ static enum nurs_return_t nfq_stop(struct nurs_producer *producer)
 static enum nurs_return_t
 nfq_signal(struct nurs_producer *producer, uint32_t signal)
 {
-	struct nfq_priv *priv = nurs_producer_context(producer);
-	struct nl_mmap_hdr *frame, *sentinel;;
-
 	switch (signal) {
-	case SIGUSR1:
-		sentinel = frame = mnl_ring_get_frame(priv->nlr);
-		do {
-			nurs_log(NURS_DEBUG, "status %p: %d\n",
-				  frame, frame->nm_status);
-			mnl_ring_advance(priv->nlr);
-			frame = mnl_ring_get_frame(priv->nlr);
-		} while (frame != sentinel);
-		break;
 	default:
 		nurs_log(NURS_DEBUG, "receive signal: %d\n", signal);
 	}
