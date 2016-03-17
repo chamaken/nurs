@@ -28,8 +28,6 @@
 #include <nurs/ipfix_protocol.h>
 #ifdef NLMMAP
 #include <nurs/ring.h>
-#else
-#define mnl_socket_unmap(x)
 #endif
 
 #include "nfnl_common.h"
@@ -855,7 +853,9 @@ static int open_dump_socket(const struct nurs_producer *producer)
 	return NURS_RET_OK;
 
 error_unmap:
+#ifdef NLMMAP
 	mnl_socket_unmap(priv->nlr);
+#endif
 error_close:
 	mnl_socket_close(priv->dump_nl);
 	return NURS_RET_ERROR;
@@ -913,7 +913,9 @@ static enum nurs_return_t nfct_organize(struct nurs_producer *producer)
 	return NURS_RET_OK;
 
 error_close_dump:
+#ifdef NLMMAP
 	mnl_socket_unmap(priv->nlr);
+#endif
 	mnl_socket_close(priv->dump_nl);
 error_close_event:
 	mnl_socket_close(priv->event_nl);
@@ -928,7 +930,9 @@ static enum nurs_return_t nfct_disorganize(struct nurs_producer *producer)
 	if (!config_destroy_only(producer)) {
 		nurs_timer_destroy(priv->timer);
 		nurs_fd_destroy(priv->dump_fd);
+#ifdef NLMMAP
 		mnl_socket_unmap(priv->nlr);
+#endif
 		mnl_socket_close(priv->dump_nl);
 	}
 
