@@ -23,6 +23,7 @@
 #include <libmnl/libmnl.h>
 #include <libnetfilter_log/libnetfilter_log.h>
 
+#include "config.h"
 #include <nurs/nurs.h>
 #include <nurs/ipfix_protocol.h>
 #ifdef NLMMAP

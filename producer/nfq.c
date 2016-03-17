@@ -14,6 +14,7 @@
 #include <signal.h>
 #include <string.h>
 
+#include "config.h"
 #include <nurs/nurs.h>
 #ifdef NLMMAP
 #include <nurs/ring.h>

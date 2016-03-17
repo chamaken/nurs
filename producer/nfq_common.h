@@ -14,8 +14,10 @@
 #define _NURS_NFQ_COMMON_H
 
 #include <libmnl/libmnl.h>
+#include "config.h"
 #include <nurs/nurs.h>
 #include <nurs/ring.h>
+
 
 enum {
 #ifdef NLMMAP

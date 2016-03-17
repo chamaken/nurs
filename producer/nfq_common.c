@@ -18,6 +18,7 @@
 #include <libnetfilter_queue/libnetfilter_queue.h>
 
 #include <nurs/nurs.h>
+#include "config.h"
 #ifdef NLMMAP
 #include <nurs/ring.h>
 #endif

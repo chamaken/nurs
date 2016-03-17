@@ -19,6 +19,7 @@
 #include <string.h>
 #include <sys/eventfd.h>
 
+#include "config.h"
 #include <nurs/nurs.h>
 #include <nurs/ring.h>
 
