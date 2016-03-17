@@ -542,7 +542,6 @@ static int nftnl_fd_cb(int fd, uint16_t what, void *param)
 	struct nftnl_priv *priv = nurs_producer_context(producer);
 	char buf[MNL_SOCKET_BUFFER_SIZE];
 	ssize_t nrecv;
-	int ret;
 
 	if (!(what & NURS_FD_F_READ))
 		return 0;
@@ -554,13 +553,9 @@ static int nftnl_fd_cb(int fd, uint16_t what, void *param)
 		return NURS_RET_ERROR;
 	}
 
-	ret = mnl_cb_run(buf, (size_t)nrecv, 0, 0, events_cb, producer);
-	if (ret == MNL_CB_ERROR) {
-		nurs_log(NURS_ERROR, "mnl_cb_run: %s\n", strerror(errno));
-		return NURS_RET_ERROR;
-	}
-
-	return NURS_RET_OK;
+        return nurs_ret_from_mnl(
+		mnl_cb_run(buf, (size_t)nrecv,
+                           0, 0, events_cb, producer));
 }
 
 static int nftnl_organize(struct nurs_producer *producer)
