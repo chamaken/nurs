@@ -118,10 +118,16 @@ TODO
 ====
 
 * docmentation, can be cite from ulogd2
+  doxygen comment, return value explanation.
 * needs more tests
 * resolve plugin symbols not only from self, but also from global.
-* try to implement rust binding.
-
+* for rust implementation...  
+  - int nurs_fd_unregister(struct nurs_fd *nfd);  
+    update to return cbdata on success
+    void *nurs_fd_unregister(struct nurs_fd *nfd);
+* move mnl_ring from src to producer?  
+  mmaped netlink will be disabled...
+* implement cvfilter - covet filter
 * put / propagate for output may cause trouble.  
   add borrowing flag for duplicate calling?
 
