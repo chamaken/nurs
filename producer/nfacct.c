@@ -147,7 +147,7 @@ propagate_nfacct(struct nurs_producer *producer,
 	return nurs_publish(output);
 }
 
-static int nlmsg_cb(const struct nlmsghdr *nlh, void *data)
+static int nfacct_mnl_cb(const struct nlmsghdr *nlh, void *data)
 {
 	struct nurs_producer *producer = data;
 	struct nurs_output *output = nurs_get_output(producer);
@@ -174,17 +174,21 @@ static enum nurs_return_t nfacct_read_cb(int fd, uint16_t when, void *data)
 	struct nfacct_priv *priv = nurs_producer_context(producer);
 	char buf[MNL_SOCKET_BUFFER_SIZE];
 	ssize_t nrecv;
+        int ret;
 
-	nrecv = mnl_socket_recvfrom(priv->nl, buf, sizeof(buf));
-	if (nrecv < 0) {
-		nurs_log(NURS_ERROR, "mnl_socket_recvfrom: %s\n",
+        do {
+                nrecv = mnl_socket_recvfrom(priv->nl, buf, sizeof(buf));
+                if (nrecv < 0) {
+                        nurs_log(NURS_ERROR, "mnl_socket_recvfrom: %s\n",
+                                 strerror(errno));
+                        return NURS_RET_ERROR;
+                }
+                ret = mnl_cb_run(buf, (size_t)nrecv, priv->seq,
+                                 priv->portid, nfacct_mnl_cb, data);
+	} while (ret == MNL_CB_OK);
+	if (ret == MNL_CB_ERROR) {
+		nurs_log(NURS_ERROR, "mnl_cb_run: %s\n",
 			 strerror(errno));
-		return NURS_RET_ERROR;
-	}
-
-	if (mnl_cb_run(buf, (size_t)nrecv, priv->seq,
-		       priv->portid, nlmsg_cb, data) == MNL_CB_ERROR) {
-		nurs_log(NURS_ERROR, "mnl_cb_run: %s\n", strerror(errno));
 		return NURS_RET_ERROR;
 	}
 
