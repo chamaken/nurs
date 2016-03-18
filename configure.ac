@@ -28,6 +28,10 @@ AC_CHECK_PROG(enable_go, [go], ["yes"], ["no"])
 AC_SUBST(HAVE_GO)
 AM_CONDITIONAL([HAVE_GO], [test "x$enable_go" = "xyes"])
 
+AC_CHECK_PROG(enable_rust, [cargo], ["yes"], ["no"])
+AC_SUBST(HAVE_RUST)
+AM_CONDITIONAL([HAVE_RUST], [test "x$enable_rust" = "xyes"])
+
 AC_CHECK_PROG(DOCBOOK2X_MAN, [docbook2x-man], [docbook2x-man], [no])
 AC_CHECK_PROG(DOCBOOK2MAN, [docbook2man], [docbook2man], [no])
 AC_CHECK_PROG(DB2X_DOCBOOK2MAN, [db2x_docbook2man], [db2x_docbook2man], [no])
@@ -215,6 +219,7 @@ AC_CONFIG_FILES([Makefile
 		 binding/Makefile
 		 binding/python/Makefile
 		 binding/go/Makefile
+		 binding/rust/Makefile
 		 doc/Makefile
 
 		 examples/Makefile
@@ -254,5 +259,6 @@ nurs configuration:
     IPFIX plugin:			${enable_nfct}
   PYTHON plugin:			${enable_python}
   Go plugin (experimental example)	${enable_go}
+  Rust plugin (experimental example)	${enable_rust}
 "
 echo "You can now run 'make' and 'make install'"
