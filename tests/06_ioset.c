@@ -384,24 +384,17 @@ static void test_consumer(void *data)
 	assertf(nurs_input_bool(input, 0),
 		"should input[0] is true");
 
-	assertf(!ioset_clear(ioset),
-		"should success to clear ioset");
-	assertf(!nurs_input_is_valid(input, 0),
-		"should not input[0] is valid");
-	assertf(!nurs_input_is_valid(input, 1),
-		"should not input[1] is valid");
-	assertf(!nurs_output_set_bool(output, 1, false),
-		"should success to set output[1] true");
-	assertf(nurs_input_is_valid(input, 0),
-		"should input[0] is valid");
-	assertf(!nurs_input_is_valid(input, 1),
-		"should not input[1] is valid");
-	assertf(!nurs_input_bool(input, 0),
-		"should input[0] is true");
-
-	assertf(!ioset_put(producer, ioset),
+        assertf(!ioset_put(producer, ioset),
 		"should success to put ioset");
-	n = 0; list_for_each_entry(ioset2, &producer->iosets, list) n++;
+	n = 0;
+        list_for_each_entry(ioset2, &producer->iosets, list) {
+                input = ioset_input(ioset2, element->idx);
+                assertf(!nurs_input_is_valid(input, 0),
+                        "should not input[0] is valid");
+                assertf(!nurs_input_is_valid(input, 1),
+                        "should not input[1] is valid");
+                n++;
+        }
 	assertf(n == 16, "should #ioset == 16 after put one");
 
 	assertf(!ioset_destroy(producer),

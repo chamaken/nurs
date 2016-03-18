@@ -452,20 +452,15 @@ static int ioset_clear(struct nurs_ioset *ioset)
 {
 	struct nurs_stack *stack;
 	struct nurs_stack_element *e;
-	struct nurs_output *output;
+	struct nurs_input *input;
 	struct nurs_output_key *key;
 	uint16_t i;
 
         for_each_stack_element(ioset->producer, stack, e) {
-                if (e->plugin->type != NURS_PLUGIN_T_PRODUCER &&
-                    e->plugin->type != NURS_PLUGIN_T_FILTER)
-                        continue;
-
-		output = ioset_output(ioset, e->odx);
-		for (i = 0; i < output->len; i++) {
-			key = &output->keys[i];
-
-			if (!(key->flags & NURS_KEY_F_VALID))
+		input = ioset_input(ioset, e->idx);
+		for (i = 0; i < input->len; i++) {
+			key = input->keys[i];
+			if (!key || !(key->flags & NURS_KEY_F_VALID))
 				continue;
 
 			if (key->def->flags & NURS_OKEY_F_FREE) {
