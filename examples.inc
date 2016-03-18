@@ -18,4 +18,9 @@ SUFFIXES = .conf .conf.in .json .json.in
 
 clean-local:
 	-rm -f core *.conf *.json *.log *.gso *.h
-	-find -name Cargo.toml | while read i; do pushd `dirname $$i`; cargo clean; popd; done
+	-find -name Cargo.toml | while read i; do \
+        	pushd `dirname $$i`; \
+                cargo clean; \
+		rm -f Cargo.toml Cargo.lock; \
+                popd; \
+        done
