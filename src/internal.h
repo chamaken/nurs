@@ -390,7 +390,7 @@ int useless_init(size_t nthread);
 int useless_fini(void);
 
 #define NURS_ALIGNTO		4
-#define NURS_ALIGN(len)		(((len) + NURS_ALIGNTO - 1) & ~(NURS_ALIGNTO - 1))
+#define NURS_ALIGN(len)		(((unsigned int)((len) + NURS_ALIGNTO - 1)) & ~((unsigned int)(NURS_ALIGNTO - 1)))
 
 #define NURS_IOSET_ALIGN(len)	(((len) + sizeof(struct nurs_ioset) - 1) & ~(sizeof(struct nurs_ioset) - 1))
 
