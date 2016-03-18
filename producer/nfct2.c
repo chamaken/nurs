@@ -442,7 +442,6 @@ nfct_event_cb(int fd, uint16_t when, void *data)
 	struct nfct_priv *priv = nurs_producer_context(producer);
 	char buf[MNL_SOCKET_BUFFER_SIZE];
 	ssize_t nrecv;
-	int ret;
 	struct mnl_cbarg cbarg = {
 		.producer	= producer,
 		.recent		= NULL
