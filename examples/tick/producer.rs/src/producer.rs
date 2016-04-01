@@ -18,10 +18,19 @@ fn timercb(_: &mut nurs::Timer, data: &mut Any) -> nurs::ReturnType {
     let mut producer = data.downcast_mut::<nurs::Producer>().unwrap();
     let mut ctx = unsafe { &mut(*(producer.context() as *mut TickPriv)) };
     let mut output = producer.get_output().unwrap();
-    output.set_u64(0, ctx.counter);
+    if let Err(errno) = output.set_u64(0, ctx.counter) {
+        nurs_log!(ERROR, "failed to set u64 output value{}", errno);
+        return nurs::ReturnType::ERROR;
+    }
     ctx.counter += 1;
-    output.set_string(1, ctx.myname);
-    output.publish();
+    if let Err(errno) = output.set_string(1, ctx.myname) {
+        nurs_log!(ERROR, "failed to set string output value: {}", errno);
+        return nurs::ReturnType::ERROR;
+    }
+    if let Err(errno) = output.publish() {
+        nurs_log!(ERROR, "failed to publish output: {}", errno);
+        return nurs::ReturnType::ERROR;
+    }
     nurs::ReturnType::OK
 }
 
@@ -46,7 +55,7 @@ pub extern fn tick_organize(producer: &mut nurs::Producer) -> c_int {
 #[no_mangle]
 pub extern fn tick_disorganize(producer: &mut nurs::Producer) -> c_int {
     let mut ctx = unsafe { &mut(*(producer.context() as *mut TickPriv)) };
-    if let Some(errno) = ctx.timer.destroy() {
+    if let Err(errno) = ctx.timer.destroy() {
         nurs_log!(ERROR, "failed to destroy timer: {}", errno);
         nurs_return!(ERROR)
     } else {
@@ -57,7 +66,7 @@ pub extern fn tick_disorganize(producer: &mut nurs::Producer) -> c_int {
 #[no_mangle]
 pub extern fn tick_start(producer: &mut nurs::Producer) -> c_int {
     let mut ctx = unsafe { &mut(*(producer.context() as *mut TickPriv)) };
-    if let Some(errno) = ctx.timer.iadd(1, 1) {
+    if let Err(errno) = ctx.timer.iadd(1, 1) {
         nurs_log!(ERROR, "failed to add itimer: {}", errno);
         nurs_return!(ERROR)
     } else {
@@ -68,7 +77,7 @@ pub extern fn tick_start(producer: &mut nurs::Producer) -> c_int {
 #[no_mangle]
 pub extern fn tick_stop(producer: &mut nurs::Producer) -> c_int {
     let mut ctx = unsafe { &mut(*(producer.context() as *mut TickPriv)) };
-    if let Some(errno) = ctx.timer.del() {
+    if let Err(errno) = ctx.timer.del() {
         nurs_log!(ERROR, "failed to del timer: {}", errno);
         nurs_return!(ERROR)
     } else {
