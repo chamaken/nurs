@@ -8,6 +8,7 @@ use std::net::{Ipv4Addr, Ipv6Addr};
 use std::os::raw::{c_char, c_void};
 use std::os::unix::io::AsRawFd;
 use std::ptr;
+use std::io;
 
 extern crate libc;
 use libc::{c_int, uint8_t, uint16_t, uint32_t, uint64_t, in_addr_t, in6_addr, time_t};
@@ -274,7 +275,7 @@ extern {
  */
 // __nurs_log(int level, char *file, int line, const char *message, ...);
 
-macro_rules! unsafe_errno_result {
+macro_rules! cvt_may_error {
     ($fcall:expr, $mayerr:expr) => ( {
         let ret = unsafe { $fcall };
         if ret != $mayerr {
@@ -284,7 +285,7 @@ macro_rules! unsafe_errno_result {
             match err.raw_os_error() {
                 Some(errno) => {
                     match errno {
-                    0 => Ok(ret),
+                        0 => Ok(ret),
                         _ => Err(err),
                     }
                 },
@@ -294,69 +295,51 @@ macro_rules! unsafe_errno_result {
     } )
 }
 
-macro_rules! unsafe_errno_option {
-    ($fcall:expr) => ( {
-        if unsafe { $fcall } == 0 { // including NURS_RET_OK
-            None
-        } else {
-            let err = Error::last_os_error();
-            match err.raw_os_error() {
-                Some(errno) => {
-                    match errno {
-                        0 => None,
-                        _ => Some(err),
-                    }
-                },
-                _ => None,
-            }
-        }
-    } )
-}
-
 impl Config {
-    pub fn integer(&self, idx: u8) -> Result<c_int, Error> {
+    pub fn integer(&self, idx: u8) -> io::Result<isize> {
         let ret = unsafe { nurs_config_integer(self, idx) };
         if ret != 0 {
-            return Ok(ret);
+            return Ok(ret as isize);
         }
 
         let err = Error::last_os_error();
         match err.raw_os_error() {
             Some(errno) => {
                 match errno {
-                    0 => Ok(ret),
+                    0 => Ok(ret as isize),
                     _ => Err(err),
                 }
             },
-            _ => Ok(ret),
+            _ => Ok(ret as isize),
         }
     }
 
-    pub fn boolean(&self, idx: u8) -> Result<bool, Error> {
-        unsafe_errno_result!(nurs_config_boolean(self, idx), false)
+    pub fn boolean(&self, idx: u8) -> io::Result<bool> {
+        cvt_may_error!(nurs_config_boolean(self, idx), false)
     }
 
-    pub fn string(&self, idx: u8) -> Result<&str, Error> {
-        match unsafe_errno_result!(nurs_config_string(self, idx), ptr::null()) {
+    pub fn string<'a>(&'a self, idx: u8) -> io::Result<&'a str> {
+        match cvt_may_error!(nurs_config_string(self, idx), ptr::null()) {
             Ok(ret) => Ok(unsafe { CStr::from_ptr(ret).to_str().unwrap() }),
+            // Ok(ret) => Ok(unsafe { CStr::from_ptr(ret).to_string_lossy().into_owned() }),
             Err(errno) => Err(errno),
         }
     }
 
-    pub fn len(&self) -> uint8_t {
+    pub fn len(&self) -> u8 {
         unsafe { nurs_config_len(self) }
     }
 
-    pub fn config_type(&self, idx: u8) -> Result<ConfigType, Error> {
-        match unsafe_errno_result!(nurs_config_type(self, idx), 0) {
+    pub fn config_type(&self, idx: u8) -> io::Result<ConfigType> {
+        match cvt_may_error!(nurs_config_type(self, idx), 0) {
             Ok(ret) => Ok(u16_config_t(ret)),
             Err(errno) => Err(errno),
         }
     }
 
-    pub fn index(&self, name: &str) -> Result<u8, Error> {
+    pub fn index(&self, name: &str) -> io::Result<u8> {
         let s = CString::new(name).unwrap();
-        unsafe_errno_result!(nurs_config_index(self, s.as_ptr()), 0)
+        cvt_may_error!(nurs_config_index(self, s.as_ptr()), 0)
     }
 }
 
@@ -365,19 +348,19 @@ impl Input {
         unsafe { nurs_input_len(self) }
     }
 
-    pub fn size(&self, idx: u16) -> Result<u16, Error> {
-        unsafe_errno_result!(nurs_input_size(self, idx), 0)
+    pub fn size(&self, idx: u16) -> io::Result<u16> {
+        cvt_may_error!(nurs_input_size(self, idx), 0)
     }
 
-    pub fn name(&self, idx: u16) -> Result<&str, Error> {
-        match unsafe_errno_result!(nurs_input_name(self, idx), ptr::null()) {
+    pub fn name<'a>(&'a self, idx: u16) -> io::Result<&'a str> {
+        match cvt_may_error!(nurs_input_name(self, idx), ptr::null()) {
             Ok(ret) => Ok(unsafe { CStr::from_ptr(ret).to_str().unwrap() }),
             Err(errno) => Err(errno),
         }
     }
 
-    pub fn key_type(&self, idx: u16) -> Result<KeyType, Error> {
-        match unsafe_errno_result!(nurs_input_type(self, idx), 0) {
+    pub fn key_type(&self, idx: u16) -> io::Result<KeyType> {
+        match cvt_may_error!(nurs_input_type(self, idx), 0) {
             Ok(ret) => Ok(u16_key_t(ret)),
             Err(errno) => Err(errno),
         }
@@ -385,40 +368,40 @@ impl Input {
 
     }
 
-    pub fn index(&self, name: &str) -> Result<u16, Error> {
+    pub fn index(&self, name: &str) -> io::Result<u16> {
         let s = CString::new(name).unwrap();
-        unsafe_errno_result!(nurs_input_index(self, s.as_ptr()), 0)
+        cvt_may_error!(nurs_input_index(self, s.as_ptr()), 0)
     }
 
-    pub fn get_bool(&self, idx: u16) -> Result<bool, Error> {
-        unsafe_errno_result!(nurs_input_bool(self, idx), false)
+    pub fn get_bool(&self, idx: u16) -> io::Result<bool> {
+        cvt_may_error!(nurs_input_bool(self, idx), false)
     }
 
-    pub fn get_u8(&self, idx: u16) -> Result<u8, Error> {
-        unsafe_errno_result!(nurs_input_u8(self, idx), 0)
+    pub fn get_u8(&self, idx: u16) -> io::Result<u8> {
+        cvt_may_error!(nurs_input_u8(self, idx), 0)
     }
 
-    pub fn get_u16(&self, idx: u16) -> Result<u16, Error> {
-        unsafe_errno_result!(nurs_input_u16(self, idx), 0)
+    pub fn get_u16(&self, idx: u16) -> io::Result<u16> {
+        cvt_may_error!(nurs_input_u16(self, idx), 0)
     }
 
-    pub fn get_u32(&self, idx: u16) -> Result<u32, Error> {
-        unsafe_errno_result!(nurs_input_u32(self, idx), 0)
+    pub fn get_u32(&self, idx: u16) -> io::Result<u32> {
+        cvt_may_error!(nurs_input_u32(self, idx), 0)
     }
 
-    pub fn get_u64(&self, idx: u16) -> Result<u64, Error> {
-        unsafe_errno_result!(nurs_input_u64(self, idx), 0)
+    pub fn get_u64(&self, idx: u16) -> io::Result<u64> {
+        cvt_may_error!(nurs_input_u64(self, idx), 0)
     }
 
-    pub fn get_in_addr(&self, idx: u16) -> Result<Ipv4Addr, Error> {
-        match unsafe_errno_result!(nurs_input_in_addr(self, idx), 0) {
+    pub fn get_in_addr(&self, idx: u16) -> io::Result<Ipv4Addr> {
+        match cvt_may_error!(nurs_input_in_addr(self, idx), 0) {
             Ok(ret) => Ok(Ipv4Addr::from(ret as u32)),
             Err(errno) => Err(errno),
         }
     }
 
-    pub fn get_in6_addr(&self, idx: u16) -> Result<Ipv6Addr, Error> {
-        match unsafe_errno_result!(nurs_input_in6_addr(self, idx), ptr::null()) {
+    pub fn get_in6_addr(&self, idx: u16) -> io::Result<Ipv6Addr> {
+        match cvt_may_error!(nurs_input_in6_addr(self, idx), ptr::null()) {
             Ok(ret) => unsafe {
                 Ok(Ipv6Addr::new(((*ret).s6_addr[ 0] as u16) << 8 | (*ret).s6_addr[ 1] as u16,
                                  ((*ret).s6_addr[ 2] as u16) << 8 | (*ret).s6_addr[ 3] as u16,
@@ -434,8 +417,8 @@ impl Input {
     }
 
     // http://stackoverflow.com/questions/24191249/working-with-c-void-in-an-ffi
-    pub fn get_pointer(&self, idx: u16) -> Result<Option<*const c_void>, Error> {
-        match unsafe_errno_result!(nurs_input_pointer(self, idx), ptr::null()) {
+    pub fn get_pointer(&self, idx: u16) -> io::Result<Option<*const c_void>> {
+        match cvt_may_error!(nurs_input_pointer(self, idx), ptr::null()) {
             Ok(ret) => {
                 if ret.is_null() {
                     Ok(None)
@@ -447,31 +430,31 @@ impl Input {
         }
     }
 
-    pub fn get_string(&self, idx: u16) -> Result<&str, Error> {
-        match unsafe_errno_result!(nurs_input_string(self, idx), ptr::null()) {
+    pub fn get_string<'a>(&'a self, idx: u16) -> io::Result<&'a str> {
+        match cvt_may_error!(nurs_input_string(self, idx), ptr::null()) {
             Ok(ret) => Ok(unsafe { CStr::from_ptr(ret).to_str().unwrap() }),
             Err(errno) => Err(errno),
         }
     }
 
-    pub fn is_valid(&self, idx: u16) -> Result<bool, Error> {
-        unsafe_errno_result!(nurs_input_is_valid(self, idx), false)
+    pub fn is_valid(&self, idx: u16) -> io::Result<bool> {
+        cvt_may_error!(nurs_input_is_valid(self, idx), false)
     }
 
-    pub fn is_active(&self, idx: u16) -> Result<bool, Error> {
-        unsafe_errno_result!(nurs_input_is_active(self, idx), false)
+    pub fn is_active(&self, idx: u16) -> io::Result<bool> {
+        cvt_may_error!(nurs_input_is_active(self, idx), false)
     }
 
-    pub fn ipfix_vendor(&self, idx: u16) -> Result<u32, Error> {
-        unsafe_errno_result!(nurs_input_ipfix_vendor(self, idx), 0)
+    pub fn ipfix_vendor(&self, idx: u16) -> io::Result<u32> {
+        cvt_may_error!(nurs_input_ipfix_vendor(self, idx), 0)
     }
 
-    pub fn ipfix_field(&self, idx: u16) -> Result<u16, Error> {
-        unsafe_errno_result!(nurs_input_ipfix_field(self, idx), 0)
+    pub fn ipfix_field(&self, idx: u16) -> io::Result<u16> {
+        cvt_may_error!(nurs_input_ipfix_field(self, idx), 0)
     }
 
-    pub fn cim_name(&self, idx: u16) -> Result<&str, Error> {
-        match unsafe_errno_result!(nurs_input_cim_name(self, idx), ptr::null()) {
+    pub fn cim_name<'a>(&'a self, idx: u16) -> io::Result<&'a str> {
+        match cvt_may_error!(nurs_input_cim_name(self, idx), ptr::null()) {
             Ok(ret) => Ok(unsafe { CStr::from_ptr(ret).to_str().unwrap() }),
             Err(errno) => Err(errno),
         }
@@ -483,66 +466,75 @@ impl Output {
         unsafe { nurs_output_len(self) }
     }
 
-    pub fn size(&self, idx: u16) -> Result<u16, Error> {
-        unsafe_errno_result!(nurs_output_size(self, idx), 0)
+    pub fn size(&self, idx: u16) -> io::Result<u16> {
+        cvt_may_error!(nurs_output_size(self, idx), 0)
     }
 
-    pub fn key_type(&self, idx: u16) -> Result<KeyType, Error> {
-        match unsafe_errno_result!(nurs_output_type(self, idx), 0) {
+    pub fn key_type(&self, idx: u16) -> io::Result<KeyType> {
+        match cvt_may_error!(nurs_output_type(self, idx), 0) {
             Ok(ret) => Ok(u16_key_t(ret)),
             Err(errno) => Err(errno),
         }
     }
 
-    pub fn index(&self, name: &str) -> Result<u16, Error> {
+    pub fn index(&self, name: &str) -> io::Result<u16> {
         let s = CString::new(name).unwrap();
-        unsafe_errno_result!(nurs_output_index(self, s.as_ptr()), 0)
+        cvt_may_error!(nurs_output_index(self, s.as_ptr()), 0)
     }
 
-    pub fn set_bool(&mut self, idx: u16, value: bool) -> Option<Error> {
-        unsafe_errno_option!(nurs_output_set_bool(self, idx, value))
+    pub fn set_bool(&mut self, idx: u16, value: bool) -> io::Result<()> {
+        try!(cvt_may_error!(nurs_output_set_bool(self, idx, value), -1));
+        Ok(())
     }
 
-    pub fn set_u8(&mut self, idx: u16, value: u8) -> Option<Error> {
-        unsafe_errno_option!(nurs_output_set_u8(self, idx, value))
+    pub fn set_u8(&mut self, idx: u16, value: u8) -> io::Result<()> {
+        try!(cvt_may_error!(nurs_output_set_u8(self, idx, value), -1));
+        Ok(())
     }
 
-    pub fn set_u16(&mut self, idx: u16, value: u16) -> Option<Error> {
-        unsafe_errno_option!(nurs_output_set_u16(self, idx, value))
+    pub fn set_u16(&mut self, idx: u16, value: u16) -> io::Result<()> {
+        try!(cvt_may_error!(nurs_output_set_u16(self, idx, value), -1));
+        Ok(())
     }
 
-    pub fn set_u32(&mut self, idx: u16, value: u32) -> Option<Error> {
-        unsafe_errno_option!(nurs_output_set_u32(self, idx, value))
+    pub fn set_u32(&mut self, idx: u16, value: u32) -> io::Result<()> {
+        try!(cvt_may_error!(nurs_output_set_u32(self, idx, value), -1));
+        Ok(())
     }
 
-    pub fn set_u64(&mut self, idx: u16, value: u64) -> Option<Error> {
-        unsafe_errno_option!(nurs_output_set_u64(self, idx, value))
+    pub fn set_u64(&mut self, idx: u16, value: u64) -> io::Result<()> {
+        try!(cvt_may_error!(nurs_output_set_u64(self, idx, value), -1));
+        Ok(())
     }
 
-    pub fn set_in_addr(&mut self, idx: u16, value: &Ipv4Addr) -> Option<Error> {
+    pub fn set_in_addr(&mut self, idx: u16, value: &Ipv4Addr) -> io::Result<()> {
         let o = (*value).octets();
         let raw = (o[0] as u32) << 24
             | (o[1] as u32) << 16
             | (o[2] as u32) << 8
             | (o[3] as u32);
-        unsafe_errno_option!(nurs_output_set_in_addr(self, idx, raw as in_addr_t))
+        try!(cvt_may_error!(nurs_output_set_in_addr(self, idx, raw as in_addr_t), -1));
+        Ok(())
     }
 
-    pub fn set_in6_addr(&mut self, idx: u16, value: &Ipv6Addr) -> Option<Error> {
-        unsafe_errno_option!(nurs_output_set_in6_addr(self, idx, value as *const _ as *const in6_addr))
+    pub fn set_in6_addr(&mut self, idx: u16, value: &Ipv6Addr) -> io::Result<()> {
+        try!(cvt_may_error!(nurs_output_set_in6_addr(self, idx, value as *const _ as *const in6_addr), -1));
+        Ok(())
     }
 
-    pub fn set_pointer(&mut self, idx: u16, value: *const c_void) -> Option<Error> {
-        unsafe_errno_option!(nurs_output_set_pointer(self, idx, value))
+    pub fn set_pointer(&mut self, idx: u16, value: *const c_void) -> io::Result<()> {
+        try!(cvt_may_error!(nurs_output_set_pointer(self, idx, value), -1));
+        Ok(())
     }
 
-    pub fn set_string(&mut self, idx: u16, value: &str) -> Option<Error> {
-        let s = CString::new(value).unwrap();
-        unsafe_errno_option!(nurs_output_set_string(self, idx, s.as_ptr()))
+    pub fn set_string(&mut self, idx: u16, value: &str) -> io::Result<()> {
+        let s = CString::new(value).unwrap().as_ptr();
+        try!(cvt_may_error!(nurs_output_set_string(self, idx, s), -1));
+        Ok(())
     }
 
-    pub fn get_pointer(&self, idx: u16) -> Result<Option<*mut c_void>, Error> {
-        match unsafe_errno_result!(nurs_output_pointer(self, idx), ptr::null_mut()) {
+    pub fn get_pointer(&self, idx: u16) -> io::Result<Option<*mut c_void>> {
+        match cvt_may_error!(nurs_output_pointer(self, idx), ptr::null_mut()) {
             Ok(ret) => {
                 if ret.is_null() {
                     Ok(None)
@@ -554,101 +546,105 @@ impl Output {
         }
     }
 
-    pub fn set_valid(&mut self, idx: u16) -> Option<Error> {
-        unsafe_errno_option!(nurs_output_set_valid(self, idx))
+    pub fn set_valid(&mut self, idx: u16) -> io::Result<()> {
+        try!(cvt_may_error!(nurs_output_set_valid(self, idx), -1));
+        Ok(())
     }
 
-    pub fn publish(&mut self) -> Option<Error> {
-        unsafe_errno_option!(nurs_publish(self))
+    pub fn publish(&mut self) -> io::Result<()> {
+        try!(cvt_may_error!(nurs_publish(self), -1));
+        Ok(())
     }
 
-    pub fn put(&mut self) -> Option<Error> {
-        unsafe_errno_option!(nurs_put_output(self))
+    pub fn put(&mut self) -> io::Result<()> {
+        try!(cvt_may_error!(nurs_put_output(self), -1));
+        Ok(())
     }
 
 }
 
-pub fn producer_unregister(name: &str) -> Option<Error> {
-    let s = CString::new(name).unwrap();
-    unsafe_errno_option!(nurs_producer_unregister_name(s.as_ptr()))
+pub fn producer_unregister(name: &str) -> io::Result<()> {
+    let s = CString::new(name).unwrap().as_ptr();
+    try!(cvt_may_error!(nurs_producer_unregister_name(s), -1));
+    Ok(())
 }
 
-pub fn filter_unregister(name: &str) -> Option<Error> {
-    let s = CString::new(name).unwrap();
-    unsafe_errno_option!(nurs_filter_unregister_name(s.as_ptr()))
+pub fn filter_unregister(name: &str) -> io::Result<()> {
+    let s = CString::new(name).unwrap().as_ptr();
+    try!(cvt_may_error!(nurs_filter_unregister_name(s), -1));
+    Ok(())
 }
 
-pub fn consumer_unregister(name: &str) -> Option<Error> {
-    let s = CString::new(name).unwrap();
-    unsafe_errno_option!(nurs_consumer_unregister_name(s.as_ptr()))
+pub fn consumer_unregister(name: &str) -> io::Result<()> {
+    let s = CString::new(name).unwrap().as_ptr();
+    try!(cvt_may_error!(nurs_consumer_unregister_name(s), -1));
+    Ok(())
 }
 
-pub fn coveter_unregister(name: &str) -> Option<Error> {
-    let s = CString::new(name).unwrap();
-    unsafe_errno_option!(nurs_coveter_unregister_name(s.as_ptr()))
+pub fn coveter_unregister(name: &str) -> io::Result<()> {
+    let s = CString::new(name).unwrap().as_ptr();
+    try!(cvt_may_error!(nurs_coveter_unregister_name(s), -1));
+    Ok(())
 }
 
-macro_rules! unsafe_str_null_errno_option {
-    ($fcall:expr, $s:expr, $($a:expr),*) => ( {
-        let s = CString::new($s).unwrap();
-        // if unsafe { $fcall } != ptr::null() {
-        if unsafe { $fcall(s.as_ptr(), $($a), *) != ptr::null() } {
-            None
-        } else {
-            let err = Error::last_os_error();
-            match err.raw_os_error() {
-                Some(errno) => {
-                    match errno {
-                        0 => None,
-                        _ => Some(err),
-                    }
-                },
-                _ => None,
-            }
-        }
-    } )
+pub fn producer_register_jsons(input: &str, context_size: u16) -> io::Result<()> {
+    let s = CString::new(input).unwrap().as_ptr();
+    try!(cvt_may_error!(nurs_producer_register_jsons(s, context_size), ptr::null()));
+    Ok(())
 }
 
-pub fn producer_register_jsons(input: &str, context_size: u16) -> Option<Error> {
-    unsafe_str_null_errno_option!(nurs_producer_register_jsons, input, context_size)
+pub fn filter_register_jsons(input: &str, context_size: u16) -> io::Result<()> {
+    let s = CString::new(input).unwrap().as_ptr();
+    try!(cvt_may_error!(nurs_filter_register_jsons(s, context_size), ptr::null()));
+    Ok(())
 }
 
-pub fn filter_register_jsons(input: &str, context_size: u16) -> Option<Error> {
-    unsafe_str_null_errno_option!(nurs_filter_register_jsons, input, context_size)
+pub fn consumer_register_jsons(input: &str, context_size: u16) -> io::Result<()> {
+    let s = CString::new(input).unwrap().as_ptr();
+    try!(cvt_may_error!(nurs_consumer_register_jsons(s, context_size), ptr::null()));
+    Ok(())
 }
 
-pub fn consumer_register_jsons(input: &str, context_size: u16) -> Option<Error> {
-    unsafe_str_null_errno_option!(nurs_consumer_register_jsons, input, context_size)
+pub fn coveter_register_jsons(input: &str, context_size: u16) -> io::Result<()> {
+    let s = CString::new(input).unwrap().as_ptr();
+    try!(cvt_may_error!(nurs_coveter_register_jsons(s, context_size), ptr::null()));
+    Ok(())
 }
 
-pub fn coveter_register_jsons(input: &str, context_size: u16) -> Option<Error> {
-    unsafe_str_null_errno_option!(nurs_coveter_register_jsons, input, context_size)
+pub fn producer_resiger_jsonf(fname: &str, context_size: u16) -> io::Result<()> {
+    let s = CString::new(fname).unwrap().as_ptr();
+    try!(cvt_may_error!(nurs_producer_register_jsonf(s, context_size), ptr::null()));
+    Ok(())
 }
 
-pub fn producer_resiger_jsonf(fname: &str, context_size: u16) -> Option<Error> {
-    unsafe_str_null_errno_option!(nurs_producer_register_jsonf, fname, context_size)
+pub fn filter_register_jsonf(fname: &str, context_size: u16) -> io::Result<()> {
+    let s = CString::new(fname).unwrap().as_ptr();
+    try!(cvt_may_error!(nurs_filter_register_jsonf(s, context_size), ptr::null()));
+    Ok(())
 }
 
-pub fn filter_register_jsonf(fname: &str, context_size: u16) -> Option<Error> {
-    unsafe_str_null_errno_option!(nurs_filter_register_jsonf, fname, context_size)
+pub fn consumer_register_jsonf(fname: &str, context_size: u16) -> io::Result<()> {
+    let s = CString::new(fname).unwrap().as_ptr();
+    try!(cvt_may_error!(nurs_consumer_register_jsonf(s, context_size), ptr::null()));
+    Ok(())
 }
 
-pub fn consumer_register_jsonf(fname: &str, context_size: u16) -> Option<Error> {
-    unsafe_str_null_errno_option!(nurs_consumer_register_jsonf, fname, context_size)
+pub fn coveter_register_jsonf(fname: &str, context_size: u16) -> io::Result<()> {
+    let s = CString::new(fname).unwrap().as_ptr();
+    try!(cvt_may_error!(nurs_coveter_register_jsonf(s, context_size), ptr::null()));
+    Ok(())
 }
 
-pub fn coveter_register_jsonf(fname: &str, context_size: u16) -> Option<Error> {
-    unsafe_str_null_errno_option!(nurs_coveter_register_jsonf, fname, context_size)
+pub fn plugins_register_jfonf(fname: &str) -> io::Result<()> {
+    let s = CString::new(fname).unwrap().as_ptr();
+    try!(cvt_may_error!(nurs_plugins_register_jsonf(s), -1));
+    Ok(())
 }
 
-pub fn plugins_register_jfonf(fname: &str) -> Option<Error> {
-    let s = CString::new(fname).unwrap();
-    unsafe_errno_option!(nurs_plugins_register_jsonf(s.as_ptr()))
-}
-
-pub fn plugins_unregster_jsonf(fname: &str) -> Option<Error> {
-    let s = CString::new(fname).unwrap();
-    unsafe_errno_option!(nurs_plugins_unregister_jsonf(s.as_ptr()))
+pub fn plugins_unregster_jsonf(fname: &str) -> io::Result<()> {
+    let s = CString::new(fname).unwrap().as_ptr();
+    try!(cvt_may_error!(nurs_plugins_unregister_jsonf(s), -1));
+    Ok(())
 }
 
 impl Plugin {
@@ -700,7 +696,7 @@ impl Producer {
         }
     }
 
-    pub fn get_output(&mut self) -> Result<&mut Output, Error> {
+    pub fn get_output(&mut self) -> io::Result<&mut Output> {
         let ret = unsafe { nurs_get_output(self) };
         if ! ret.is_null() {
             unsafe { Ok(&mut(*ret)) }
@@ -735,9 +731,9 @@ extern fn fdcb(fd: c_int, what: uint16_t, data: *mut c_void) -> c_int {
 }
 
 impl Fd {
-    pub fn create(fd: &AsRawFd, when: u16) -> Result<&mut Fd, Error> {
+    pub fn create(fd: &AsRawFd, when: u16) -> io::Result<&mut Fd> {
         let errval: *const Fd = ptr::null();
-        match unsafe_errno_result!(nurs_fd_create(fd.as_raw_fd(), when), errval as *mut Fd) {
+        match cvt_may_error!(nurs_fd_create(fd.as_raw_fd(), when), errval as *mut Fd) {
             Ok(ret) => unsafe { Ok(&mut(*ret)) },
             Err(errno) => Err(errno),
         }
@@ -747,17 +743,18 @@ impl Fd {
         unsafe { nurs_fd_destroy(self as *mut Fd) }
     }
 
-    pub fn register(&mut self, cb: FdCb, data: &mut Any) -> Option<Error> {
+    pub fn register(&mut self, cb: FdCb, data: &mut Any) -> io::Result<()> {
         let mut cbdata = Box::new(FdCbData {cb: cb, data: data});
         let pdata: *mut c_void = &mut cbdata as *mut _ as *mut c_void;
-        let ret = unsafe_errno_option!(nurs_fd_register(self, fdcb, pdata));
+        try!(cvt_may_error!(nurs_fd_register(self, fdcb, pdata), -1));
         Box::into_raw(cbdata);
-        ret
+        Ok(())
     }
 
-    pub fn unregister(&mut self) -> Option<Error> {
+    pub fn unregister(&mut self) -> io::Result<()> {
         // XXX: cbdata leaks.
-        unsafe_errno_option!(nurs_fd_unregister(self))
+        try!(cvt_may_error!(nurs_fd_unregister(self), -1));
+        Ok(())
     }
 }
 
@@ -780,11 +777,11 @@ extern fn timercb(timer: *mut Timer, data: *mut c_void) -> c_int {
 }
 
 impl <'a> Timer {
-    pub fn create(cb: TimerCb, data: &mut Any) -> Result<&'a mut Timer, Error> {
+    pub fn create(cb: TimerCb, data: &mut Any) -> io::Result<&'a mut Timer> {
         let mut cbdata = Box::new(TimerCbData {cb: cb, data: data});
         let pdata: *mut c_void = &mut cbdata as *mut _ as *mut c_void;
         let errval: *const Fd = ptr::null();
-        let ret = unsafe_errno_result!(nurs_timer_create(timercb, pdata), errval as *mut Timer);
+        let ret = cvt_may_error!(nurs_timer_create(timercb, pdata), errval as *mut Timer);
         Box::into_raw(cbdata);
         match ret {
             Ok(ret) => unsafe { Ok(&mut(*ret)) },
@@ -792,24 +789,28 @@ impl <'a> Timer {
         }
     }
 
-    pub fn destroy(&mut self) -> Option<Error> {
-        unsafe_errno_option!(nurs_timer_destroy(self))
+    pub fn destroy(&mut self) -> io::Result<()> {
+        try!(cvt_may_error!(nurs_timer_destroy(self), -1));
+        Ok(())
     }
 
-    pub fn add(&mut self, sc: time_t) -> Option<Error> {
-        unsafe_errno_option!(nurs_timer_add(self, sc))
+    pub fn add(&mut self, sc: time_t) -> io::Result<()> {
+        try!(cvt_may_error!(nurs_timer_add(self, sc), -1));
+        Ok(())
     }
 
-    pub fn iadd(&mut self, ini: time_t, per: time_t) -> Option<Error> {
-        unsafe_errno_option!(nurs_itimer_add(self, ini, per))
+    pub fn iadd(&mut self, ini: time_t, per: time_t) -> io::Result<()> {
+        try!(cvt_may_error!(nurs_itimer_add(self, ini, per), -1));
+        Ok(())
     }
 
-    pub fn del(&mut self) -> Option<Error> {
-        unsafe_errno_option!(nurs_timer_del(self))
+    pub fn del(&mut self) -> io::Result<()> {
+        try!(cvt_may_error!(nurs_timer_del(self), -1));
+        Ok(())
     }
 
-    pub fn pending(&mut self) -> Result<bool, Error> {
-        match unsafe_errno_result!(nurs_timer_pending(self), -1) {
+    pub fn pending(&mut self) -> io::Result<bool> {
+        match cvt_may_error!(nurs_timer_pending(self), -1) {
             Ok(ret) => match ret {
                 0 => Ok(false),
                 _ => Ok(true),
