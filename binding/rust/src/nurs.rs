@@ -117,7 +117,7 @@ type KeyDestructor = fn(*mut c_void);
 pub enum Input{}
 extern {
     fn nurs_input_len(input: *const Input) -> uint16_t;
-    fn nurs_input_size(input: *const Input, idx: uint16_t) -> uint16_t;
+    fn nurs_input_size(input: *const Input, idx: uint16_t) -> uint32_t;
 
     fn nurs_input_name(input: *const Input, idx: uint16_t) -> *const c_char;
     fn nurs_input_type(input: *const Input, idx: uint16_t) -> uint16_t;
@@ -142,7 +142,7 @@ extern {
 pub enum Output{}
 extern {
     fn nurs_output_len(output: *const Output) -> uint16_t;
-    fn nurs_output_size(output: *const Output, idx: uint16_t) -> uint16_t;
+    fn nurs_output_size(output: *const Output, idx: uint16_t) -> uint32_t;
     fn nurs_output_type(output: *const Output, idx: uint16_t) -> uint16_t;
     fn nurs_output_index(output: *const Output, name: *const c_char) -> uint16_t;
 
@@ -348,7 +348,7 @@ impl Input {
         unsafe { nurs_input_len(self) }
     }
 
-    pub fn size(&self, idx: u16) -> io::Result<u16> {
+    pub fn size(&self, idx: u16) -> io::Result<u32> {
         cvt_may_error!(nurs_input_size(self, idx), 0)
     }
 
@@ -466,7 +466,7 @@ impl Output {
         unsafe { nurs_output_len(self) }
     }
 
-    pub fn size(&self, idx: u16) -> io::Result<u16> {
+    pub fn size(&self, idx: u16) -> io::Result<u32> {
         cvt_may_error!(nurs_output_size(self, idx), 0)
     }
 
