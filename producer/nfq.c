@@ -14,11 +14,7 @@
 #include <signal.h>
 #include <string.h>
 
-#include "config.h"
 #include <nurs/nurs.h>
-#ifdef NLMMAP
-#include <nurs/ring.h>
-#endif
 
 #include "nfq_common.h"
 
@@ -28,10 +24,6 @@ extern struct nurs_output_def nfq_output;
 struct nfq_priv {
 	struct mnl_socket	*nl;
 	uint32_t		portid;
-#ifdef NLMMAP
-	struct mnl_ring		*nlr;
-#endif
-
         struct nurs_fd		*fd;
 };
 
@@ -48,9 +40,6 @@ static enum nurs_return_t nfq_organize(struct nurs_producer *producer)
 		goto fail;
 	return NURS_RET_OK;
 fail:
-#ifdef NLMMAP
-	mnl_socket_unmap(priv->nlr);
-#endif
 	mnl_socket_close(priv->nl);
 	return NURS_RET_ERROR;
 

@@ -14,17 +14,9 @@
 #define _NURS_NFQ_COMMON_H
 
 #include <libmnl/libmnl.h>
-#include "config.h"
 #include <nurs/nurs.h>
-#include <nurs/ring.h>
-
 
 enum {
-#ifdef NLMMAP
-	NFQ_CONFIG_BLOCK_SIZE,		/* 8192 */
-	NFQ_CONFIG_BLOCK_NR,		/* 32 */
-	NFQ_CONFIG_FRAME_SIZE,		/* 8192 */
-#endif
 	NFQ_CONFIG_QUEUE_NUM,
 	NFQ_CONFIG_COPY_MODE,		/* NFQNL_COPY_META / NFQNL_COPY_PACKET */
 	NFQ_CONFIG_COPY_RANGE,
@@ -38,11 +30,6 @@ enum {
 	NFQ_CONFIG_MAX,
 };
 
-#ifdef NLMMAP
-#define config_block_size(x)	(unsigned int)nurs_config_integer(nurs_producer_config(x), NFQ_CONFIG_BLOCK_SIZE)
-#define config_block_nr(x)	(unsigned int)nurs_config_integer(nurs_producer_config(x), NFQ_CONFIG_BLOCK_NR)
-#define config_frame_size(x)	(unsigned int)nurs_config_integer(nurs_producer_config(x), NFQ_CONFIG_FRAME_SIZE)
-#endif
 #define config_queue_num(x)	(uint32_t)nurs_config_integer(nurs_producer_config(x), NFQ_CONFIG_QUEUE_NUM)
 #define config_copy_mode(x)	nurs_config_string(nurs_producer_config(x), NFQ_CONFIG_COPY_MODE)
 #define config_copy_range(x)	(uint32_t)nurs_config_integer(nurs_producer_config(x), NFQ_CONFIG_COPY_RANGE)
@@ -68,9 +55,6 @@ struct nfq_common_priv {
 	struct mnl_socket	*nl;
 	uint32_t		portid;
 	struct nurs_fd		*fd;
-#ifdef NLMMAP
-	struct mnl_ring		*nlr;
-#endif
 };
 
 void frame_destructor(void *data);

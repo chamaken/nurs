@@ -12,16 +12,11 @@
  */
 #include <errno.h>
 #include <string.h>
-#include <sys/mman.h>
 
 #include <libmnl/libmnl.h>
 #include <libnetfilter_queue/libnetfilter_queue.h>
 
 #include <nurs/nurs.h>
-#include "config.h"
-#ifdef NLMMAP
-#include <nurs/ring.h>
-#endif
 
 #include "nfnl_common.h"
 #include "nfq_common.h"
@@ -29,23 +24,6 @@
 struct nurs_config_def nfq_config = {
 	.len	= NFQ_CONFIG_MAX,
 	.keys	= {
-#ifdef NLMMAP
-		[NFQ_CONFIG_BLOCK_SIZE] = {
-			.name	 = "block_size",
-			.type	 = NURS_CONFIG_T_INTEGER,
-			.integer = 8192,
-		},
-		[NFQ_CONFIG_BLOCK_NR] = {
-			.name	 = "block_nr",
-			.type	 = NURS_CONFIG_T_INTEGER,
-			.integer = 32,
-		},
-		[NFQ_CONFIG_FRAME_SIZE] = {
-			.name	 = "frame_size",
-			.type	 = NURS_CONFIG_T_INTEGER,
-			.integer = 8192,
-		},
-#endif
 		[NFQ_CONFIG_QUEUE_NUM] = {
 			.name	 = "queue_num",
 			.type	 = NURS_CONFIG_T_INTEGER,
@@ -145,10 +123,7 @@ static int nfq_mnl_cb(const struct nlmsghdr *nlh, void *data)
 		return MNL_CB_ERROR;
 	}
 	nurs_output_set_valid(output, NFQ_OUTPUT_NLATTRS);
-#ifdef NLMMAP
-        nurs_output_set_pointer(output, NFQ_OUTPUT_FRAME,
-                                        MNL_NLMSG_FRAME(nlh));
-#endif
+
 	return MNL_CB_OK;
 }
 
@@ -201,62 +176,6 @@ fail:
         return NURS_RET_ERROR;
 }
 
-#ifdef NLMMAP
-static enum nurs_return_t
-nfq_valid_frame(struct nl_mmap_hdr *frame, void *arg)
-{
-        struct nurs_producer *producer = arg;
-	struct nfq_common_priv *priv =	nurs_producer_context(producer);
-
-	if (!frame->nm_len) {
-		/* an error may occured in kernel */
-		return NURS_RET_OK;
-	}
-
-        return nurs_ret_from_mnl(
-		mnl_cb_run(MNL_FRAME_PAYLOAD(frame), frame->nm_len,
-                           0, priv->portid, nfq_mnl_cb, producer));
-}
-
-enum nurs_return_t nfq_read_cb(int fd, uint16_t when, void *data)
-{
-	struct nurs_producer *producer = data;
-	struct nfq_common_priv *priv =	nurs_producer_context(producer);
-        enum nurs_return_t ret;
-
-	if (!(when & NURS_FD_F_READ))
-		return 0;
-
-        ret = mnl_ring_cb_run(priv->nlr,
-                              nfq_valid_frame, nfq_copy_frame,
-                              producer);
-
-        if (ret == NURS_RET_STOP)
-                return NURS_RET_OK;
-	return ret;
-}
-
-static int check_config_response(struct nfq_common_priv *priv)
-{
-	struct mnl_ring *nlr = priv->nlr;
-	struct nl_mmap_hdr *frame = mnl_ring_get_frame(nlr);
-	void *buf = MNL_FRAME_PAYLOAD(frame);
-	int ret;
-
-	if (frame->nm_status != NL_MMAP_STATUS_VALID) {
-		nurs_log(NURS_ERROR, "no valid response\n");
-		return -1;
-	}
-	frame->nm_status = NL_MMAP_STATUS_SKIP;
-	ret = mnl_cb_run(buf, frame->nm_len, 0, priv->portid, NULL, NULL);
-	frame->nm_status = NL_MMAP_STATUS_UNUSED;
-	mnl_ring_advance(nlr);
-
-	if (ret == MNL_CB_ERROR)
-		return -1;
-	return 0;
-}
-#else
 enum nurs_return_t nfq_read_cb(int fd, uint16_t when, void *data)
 {
         return nfq_copy_frame(fd, data);
@@ -283,7 +202,6 @@ static int check_config_response(struct nfq_common_priv *priv)
 
 	return 0;
 }
-#endif
 
 /* copy from library examples */
 static struct nlmsghdr *nfq_hdr_put(char *buf, int type, uint32_t queue_num)
@@ -308,12 +226,6 @@ static int nfq_put_config(struct nlmsghdr *nlh,
 
 	if (!strcasecmp(copy_mode, "packet")) {
 		uint32_t copy_range;
-#ifdef NLMMAP
-		if (config_frame_size(producer) < config_copy_range(producer))
-			nurs_log(NURS_NOTICE, "may cause COPY status"
-				  " - frame size: %d, copy_range: %d\n",
-				  config_frame_size(producer), config_copy_range(producer));
-#endif
 		copy_range = htonl(config_copy_range(producer));
 		nfq_nlmsg_cfg_put_params(nlh, NFQNL_COPY_PACKET, (int)copy_range);
 	} else if (!strcasecmp(copy_mode, "meta")) {
@@ -398,35 +310,6 @@ int config_nfq(const struct nurs_producer *producer)
 	return NURS_RET_OK;
 }
 
-#ifdef NLMMAP
-static int mmap_socket(const struct nurs_producer *producer)
-{
-	struct nfq_common_priv *priv = nurs_producer_context(producer);
-	struct nl_mmap_req req = {
-		.nm_block_size	= config_block_size(producer),
-		.nm_block_nr	= config_block_nr(producer),
-		.nm_frame_size	= config_frame_size(producer),
-		.nm_frame_nr	= config_block_size(producer)
-				/ config_frame_size(producer)
-		* config_block_nr(producer)
-	};
-
-	priv->nlr = mnl_socket_rx_mmap(priv->nl, &req, MAP_SHARED);
-	if (!priv->nlr) {
-		nurs_log(NURS_FATAL, "mnl_socket_mmap: %s\n",
-			 strerror(errno));
-                return -1;
-	}
-
-        return 0;
-}
-#else
-static int mmap_socket(const struct nurs_producer *producer)
-{
-        return 0;
-}
-#endif
-
 enum nurs_return_t
 nfq_common_organize(const struct nurs_producer *producer)
 {
@@ -439,13 +322,10 @@ nfq_common_organize(const struct nurs_producer *producer)
 		return NURS_RET_ERROR;;
 	}
 
-        if (mmap_socket(producer))
-                goto error_close;
-
 	if (mnl_socket_bind(priv->nl, 0, MNL_SOCKET_AUTOPID) < 0) {
 		nurs_log(NURS_FATAL, "failed to mnl_socket_bind: %s\n",
 			 strerror(errno));
-		goto error_unmap;
+		goto error_close;
 	}
 	priv->portid = mnl_socket_get_portid(priv->nl);
 
@@ -453,19 +333,15 @@ nfq_common_organize(const struct nurs_producer *producer)
 	    mnl_socket_set_reliable(priv->nl)) {
 		nurs_log(NURS_ERROR, "failed to mnl_socket_set_reliable: %s\n",
 			 strerror(errno));
-		goto error_unmap;
+		goto error_close;
 	}
 
 	priv->fd = nurs_fd_create(mnl_socket_get_fd(priv->nl),
 				  NURS_FD_F_READ);
 	if (!priv->fd)
-		goto error_unmap;
+		goto error_close;
 
 	return NURS_RET_OK;
-error_unmap:
-#ifdef NLMMAP
-	mnl_socket_unmap(priv->nlr);
-#endif
 error_close:
 	mnl_socket_close(priv->nl);
 	return NURS_RET_ERROR;
@@ -477,13 +353,6 @@ nfq_common_disorganize(const struct nurs_producer *producer)
 	struct nfq_common_priv *priv = nurs_producer_context(producer);
 	int ret = 0;
 
-#ifdef NLMMAP
-	if (mnl_socket_unmap(priv->nlr)) {
-		nurs_log(NURS_ERROR, "failed to mnl_socket_unmap: %s\n",
-			 strerror(errno));
-		ret = -1;
-	}
-#endif
 	if (mnl_socket_close(priv->nl)) {
 		nurs_log(NURS_ERROR, "failed to mnl_socket_close: %s\n",
 			 strerror(errno));
