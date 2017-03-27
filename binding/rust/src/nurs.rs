@@ -1,6 +1,8 @@
 #![crate_type = "lib"]
 #![crate_name = "nurs"]
 
+#![allow(dead_code)]
+
 use std::any::Any;
 use std::ffi::{CStr, CString};
 use std::io::Error;
