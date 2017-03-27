@@ -37,6 +37,14 @@ Suite.
 た次第です。  
 -->
 
+However the mmaped netlink socket has been disabled, so that I remove the codes
+related to it.
+
+<!--
+しかしながらその後 netlink の mmaped ソケットは廃止となりましたので、機能からは
+削除してしまいました。
+-->
+
 As described above, personally it is plenty to be able to use conntrack  
 information as Netflow ver. 9, so the methods actually being used are under  
 examples/ctflow9. There is less document (I would welcome document patches too).  
@@ -65,9 +73,6 @@ Prerequisites
 
 Optional
 --------
-* mmaped netlink available kernel (>= 4.5 is better see:  
-  commit aa3a022094fac7f6e48050e139fa8a5a2e3265ce  
-  commit 1853c949646005b5959c483becde86608f548f24)
 * libnetfilter-acct (http://www.netfilter.org/projects/libnetfilter_acct/)
 * libnetfilter-log (http://www.netfilter.org/projects/libnetfilter_log/)  
   require recent nflog_nlmsg_parse()

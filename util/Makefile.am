@@ -3,7 +3,3 @@ AM_CFLAGS = ${regular_CFLAGS}
 
 noinst_LTLIBRARIES	= libutil.la
 libutil_la_SOURCES	= ipfix.c
-
-if NLMMAP
-libutil_la_SOURCES	+= ring.c
-endif

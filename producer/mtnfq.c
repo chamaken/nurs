@@ -21,7 +21,6 @@
 
 #include "config.h"
 #include <nurs/nurs.h>
-#include <nurs/ring.h>
 
 #include "nfq_common.h"
 
@@ -38,10 +37,6 @@ enum thread_status {
 struct mtnfq_priv {
 	struct mnl_socket	*nl;
 	uint32_t		portid;
-#ifdef NLMMAP
-	struct mnl_ring		*nlr;
-#endif
-
 	int			retval, statusfd;
 	enum thread_status	status_req;
 	pthread_t		tid;

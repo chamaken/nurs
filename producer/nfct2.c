@@ -27,9 +27,6 @@
 #include "config.h"
 #include <nurs/nurs.h>
 #include <nurs/ipfix_protocol.h>
-#ifdef NLMMAP
-#include <nurs/ring.h>
-#endif
 
 #include "nfnl_common.h"
 
@@ -50,9 +47,6 @@ static uint8_t flowReasons[] = {
 };
 
 struct nfct_priv {
-#ifdef NLMMAP
-	struct mnl_ring		*nlr;
-#endif
 	struct mnl_socket	*event_nl;
 	struct nurs_fd		*event_fd;
 	uint32_t		event_pid;
@@ -69,11 +63,6 @@ struct nfct_priv {
 };
 
 enum nfct_conf {
-#ifdef NLMMAP
-	NFCT_CONFIG_BLOCK_SIZE,		/* 8192 */
-	NFCT_CONFIG_BLOCK_NR,		/* 128 */
-	NFCT_CONFIG_FRAME_SIZE,		/* 8192 */
-#endif
 	NFCT_CONFIG_POLLINTERVAL,
 	NFCT_CONFIG_RELIABLE,
 	NFCT_CONFIG_MARK_FILTER,
@@ -87,26 +76,6 @@ enum nfct_conf {
 static struct nurs_config_def nfct_config = {
 	.len     = NFCT_CONFIG_MAX,
 	.keys = {
-#ifdef NLMMAP
-		[NFCT_CONFIG_BLOCK_SIZE] = {
-			.name	 = "block_size",
-			.type	 = NURS_CONFIG_T_INTEGER,
-			.flags   = NURS_CONFIG_F_NONE,
-			.integer = 8192,
-		},
-		[NFCT_CONFIG_BLOCK_NR] = {
-			.name	 = "block_nr",
-			.type	 = NURS_CONFIG_T_INTEGER,
-			.flags   = NURS_CONFIG_F_NONE,
-			.integer = 128,
-		},
-		[NFCT_CONFIG_FRAME_SIZE] = {
-			.name	 = "frame_size",
-			.type	 = NURS_CONFIG_T_INTEGER,
-			.flags   = NURS_CONFIG_F_NONE,
-			.integer = 8192,
-		},
-#endif
 		[NFCT_CONFIG_POLLINTERVAL] = {
 			.name	 = "pollinterval",
 			.type	 = NURS_CONFIG_T_INTEGER,
@@ -151,11 +120,6 @@ static struct nurs_config_def nfct_config = {
 	},
 };
 
-#ifdef NLMMAP
-#define config_block_size(x)	(unsigned int)nurs_config_integer(nurs_producer_config(x), NFCT_CONFIG_BLOCK_SIZE)
-#define config_block_nr(x)	(unsigned int)nurs_config_integer(nurs_producer_config(x), NFCT_CONFIG_BLOCK_NR)
-#define config_frame_size(x)	(unsigned int)nurs_config_integer(nurs_producer_config(x), NFCT_CONFIG_FRAME_SIZE)
-#endif
 #define config_pollint(x)	(time_t)nurs_config_integer(nurs_producer_config(x), NFCT_CONFIG_POLLINTERVAL)
 #define config_reliable(x)	nurs_config_boolean(nurs_producer_config(x), NFCT_CONFIG_RELIABLE)
 #define config_mark_filter(x)	nurs_config_string (nurs_producer_config(x), NFCT_CONFIG_MARK_FILTER)
@@ -488,52 +452,6 @@ nfct_copy_frame(int fd, void *arg)
                            nfct_mnl_cb, cbarg));
 }
 
-#ifdef NLMMAP
-static enum nurs_return_t
-nfct_valid_frame(struct nl_mmap_hdr *frame, void *arg)
-{
-	struct mnl_cbarg *cbarg = arg;
-        struct nfct_priv *priv = nurs_producer_context(cbarg->producer);
-
-	if (!frame->nm_len) {
-		/* an error may occured in kernel */
-		return NURS_RET_OK;
-	}
-
-        return nurs_ret_from_mnl(
-                mnl_cb_run(MNL_FRAME_PAYLOAD(frame), frame->nm_len,
-                           priv->dump_request->nlmsg_seq, priv->dump_pid,
-                           nfct_mnl_cb, cbarg));
-}
-
-static enum nurs_return_t
-nfct_dump_cb(int fd, uint16_t when, void *data)
-{
-	struct nurs_producer *producer = data;
-	struct nfct_priv *priv = nurs_producer_context(producer);
-	struct timeval tv;
-	enum nurs_return_t ret;
-        struct mnl_cbarg cbarg = {
-                .producer	= producer,
-                .recent		= &tv,
-        };
-
-	if (!(when & NURS_FD_F_READ))
-		return NURS_RET_OK;
-
-	gettimeofday(&tv, NULL);
-        do {
-                ret = mnl_ring_cb_run(priv->nlr,
-                                      nfct_valid_frame, nfct_copy_frame,
-                                      &cbarg);
-        } while (ret == NURS_RET_OK);
-
-	priv->dump_prev = tv;
-        if (ret == NURS_RET_STOP)
-                return NURS_RET_OK;
-	return ret;
-}
-#else
 static enum nurs_return_t
 nfct_dump_cb(int fd, uint16_t when, void *data)
 {
@@ -559,7 +477,6 @@ nfct_dump_cb(int fd, uint16_t when, void *data)
                 return NURS_RET_OK;
 	return ret;
 }
-#endif
 
 static int clear_counters(const struct nurs_producer *producer)
 {
@@ -782,34 +699,6 @@ error_close:
 	return NURS_RET_ERROR;
 }
 
-#ifdef NLMMAP
-static int mmap_dump_socket(const struct nurs_producer *producer)
-{
-	struct nfct_priv *priv = nurs_producer_context(producer);
-	struct nl_mmap_req req = {
-		.nm_block_size	= config_block_size(producer),
-		.nm_block_nr	= config_block_nr(producer),
-		.nm_frame_size	= config_frame_size(producer),
-		.nm_frame_nr	= config_block_size(producer)
-				  / config_frame_size(producer)
-				  * config_block_nr(producer),
-	};
-	priv->nlr = mnl_socket_rx_mmap(priv->dump_nl, &req, MAP_SHARED);
-	if (!priv->nlr) {
-		nurs_log(NURS_FATAL, "mnl_socket_mmap: %s\n",
-			 strerror(errno));
-                return -1;
-	}
-
-        return 0;
-}
-#else
-static int mmap_dump_socket(const struct nurs_producer *producer)
-{
-        return 0;
-}
-#endif
-
 static int open_dump_socket(const struct nurs_producer *producer)
 {
 	struct nfct_priv *priv = nurs_producer_context(producer);
@@ -821,13 +710,10 @@ static int open_dump_socket(const struct nurs_producer *producer)
 		goto error_close;
 	}
 
-        if (mmap_dump_socket(producer))
-                goto error_close;
-
 	if (mnl_socket_bind(priv->dump_nl, 0, MNL_SOCKET_AUTOPID) == -1) {
 		nurs_log(NURS_ERROR, "mnl_sockt_bind: %s\n",
 			 strerror(errno));
-		goto error_unmap;
+		goto error_close;
 	}
 	priv->dump_pid = mnl_socket_get_portid(priv->dump_nl);
 
@@ -835,21 +721,17 @@ static int open_dump_socket(const struct nurs_producer *producer)
 		if (mnl_socket_set_reliable(priv->dump_nl)) {
 			nurs_log(NURS_ERROR, "set_reliable: %s\n",
 				 strerror(errno));
-			goto error_unmap;
+			goto error_close;
 		}
 	}
 
 	priv->dump_fd = nurs_fd_create(mnl_socket_get_fd(priv->dump_nl),
 				       NURS_FD_F_READ);
 	if (!priv->dump_fd)
-		goto error_unmap;
+		goto error_close;
 
 	return NURS_RET_OK;
 
-error_unmap:
-#ifdef NLMMAP
-	mnl_socket_unmap(priv->nlr);
-#endif
 error_close:
 	mnl_socket_close(priv->dump_nl);
 	return NURS_RET_ERROR;
@@ -907,9 +789,6 @@ static enum nurs_return_t nfct_organize(struct nurs_producer *producer)
 	return NURS_RET_OK;
 
 error_close_dump:
-#ifdef NLMMAP
-	mnl_socket_unmap(priv->nlr);
-#endif
 	mnl_socket_close(priv->dump_nl);
 error_close_event:
 	mnl_socket_close(priv->event_nl);
@@ -924,9 +803,6 @@ static enum nurs_return_t nfct_disorganize(struct nurs_producer *producer)
 	if (!config_destroy_only(producer)) {
 		nurs_timer_destroy(priv->timer);
 		nurs_fd_destroy(priv->dump_fd);
-#ifdef NLMMAP
-		mnl_socket_unmap(priv->nlr);
-#endif
 		mnl_socket_close(priv->dump_nl);
 	}
 
