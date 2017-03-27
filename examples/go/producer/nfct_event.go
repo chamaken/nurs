@@ -51,7 +51,7 @@ var (
 	idx_nfct uint16
 )
 
-func dataCb(nlh *mnl.Nlmsghdr, data interface{}) (int, syscall.Errno) {
+func dataCb(nlh *mnl.Nlmsg, data interface{}) (int, syscall.Errno) {
 	producer := data.(*nurs.Producer)
 	event := uint32(nfct.NFCT_T_UNKNOWN)
 
