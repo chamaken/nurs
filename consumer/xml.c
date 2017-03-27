@@ -280,13 +280,13 @@ static uint32_t event2flag(uint32_t event)
 	case NFT_MSG_NEWSET:
 	case NFT_MSG_NEWSETELEM:
 	case NFT_MSG_NEWGEN:
-		return NFT_OF_EVENT_NEW;
+		return NFTNL_OF_EVENT_NEW;
 	case NFT_MSG_DELTABLE:
 	case NFT_MSG_DELCHAIN:
 	case NFT_MSG_DELRULE:
 	case NFT_MSG_DELSET:
 	case NFT_MSG_DELSETELEM:
-		return NFT_OF_EVENT_DEL;
+		return NFTNL_OF_EVENT_DEL;
 	}
 
 	return 0;
