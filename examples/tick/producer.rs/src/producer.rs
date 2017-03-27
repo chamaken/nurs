@@ -110,7 +110,7 @@ static JSONRC: &'static str = r#"
 }"#;
 
 pub extern fn tick_producer_init() {
-    nurs::producer_register_jsons(JSONRC, 0);
+    nurs::producer_register_jsons(JSONRC, 0).unwrap();
 }
 
 #[link_section = ".ctors"]

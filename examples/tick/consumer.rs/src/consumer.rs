@@ -38,7 +38,7 @@ pub extern fn tick_interp(plugin: &mut nurs::Plugin, input: &nurs::Input) -> c_i
 
 pub extern fn tick_consumer_init() {
     let fname = "consumer_rs.json";
-    nurs::consumer_register_jsonf(fname, mem::size_of::<TickPriv>() as u16);
+    nurs::consumer_register_jsonf(fname, mem::size_of::<TickPriv>() as u16).unwrap();
 }
 
 #[link_section = ".ctors"]
