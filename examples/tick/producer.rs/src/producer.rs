@@ -16,7 +16,7 @@ struct TickPriv <'a> {
 
 fn timercb(_: &mut nurs::Timer, data: &mut Any) -> nurs::ReturnType {
     let mut producer = data.downcast_mut::<nurs::Producer>().unwrap();
-    let mut ctx = unsafe { &mut(*(producer.context() as *mut TickPriv)) };
+    let mut ctx = producer.context::<TickPriv>().unwrap();
     let mut output = producer.get_output().unwrap();
     if let Err(errno) = output.set_u64(0, ctx.counter) {
         nurs_log!(ERROR, "failed to set u64 output value{}", errno);
@@ -36,7 +36,7 @@ fn timercb(_: &mut nurs::Timer, data: &mut Any) -> nurs::ReturnType {
 
 #[no_mangle]
 pub extern fn tick_organize(producer: &mut nurs::Producer) -> c_int {
-    let mut ctx = unsafe { &mut(*(producer.context() as *mut TickPriv)) };
+    let mut ctx = producer.context::<TickPriv>().unwrap();
     let config = producer.config().unwrap();
     ctx.myname = config.string(0).unwrap();
     ctx.counter = 0;
@@ -54,7 +54,7 @@ pub extern fn tick_organize(producer: &mut nurs::Producer) -> c_int {
 
 #[no_mangle]
 pub extern fn tick_disorganize(producer: &mut nurs::Producer) -> c_int {
-    let mut ctx = unsafe { &mut(*(producer.context() as *mut TickPriv)) };
+    let mut ctx = producer.context::<TickPriv>().unwrap();
     if let Err(errno) = ctx.timer.destroy() {
         nurs_log!(ERROR, "failed to destroy timer: {}", errno);
         nurs_return!(ERROR)
@@ -65,7 +65,7 @@ pub extern fn tick_disorganize(producer: &mut nurs::Producer) -> c_int {
 
 #[no_mangle]
 pub extern fn tick_start(producer: &mut nurs::Producer) -> c_int {
-    let mut ctx = unsafe { &mut(*(producer.context() as *mut TickPriv)) };
+    let mut ctx = producer.context::<TickPriv>().unwrap();
     if let Err(errno) = ctx.timer.iadd(1, 1) {
         nurs_log!(ERROR, "failed to add itimer: {}", errno);
         nurs_return!(ERROR)
@@ -76,7 +76,7 @@ pub extern fn tick_start(producer: &mut nurs::Producer) -> c_int {
 
 #[no_mangle]
 pub extern fn tick_stop(producer: &mut nurs::Producer) -> c_int {
-    let mut ctx = unsafe { &mut(*(producer.context() as *mut TickPriv)) };
+    let mut ctx = producer.context::<TickPriv>().unwrap();
     if let Err(errno) = ctx.timer.del() {
         nurs_log!(ERROR, "failed to del timer: {}", errno);
         nurs_return!(ERROR)

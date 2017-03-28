@@ -14,7 +14,7 @@ struct TickPriv <'a> {
 
 #[no_mangle]
 pub extern fn tick_organize(plugin: &mut nurs::Plugin) -> c_int {
-    let mut ctx = unsafe { &mut(*(plugin.context() as *mut TickPriv)) };
+    let mut ctx = plugin.context::<TickPriv>().unwrap();
     let config = plugin.config().unwrap();
     ctx.name = config.string(0).unwrap();
     nurs_return!(OK)
@@ -22,7 +22,7 @@ pub extern fn tick_organize(plugin: &mut nurs::Plugin) -> c_int {
 
 #[no_mangle]
 pub extern fn tick_interp(plugin: &mut nurs::Plugin, input: &nurs::Input) -> c_int {
-    let ctx = unsafe { &mut(*(plugin.context() as *mut TickPriv)) };
+    let ctx = plugin.context::<TickPriv>().unwrap();
     let srcname = input.get_string(1).unwrap();
     match input.get_u64(0) {
         Ok(value) => {
