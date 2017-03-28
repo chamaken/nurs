@@ -530,8 +530,8 @@ impl Output {
     }
 
     pub fn set_string(&mut self, idx: u16, value: &str) -> io::Result<()> {
-        let s = CString::new(value).unwrap().as_ptr();
-        try!(cvt_may_error!(nurs_output_set_string(self, idx, s), -1));
+        let s = CString::new(value).unwrap();
+        try!(cvt_may_error!(nurs_output_set_string(self, idx, s.as_ptr()), -1));
         Ok(())
     }
 
@@ -566,98 +566,96 @@ impl Output {
 }
 
 pub fn producer_unregister(name: &str) -> io::Result<()> {
-    let s = CString::new(name).unwrap().as_ptr();
-    try!(cvt_may_error!(nurs_producer_unregister_name(s), -1));
+    let s = CString::new(name).unwrap();
+    try!(cvt_may_error!(nurs_producer_unregister_name(s.as_ptr()), -1));
     Ok(())
 }
 
 pub fn filter_unregister(name: &str) -> io::Result<()> {
-    let s = CString::new(name).unwrap().as_ptr();
-    try!(cvt_may_error!(nurs_filter_unregister_name(s), -1));
+    let s = CString::new(name).unwrap();
+    try!(cvt_may_error!(nurs_filter_unregister_name(s.as_ptr()), -1));
     Ok(())
 }
 
 pub fn consumer_unregister(name: &str) -> io::Result<()> {
-    let s = CString::new(name).unwrap().as_ptr();
-    try!(cvt_may_error!(nurs_consumer_unregister_name(s), -1));
+    let s = CString::new(name).unwrap();
+    try!(cvt_may_error!(nurs_consumer_unregister_name(s.as_ptr()), -1));
     Ok(())
 }
 
 pub fn coveter_unregister(name: &str) -> io::Result<()> {
-    let s = CString::new(name).unwrap().as_ptr();
-    try!(cvt_may_error!(nurs_coveter_unregister_name(s), -1));
+    let s = CString::new(name).unwrap();
+    try!(cvt_may_error!(nurs_coveter_unregister_name(s.as_ptr()), -1));
     Ok(())
 }
 
 pub fn producer_register_jsons(input: &str, context_size: u16) -> io::Result<()> {
-    let s = CString::new(input).unwrap().as_ptr();
-    try!(cvt_may_error!(nurs_producer_register_jsons(s, context_size), ptr::null()));
+    let s = CString::new(input).unwrap();
+    try!(cvt_may_error!(nurs_producer_register_jsons(s.as_ptr(), context_size), ptr::null()));
     Ok(())
 }
 
 pub fn filter_register_jsons(input: &str, context_size: u16) -> io::Result<()> {
-    let s = CString::new(input).unwrap().as_ptr();
-    try!(cvt_may_error!(nurs_filter_register_jsons(s, context_size), ptr::null()));
+    let s = CString::new(input).unwrap();
+    try!(cvt_may_error!(nurs_filter_register_jsons(s.as_ptr(), context_size), ptr::null()));
     Ok(())
 }
 
 pub fn consumer_register_jsons(input: &str, context_size: u16) -> io::Result<()> {
-    let s = CString::new(input).unwrap().as_ptr();
-    try!(cvt_may_error!(nurs_consumer_register_jsons(s, context_size), ptr::null()));
+    let s = CString::new(input).unwrap();
+    try!(cvt_may_error!(nurs_consumer_register_jsons(s.as_ptr(), context_size), ptr::null()));
     Ok(())
 }
 
 pub fn coveter_register_jsons(input: &str, context_size: u16) -> io::Result<()> {
-    let s = CString::new(input).unwrap().as_ptr();
-    try!(cvt_may_error!(nurs_coveter_register_jsons(s, context_size), ptr::null()));
+    let s = CString::new(input).unwrap();
+    try!(cvt_may_error!(nurs_coveter_register_jsons(s.as_ptr(), context_size), ptr::null()));
     Ok(())
 }
 
 pub fn producer_resiger_jsonf(fname: &str, context_size: u16) -> io::Result<()> {
-    let s = CString::new(fname).unwrap().as_ptr();
-    try!(cvt_may_error!(nurs_producer_register_jsonf(s, context_size), ptr::null()));
+    let s = CString::new(fname).unwrap();
+    try!(cvt_may_error!(nurs_producer_register_jsonf(s.as_ptr(), context_size), ptr::null()));
     Ok(())
 }
 
 pub fn filter_register_jsonf(fname: &str, context_size: u16) -> io::Result<()> {
-    let s = CString::new(fname).unwrap().as_ptr();
-    try!(cvt_may_error!(nurs_filter_register_jsonf(s, context_size), ptr::null()));
+    let s = CString::new(fname).unwrap();
+    try!(cvt_may_error!(nurs_filter_register_jsonf(s.as_ptr(), context_size), ptr::null()));
     Ok(())
 }
 
 pub fn consumer_register_jsonf(fname: &str, context_size: u16) -> io::Result<()> {
-    let s = CString::new(fname).unwrap().as_ptr();
-    try!(cvt_may_error!(nurs_consumer_register_jsonf(s, context_size), ptr::null()));
+    let s = CString::new(fname).unwrap();
+    try!(cvt_may_error!(nurs_consumer_register_jsonf(s.as_ptr(), context_size), ptr::null()));
     Ok(())
 }
 
 pub fn coveter_register_jsonf(fname: &str, context_size: u16) -> io::Result<()> {
-    let s = CString::new(fname).unwrap().as_ptr();
-    try!(cvt_may_error!(nurs_coveter_register_jsonf(s, context_size), ptr::null()));
+    let s = CString::new(fname).unwrap();
+    try!(cvt_may_error!(nurs_coveter_register_jsonf(s.as_ptr(), context_size), ptr::null()));
     Ok(())
 }
 
 pub fn plugins_register_jfonf(fname: &str) -> io::Result<()> {
-    let s = CString::new(fname).unwrap().as_ptr();
-    try!(cvt_may_error!(nurs_plugins_register_jsonf(s), -1));
+    let s = CString::new(fname).unwrap();
+    try!(cvt_may_error!(nurs_plugins_register_jsonf(s.as_ptr()), -1));
     Ok(())
 }
 
 pub fn plugins_unregster_jsonf(fname: &str) -> io::Result<()> {
-    let s = CString::new(fname).unwrap().as_ptr();
-    try!(cvt_may_error!(nurs_plugins_unregister_jsonf(s), -1));
+    let s = CString::new(fname).unwrap();
+    try!(cvt_may_error!(nurs_plugins_unregister_jsonf(s.as_ptr()), -1));
     Ok(())
 }
 
-impl Plugin {
-    // pub fn context(&self) -> Option<&mut Any> {
-    pub fn context(&self) -> *mut c_void {
+impl <'a> Plugin {
+    pub fn context<T>(&mut self) -> Option<&'a mut T> {
         let ret = unsafe { nurs_plugin_context(self) };
         if ret.is_null() {
-            panic!("must acquire plugin private data but...");
+            return None;
         } else {
-            // unsafe { Some(&mut(*(ret as *mut Any))) }
-            ret
+            unsafe { Some(&mut(*(ret as *mut T))) }
         }
     }
 
@@ -674,19 +672,17 @@ impl Plugin {
     }
 }
 
-impl Producer {
-    // pub fn context(&self) -> Option<&mut Any> {
-    pub fn context(&self) -> *mut c_void {
+impl <'a> Producer {
+    pub fn context<T>(&self) -> Option<&'a mut T> {
         let ret = unsafe { nurs_producer_context(self) };
         if ret.is_null() {
-            panic!("must acquire producer private data but...");
+            return None;
         } else {
-            // unsafe { Some(&mut(*(ret as *mut Any))) }
-            ret
+            unsafe { Some(&mut(*(ret as *mut T))) }
         }
     }
 
-    pub fn config<'a>(&self) -> Option<&'a Config> {
+    pub fn config(&self) -> Option<&'a Config> {
         unsafe {
             let ret = nurs_producer_config(self);
             // ret.as_ref() see rust issue #27780
