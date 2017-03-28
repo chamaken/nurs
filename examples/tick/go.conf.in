@@ -6,7 +6,7 @@
 # plugin:
 # 1. load the plugins _first_ from the global section
 # 2. options for each plugin in seperate section below
-plugin	= "@pkglibdir@/nurs_producer_TICK.so"
+plugin	= "@cwd@/.libs/nurs_producer_TICK.so"
 plugin	= "@cwd@/producer.gso"
 plugin	= "@cwd@/consumer.gso"
 

@@ -6,8 +6,8 @@
 # plugin:
 # 1. load the plugins _first_ from the global section
 # 2. options for each plugin in seperate section below
-plugin	= "@pkglibdir@/nurs_producer_TICK.so"
-plugin	= "@pkglibdir@/nurs_PYTHON.so"
+plugin	= "@cwd@/.libs/nurs_producer_TICK.so"
+plugin  = "@builddir@/binding/python/.libs/nurs_PYTHON.so"
 
 # stack
 # each element represented id:name, separated by ,

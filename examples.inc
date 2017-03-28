@@ -1,5 +1,6 @@
 edit = sed -e \
 	"s,@pkglibdir\@,${pkglibdir},g; \
+	 s,@builddir\@,${abs_top_builddir},g; \
 	 s,@cwd@,`pwd`,g; \
 	 s,@pynurs@,${abs_top_srcdir}/examples/python,g; \
 	 s,@gonurs@,${abs_top_srcdir}/examples/go,g; \
