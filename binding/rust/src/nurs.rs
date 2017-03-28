@@ -745,7 +745,7 @@ impl Fd {
         let mut cbdata = Box::new(FdCbData {cb: cb, data: data});
         let pdata: *mut c_void = &mut cbdata as *mut _ as *mut c_void;
         try!(cvt_may_error!(nurs_fd_register(self, fdcb, pdata), -1));
-        Box::into_raw(cbdata);
+        Box::into_raw(cbdata); // XXX: leaks
         Ok(())
     }
 
@@ -780,7 +780,7 @@ impl <'a> Timer {
         let pdata: *mut c_void = &mut cbdata as *mut _ as *mut c_void;
         let errval: *const Fd = ptr::null();
         let ret = cvt_may_error!(nurs_timer_create(timercb, pdata), errval as *mut Timer);
-        Box::into_raw(cbdata);
+        Box::into_raw(cbdata); // XXX: leaks
         match ret {
             Ok(ret) => unsafe { Ok(&mut(*ret)) },
             Err(errno) => Err(errno),
