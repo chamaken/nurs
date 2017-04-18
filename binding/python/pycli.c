@@ -294,7 +294,7 @@ static int pycli_fd_callback(struct nlmsghdr *nlh, int fd)
 	struct pynurs_fd *nfd;
 	uint16_t when;
 
-	if (unpack_nlmsg(nlh, "Hp", &when, &nfd)) {
+	if (unpack_nlmsg(nlh, "pH", &nfd, &when)) {
 		pycli_log(NURS_ERROR, "failed to unpack fd callback: %s\n",
 			 _sys_errlist[errno]);
 		return -1;

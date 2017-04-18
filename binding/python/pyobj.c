@@ -1064,6 +1064,31 @@ pynurs_output_set_value(struct pynurs_output *self,
 }
 
 static PyObject *
+pynurs_output_get_pointer(struct pynurs_output *self, PyObject *key)
+{
+	struct nurs_output *output = self->raw;
+        uint16_t index;
+        char *mem;
+        Py_ssize_t size;
+
+        index = output_index(output, key);
+        if (index == UINT16_MAX) {
+		PyErr_SetString(PyExc_Exception, "invalid index key");
+                return NULL;
+        }
+
+        if (nurs_output_type(output, index) != NURS_KEY_T_EMBED) {
+		PyErr_SetString(PyExc_Exception, "type is not a EMBED");
+                return NULL;
+        }
+
+        size = nurs_output_size(output, index);
+        mem = nurs_output_pointer(output, index);
+
+        return PyMemoryView_FromMemory(mem, size, PyBUF_WRITE);
+}
+
+static PyObject *
 pynurs_publish(struct pynurs_output *output)
 {
 	if (pycli_publish(output->raw) != NURS_RET_OK) {
@@ -1102,7 +1127,7 @@ static PyMethodDef pynurs_output_methods[] = {
 
 static PyMappingMethods pynurs_output_as_mapping = {
 	(lenfunc)pynurs_output_len,
-	NULL,
+        (binaryfunc)pynurs_output_get_pointer,
 	(objobjargproc)pynurs_output_set_value,
 };
 
@@ -1230,16 +1255,17 @@ static PyTypeObject pynurs_producer_type = {
 enum nurs_return_t py_fd_callback(struct pynurs_fd *nfd, uint16_t when)
 {
 	return py_nurs_return(
-		PyObject_CallFunction(
-			nfd->cb, "OHO", nfd->file, when, nfd->data));
+		PyObject_CallFunction(nfd->cb, "OH", nfd, when));
 }
 
 static void pynurs_fd_dealloc(struct pynurs_fd *self)
 {
-	pycli_fd_destroy(self->raw);
+	Py_XDECREF(self->file);
+        self->file = NULL;
+        /* might be decrefed at unregister */
 	Py_XDECREF(self->cb);
 	Py_XDECREF(self->data);
-	Py_XDECREF(self->file);
+
 	Py_TYPE(self)->tp_free((PyObject *)self);
 }
 
@@ -1297,6 +1323,7 @@ pynurs_fd_register(struct pynurs_fd *self, PyObject *args)
 
 	self->cb = cb;
 	self->data = data;
+        Py_INCREF(self);
 	Py_INCREF(self->cb);
 	Py_INCREF(self->data);
 	Py_RETURN_NONE;
@@ -1312,6 +1339,7 @@ pynurs_fd_unregister(struct pynurs_fd *self)
 
 	Py_XDECREF(self->cb);
 	Py_XDECREF(self->data);
+	Py_XDECREF(self);
 	self->cb = NULL;
 	self->data = NULL;
 	Py_RETURN_NONE;
@@ -1325,6 +1353,37 @@ static PyMethodDef pynurs_fd_methods[] = {
 	{ NULL, },
 };
 
+/* below accessors are valid only at callback */
+static PyObject *pynurs_fd_get_fd(struct pynurs_fd *self)
+{
+        Py_INCREF(self->file);
+        return self->file;
+}
+
+static PyObject *pynurs_fd_get_data(struct pynurs_fd *self)
+{
+        Py_INCREF(self->data);
+        return self->data;
+}
+
+static PyGetSetDef pynurs_fd_getseters[] = {
+        {
+                "fd",
+                (getter)pynurs_fd_get_fd,
+                NULL,
+                "nurs.Fd",
+                NULL,
+        },
+        {
+                "data",
+                (getter)pynurs_fd_get_data,
+                NULL,
+                "nurs.Fd",
+                NULL,
+        },
+        { NULL },
+};
+
 static PyTypeObject pynurs_fd_type = {
 	PyVarObject_HEAD_INIT(NULL, 0)
 	.tp_name	= "nurs.Fd",
@@ -1335,6 +1394,7 @@ static PyTypeObject pynurs_fd_type = {
 	.tp_doc		= "struct nurs_fd",
 	.tp_methods	= pynurs_fd_methods,
 	.tp_init	= (initproc)pynurs_fd_init,
+        .tp_getset	= pynurs_fd_getseters,
 };
 
 /****

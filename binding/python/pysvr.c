@@ -415,13 +415,14 @@ pysvr_consumer_interp(const struct nurs_plugin *plugin,
  * fd
  */
 static enum nurs_return_t
-pysvr_fd_callback(int fd, uint16_t when, void *data)
+pysvr_fd_callback(const struct nurs_fd *nfd, uint16_t when)
 {
-	struct py_nfd *pfd = data;
+        struct py_nfd *pfd = nurs_fd_get_data(nfd);
 	return _talk_active(pfd->priv,
 			    NURS_PYIPC_T_REQ_FD_CALLBACK,
 			    NURS_PYIPC_T_ACK_FD_CALLBACK,
-			    fd, "Hp", when, pfd->data);
+			    nurs_fd_get_fd(nfd),
+                            "pH", pfd->data, when);
 }
 
 static int pysvr_fd_create(struct py_priv *priv, struct nlmsghdr *nlh, int fd)
@@ -496,7 +497,7 @@ static int pysvr_fd_register(struct py_priv *priv, struct nlmsghdr *nlh, int fd)
 		ret = nurs_fd_register(pfd->nfd, pysvr_fd_callback, pfd);
 		if (!ret) {
 			pfd->priv = priv;
-			pfd->data = data;
+                        pfd->data = data;
 		}
 	}
 	return priv->sendf(priv, NURS_PYIPC_T_ACK_FD_REGISTER, NLM_F_ACK,
@@ -696,7 +697,7 @@ static int (*passive_funcs[NURS_PYIPC_T_REQ_MAX])
 	[NURS_PYIPC_T_REQ_FD_CREATE]		= pysvr_fd_create,
 	[NURS_PYIPC_T_REQ_FD_DESTROY]		= pysvr_fd_destroy,
 	[NURS_PYIPC_T_REQ_FD_REGISTER]		= pysvr_fd_register,
-	[NURS_PYIPC_T_REQ_FD_UNREGISTER]		= pysvr_fd_unregister,
+	[NURS_PYIPC_T_REQ_FD_UNREGISTER]	= pysvr_fd_unregister,
 	[NURS_PYIPC_T_REQ_TIMER_CREATE]		= pysvr_timer_create,
 	[NURS_PYIPC_T_REQ_TIMER_DESTROY]	= pysvr_timer_destroy,
 	[NURS_PYIPC_T_REQ_TIMER_ADD]		= pysvr_timer_add,

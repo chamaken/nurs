@@ -533,7 +533,8 @@ int py_recvf(int sockfd, uint16_t type, uint16_t flags,
 	if (ret < 0)
 		return -1;
 	if (nlh->nlmsg_type != type || nlh->nlmsg_flags != flags) {
-		nurs_log(NURS_ERROR, "---- type: %d, %d, flags: %d, %d\n",
+		nurs_log(NURS_ERROR, "invalid nlmsg -"
+                         " type: %d ? %d, flags: %d ? %d\n",
 			 type, nlh->nlmsg_type, flags, nlh->nlmsg_flags);
 		errno = ENOMSG;
 		return -1;

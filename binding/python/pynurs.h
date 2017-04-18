@@ -137,7 +137,7 @@ struct pynurs_producer {
 struct py_nfd {
 	struct py_priv *priv;
 	struct nurs_fd *nfd;
-	void *data;
+        void *data;
 };
 
 struct pynurs_fd {
