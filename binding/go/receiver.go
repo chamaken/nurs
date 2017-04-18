@@ -195,6 +195,14 @@ func NewFd(fd int, when FdEvent) (*Fd, error) {
 	return nursFdCreate(fd, when)
 }
 
+func (fd *Fd) Fd() int {
+	return nursFdGetFd(fd)
+}
+
+func (fd *Fd) Data() interface{} {
+	return nursFdGetData(fd)
+}
+
 func (fd *Fd) Destroy() {
 	nursFdDestroy(fd)
 }

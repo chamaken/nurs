@@ -495,8 +495,8 @@ const (
 type Fd C.struct_nurs_fd
 
 // typedef enum nurs_return_t
-//	(*nurs_fd_cb_t)(int fd, uint16_t when, void *data);
-type FdCb func(int, FdEvent, interface{}) ReturnType
+//	(*nurs_fd_cb_t)(const struct nurs_fd *nfd, uint16_t when);
+type FdCb func(*Fd, FdEvent) ReturnType
 
 type fdCbData struct {
 	cb   FdCb
@@ -511,15 +511,30 @@ func nursFdCreate(fd int, when FdEvent) (*Fd, error) {
 	return (*Fd)(ret), err
 }
 
+// int nurs_fd_get_fd(const struct nurs_fd *nfd);
+func nursFdGetFd(fd *Fd) int {
+	return int(C.nurs_fd_get_fd((*C.struct_nurs_fd)(fd)))
+}
+
+// void *nurs_fd_get_data(const struct nurs_fd *nfd);
+func nursFdGetData(fd *Fd) interface{} {
+	fcb := C.nurs_fd_get_data((*C.struct_nurs_fd)(fd))
+	return ((*fdCbData)(fcb)).data
+}
+
 // void nurs_fd_destroy(struct nurs_fd *nfd);
 func nursFdDestroy(fd *Fd) {
 	C.nurs_fd_destroy((*C.struct_nurs_fd)(fd))
 }
 
 //export goFdCb
-func goFdCb(fd C.int, when C.uint16_t, data unsafe.Pointer) C.enum_nurs_return_t {
-	fcb := (*fdCbData)(data)
-	return C.enum_nurs_return_t(fcb.cb(int(fd), FdEvent(when), fcb.data))
+func goFdCb(nfd *C.struct_nurs_fd, when C.uint16_t) C.enum_nurs_return_t {
+	fcb, err := C.nurs_fd_get_data((*C.struct_nurs_fd)(nfd))
+	if err != nil {
+		Log(ERROR, "failed to get data from nfd\n")
+		return C.NURS_RET_ERROR
+	}
+	return C.enum_nurs_return_t(((*fdCbData)(fcb)).cb((*Fd)(nfd), FdEvent(when)))
 }
 
 // int nurs_fd_register(struct nurs_fd *nfd, nurs_fd_cb_t cb, void *data);
