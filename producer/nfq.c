@@ -54,6 +54,12 @@ static enum nurs_return_t nfq_disorganize(struct nurs_producer *producer)
 	return nfq_common_disorganize(producer);
 }
 
+static enum nurs_return_t _nfq_read_cb(const struct nurs_fd *nfd, uint16_t when)
+{
+        return nfq_read_cb(nurs_fd_get_fd(nfd), when,
+                           nurs_fd_get_data(nfd));
+}
+
 static enum nurs_return_t nfq_start(struct nurs_producer *producer)
 {
 	struct nfq_priv *priv = nurs_producer_context(producer);
@@ -61,7 +67,7 @@ static enum nurs_return_t nfq_start(struct nurs_producer *producer)
 	if (config_nfq(producer))
 		return NURS_RET_ERROR;
 
-	if (nurs_fd_register(priv->fd, nfq_read_cb, producer)) {
+	if (nurs_fd_register(priv->fd, _nfq_read_cb, producer)) {
 		nurs_log(NURS_ERROR, "nurs_fd_register failed: %s\n",
 			 strerror(errno));
 		return NURS_RET_ERROR;

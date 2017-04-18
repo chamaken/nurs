@@ -400,9 +400,9 @@ static int update_bufsize(const struct nurs_producer *producer)
 }
 
 static enum nurs_return_t
-nfct_event_cb(int fd, uint16_t when, void *data)
+nfct_event_cb(const struct nurs_fd *nfd, uint16_t when)
 {
-	struct nurs_producer *producer = data;
+        struct nurs_producer *producer = nurs_fd_get_data(nfd);
 	struct nfct_priv *priv = nurs_producer_context(producer);
 	char buf[MNL_SOCKET_BUFFER_SIZE];
 	ssize_t nrecv;
@@ -453,9 +453,9 @@ nfct_copy_frame(int fd, void *arg)
 }
 
 static enum nurs_return_t
-nfct_dump_cb(int fd, uint16_t when, void *data)
+nfct_dump_cb(const struct nurs_fd *nfd, uint16_t when)
 {
-	struct nurs_producer *producer = data;
+        struct nurs_producer *producer = nurs_fd_get_data(nfd);
 	struct nfct_priv *priv = nurs_producer_context(producer);
 	struct timeval tv;
 	enum nurs_return_t ret;
@@ -469,7 +469,7 @@ nfct_dump_cb(int fd, uint16_t when, void *data)
 
 	gettimeofday(&tv, NULL);
         do {
-                ret = nfct_copy_frame(fd, &cbarg);
+                ret = nfct_copy_frame(nurs_fd_get_fd(nfd), &cbarg);
         } while (ret == NURS_RET_OK);
 
 	priv->dump_prev = tv;

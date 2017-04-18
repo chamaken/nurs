@@ -536,9 +536,9 @@ static int events_cb(const struct nlmsghdr *nlh, void *data)
 	return ret;
 }
 
-static int nftnl_fd_cb(int fd, uint16_t what, void *param)
+static int nftnl_fd_cb(const struct nurs_fd *nfd, uint16_t what)
 {
-	struct nurs_producer *producer = param;
+        struct nurs_producer *producer = nurs_fd_get_data(nfd);
 	struct nftnl_priv *priv = nurs_producer_context(producer);
 	char buf[MNL_SOCKET_BUFFER_SIZE];
 	ssize_t nrecv;

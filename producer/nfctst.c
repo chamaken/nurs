@@ -185,9 +185,9 @@ static int nfctst_mnl_cb(const struct nlmsghdr *nlh, void *data)
 	return MNL_CB_OK;
 }
 
-static enum nurs_return_t nfctst_read_cb(int fd, uint16_t when, void *data)
+static enum nurs_return_t nfctst_read_cb(const struct nurs_fd *nfd, uint16_t when)
 {
-	struct nurs_producer *producer = data;
+        struct nurs_producer *producer = nurs_fd_get_data(nfd);
 	struct nfctst_priv *priv = nurs_producer_context(producer);
 	struct nurs_output *output;
 	uint32_t tb[NFCTST_OUTPUT_MAX] = {0};

@@ -578,9 +578,9 @@ static int setnlbufsiz(const struct nurs_producer *producer, unsigned int size)
 	return 0;
 }
 
-static int read_cb_nfct(int fd, uint16_t when, void *data)
+static int read_cb_nfct(const struct nurs_fd *nfd, uint16_t when)
 {
-	struct nurs_producer *producer = data;
+        struct nurs_producer *producer = nurs_fd_get_data(nfd);
 	struct nfct_priv *priv = nurs_producer_context(producer);
 	static int warned = 0;
 
@@ -686,9 +686,9 @@ static int overrun_handler(enum nf_conntrack_msg_type type,
 	return NFCT_CB_CONTINUE;
 }
 
-static int read_cb_ovh(int fd, uint16_t when, void *data)
+static int read_cb_ovh(const struct nurs_fd *nfd, uint16_t when)
 {
-	struct nurs_producer *producer = data;
+	struct nurs_producer *producer = nurs_fd_get_data(nfd);
 	struct nfct_priv *priv = nurs_producer_context(producer);
 
 	if (!(when & NURS_FD_F_READ))

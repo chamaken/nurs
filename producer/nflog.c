@@ -467,14 +467,15 @@ static int nflog_mnl_cb(const struct nlmsghdr *nlh, void *data)
 }
 
 static enum nurs_return_t
-nflog_copy_frame(int fd, void *arg)
+nflog_copy_frame(const struct nurs_fd *nfd)
 {
-        struct nurs_producer *producer = arg;
+        struct nurs_producer *producer = nurs_fd_get_data(nfd);
         struct nflog_priv *priv = nurs_producer_context(producer);
         struct nurs_output *output = nurs_get_output(producer);
         ssize_t nrecv;
         void *buf;
         size_t buflen;
+        int fd = nurs_fd_get_fd(nfd);
 
         if (!output) {
                 nurs_log(NURS_ERROR, "failed to get output: %s\n",
@@ -520,9 +521,9 @@ fail:
 }
 
 static enum nurs_return_t
-nflog_read_cb(int fd, uint16_t when, void *data)
+nflog_read_cb(const struct nurs_fd *nfd, uint16_t when)
 {
-        return nflog_copy_frame(fd, data);
+        return nflog_copy_frame(nfd);
 }
 
 static int check_config_response(struct nflog_priv *priv)

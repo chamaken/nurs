@@ -138,6 +138,7 @@ nfq_copy_frame(int fd, void *arg)
         ssize_t nrecv;
         void *buf;
         size_t buflen;
+
         if (!output) {
                 nurs_log(NURS_ERROR, "failed to get output: %s\n",
                          strerror(errno));

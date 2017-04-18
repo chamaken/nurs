@@ -168,9 +168,9 @@ static int nfacct_mnl_cb(const struct nlmsghdr *nlh, void *data)
 	return MNL_CB_OK;
 }
 
-static enum nurs_return_t nfacct_read_cb(int fd, uint16_t when, void *data)
+static enum nurs_return_t nfacct_read_cb(const struct nurs_fd *nfd, uint16_t when)
 {
-	const struct nurs_producer *producer = data;
+        struct nurs_producer *producer = nurs_fd_get_data(nfd);
 	struct nfacct_priv *priv = nurs_producer_context(producer);
 	char buf[MNL_SOCKET_BUFFER_SIZE];
 	ssize_t nrecv;
@@ -184,7 +184,7 @@ static enum nurs_return_t nfacct_read_cb(int fd, uint16_t when, void *data)
                         return NURS_RET_ERROR;
                 }
                 ret = mnl_cb_run(buf, (size_t)nrecv, priv->seq,
-                                 priv->portid, nfacct_mnl_cb, data);
+                                 priv->portid, nfacct_mnl_cb, producer);
 	} while (ret == MNL_CB_OK);
 	if (ret == MNL_CB_ERROR) {
 		nurs_log(NURS_ERROR, "mnl_cb_run: %s\n",
