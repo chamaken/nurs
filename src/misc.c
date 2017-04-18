@@ -214,12 +214,12 @@ static void stop_handler(uint32_t signal)
 }
 
 static enum nurs_return_t
-signal_cb(int fd, uint16_t when, void *data)
+signal_cb(const struct nurs_fd *nfd, uint16_t when)
 {
 	struct signalfd_siginfo fdsi;
 	FILE *prevfd;
 	ssize_t s;
-	int ret;
+	int ret, fd = nurs_fd_get_fd(nfd);
 
 	s = read(fd, &fdsi, sizeof(struct signalfd_siginfo));
 	if (s != sizeof(struct signalfd_siginfo)) {

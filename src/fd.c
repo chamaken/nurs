@@ -78,6 +78,18 @@ struct nurs_fd *nurs_fd_create(int fd, uint16_t when)
 }
 EXPORT_SYMBOL(nurs_fd_create);
 
+int nurs_fd_get_fd(const struct nurs_fd *nfd)
+{
+        return nfd->fd;
+}
+EXPORT_SYMBOL(nurs_fd_get_fd);
+
+void *nurs_fd_get_data(const struct nurs_fd *nfd)
+{
+        return nfd->data;
+}
+EXPORT_SYMBOL(nurs_fd_get_data);
+
 void nurs_fd_destroy(struct nurs_fd *nfd)
 {
 	free(nfd);
@@ -190,7 +202,7 @@ int nfd_loop(void)
 			}
 
 			if (flags & nfd->when) {
-				rc = nfd->cb(nfd->fd, flags, nfd->data);
+				rc = nfd->cb(nfd, flags);
 				if (rc != NURS_RET_OK)
 					nurs_log(NURS_DEBUG, "callback is not OK"
 						 ", but %d\n", rc);
@@ -229,11 +241,12 @@ int nfd_cancel(void)
 }
 
 static enum nurs_return_t
-timer_cb(int fd, uint16_t when, void *data)
+timer_cb(const struct nurs_fd *nfd, uint16_t when)
 {
-	struct nurs_timer *timer = data;
+	struct nurs_timer *timer = nurs_fd_get_data(nfd);
 	enum nurs_return_t ret;
 	uint64_t exp;
+        int fd = nurs_fd_get_fd(nfd);
 
 	read(fd, &exp, sizeof(uint64_t)); /* just consuming */
 	/* unregister first since cb may call add_timer */
@@ -253,11 +266,12 @@ timer_cb(int fd, uint16_t when, void *data)
 }
 
 static enum nurs_return_t
-itimer_cb(int fd, uint16_t when, void *data)
+itimer_cb(const struct nurs_fd *nfd, uint16_t when)
 {
-	struct nurs_timer *timer = data;
+	struct nurs_timer *timer = nurs_fd_get_data(nfd);
 	enum nurs_return_t ret;
 	uint64_t exp;
+        int fd = nurs_fd_get_fd(nfd);
 
 	read(fd, &exp, sizeof(uint64_t));
 	ret = timer->cb(timer, timer->data);

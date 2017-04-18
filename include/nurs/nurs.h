@@ -548,9 +548,11 @@ enum nurs_fd_event {
 
 struct nurs_fd;
 typedef enum nurs_return_t
-	(*nurs_fd_cb_t)(int fd, uint16_t when, void *data);
+	(*nurs_fd_cb_t)(const struct nurs_fd *nfd, uint16_t when);
 
 struct nurs_fd *nurs_fd_create(int fd, uint16_t when);
+int nurs_fd_get_fd(const struct nurs_fd *nfd);
+void *nurs_fd_get_data(const struct nurs_fd *nfd);
 void nurs_fd_destroy(struct nurs_fd *nfd);
 int nurs_fd_register(struct nurs_fd *nfd, nurs_fd_cb_t cb, void *data);
 int nurs_fd_unregister(struct nurs_fd *nfd);
