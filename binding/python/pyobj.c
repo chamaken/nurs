@@ -950,7 +950,7 @@ pynurs_output_set_value(struct pynurs_output *self,
 			PyObject *key, PyObject *value)
 {
 	struct nurs_output *output = self->raw;
-	Py_buffer view;
+	Py_buffer view, *viewp;
 	PyObject *ascii;
 	uint16_t index, ktype;
 	char *src;
@@ -1031,7 +1031,7 @@ pynurs_output_set_value(struct pynurs_output *self,
 		}
 		if (!PyObject_GetBuffer(value, &view, PyBUF_SIMPLE))
 			break;
-		ret =nurs_output_set_in6_addr(output, index, view.buf);
+		ret = nurs_output_set_in6_addr(output, index, view.buf);
 		break;
 	case NURS_KEY_T_STRING:
 		if (!PyUnicode_Check(value)) {
@@ -1051,6 +1051,19 @@ pynurs_output_set_value(struct pynurs_output *self,
 		ret = nurs_output_set_string(output, index, src);
 		Py_DECREF(ascii);
 		return ret;
+        case NURS_KEY_T_EMBED:
+		if (!PyMemoryView_Check(value)) {
+			PyErr_SetString(PyExc_TypeError, "not a memory view");
+			break;
+		}
+                viewp = PyMemoryView_GET_BUFFER(value);
+                if (viewp->buf != nurs_output_pointer(output, index)) {
+			PyErr_SetString(PyExc_TypeError, "invalid memory view");
+                        break;
+                }
+                ret = nurs_output_set_valid(output, index);
+                /*  Py_DECREF(value); */
+                return ret;
 	default:
 		PyErr_Format(PyExc_TypeError, "unsupported type: %d", ktype);
 	}
