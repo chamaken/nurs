@@ -305,39 +305,18 @@ static int pycli_fd_callback(struct nlmsghdr *nlh, int fd)
 			   0, "I", py_fd_callback(nfd, when));
 }
 
-struct py_nfd *pycli_fd_create(int fd, uint16_t when)
+struct py_nfd *pycli_fd_register(int fd, uint16_t when, struct pynurs_fd *data)
 {
-	struct py_nfd *pfd;
-
-	pycli_sendf(__func__,
-		    NURS_PYIPC_T_REQ_FD_CREATE, NLM_F_REQUEST,
-		    fd, "B", when);
-	pycli_recvf(__func__,
-		    NURS_PYIPC_T_ACK_FD_CREATE, NLM_F_ACK,
-		    NULL, "p", &pfd);
-
-	return pfd;
-}
-
-void pycli_fd_destroy(struct py_nfd *pfd)
-{
-	pycli_sendf(__func__,
-		    NURS_PYIPC_T_REQ_FD_DESTROY, NLM_F_REQUEST,
-		    0, "p", pfd);
-}
-
-int pycli_fd_register(struct py_nfd *pfd, void *data)
-{
-	int ret;
+        struct py_nfd *pfd;
 
 	pycli_sendf(__func__,
 		    NURS_PYIPC_T_REQ_FD_REGISTER, NLM_F_REQUEST,
-		    0, "pp", pfd, data);
+		    fd, "Bp", when, data);
 	pycli_recvf(__func__,
 		    NURS_PYIPC_T_ACK_FD_REGISTER, NLM_F_ACK,
-		    NULL, "I", &ret);
+		    NULL, "p", &pfd);
 
-	return ret;
+	return pfd;
 }
 
 int pycli_fd_unregister(struct py_nfd *pfd)
@@ -365,67 +344,48 @@ static int pycli_timer_callback(struct nlmsghdr *nlh, int fd)
 	}
 	return pycli_sendf(__func__,
 			   NURS_PYIPC_T_ACK_FD_CALLBACK, NLM_F_ACK,
-			   0, "I", ptimer->cb(ptimer->timer, ptimer->data));
+			   0, "I", ptimer->cb(ptimer->timer));
 }
 
-struct py_timer *pycli_timer_create(const nurs_timer_cb_t cb, void *data)
+struct py_timer *
+pycli_timer_register(time_t sc, struct pynurs_timer *data)
 {
-	struct py_timer *ptimer;
+        struct py_timer *ptimer;
 
 	pycli_sendf(__func__,
-		    NURS_PYIPC_T_REQ_TIMER_CREATE, NLM_F_REQUEST,
-		    0, "pp", cb, data);
+		    NURS_PYIPC_T_REQ_TIMER_REGISTER, NLM_F_REQUEST,
+		    0, "Ip", sc, data);
 	pycli_recvf(__func__,
-		    NURS_PYIPC_T_ACK_TIMER_CREATE, NLM_F_ACK,
+		    NURS_PYIPC_T_ACK_TIMER_REGISTER, NLM_F_ACK,
 		    NULL, "p", &ptimer);
 
 	return ptimer;
 }
 
-void pycli_timer_destroy(struct py_timer *ptimer)
+struct py_timer *
+pycli_itimer_register(time_t ini, time_t per, struct pynurs_timer *data)
 {
-	pycli_sendf(__func__,
-		    NURS_PYIPC_T_REQ_TIMER_DESTROY, NLM_F_REQUEST,
-		    0, "p", ptimer);
-}
-
-int pycli_timer_add(struct py_timer *ptimer, timer_t sc)
-{
-	int ret;
+        struct py_timer *ptimer;
 
 	pycli_sendf(__func__,
-		    NURS_PYIPC_T_REQ_TIMER_ADD, NLM_F_REQUEST,
-		    0, "pI", ptimer, sc);
+		    NURS_PYIPC_T_REQ_ITIMER_REGISTER, NLM_F_REQUEST,
+		    0, "IIp", ini, per, data);
 	pycli_recvf(__func__,
-		    NURS_PYIPC_T_ACK_TIMER_ADD, NLM_F_ACK,
-		    NULL, "I", &ret);
+		    NURS_PYIPC_T_ACK_ITIMER_REGISTER, NLM_F_ACK,
+		    NULL, "I", &ptimer);
 
-	return ret;
+	return ptimer;
 }
 
-int pycli_itimer_add(struct py_timer *ptimer, timer_t sc, timer_t per)
+int pycli_timer_unregister(struct py_timer *ptimer)
 {
 	int ret;
 
 	pycli_sendf(__func__,
-		    NURS_PYIPC_T_REQ_ITIMER_ADD, NLM_F_REQUEST,
-		    0, "pII", ptimer, sc, per);
-	pycli_recvf(__func__,
-		    NURS_PYIPC_T_ACK_ITIMER_ADD, NLM_F_ACK,
-		    NULL, "I", &ret);
-
-	return ret;
-}
-
-int pycli_timer_del(struct py_timer *ptimer)
-{
-	int ret;
-
-	pycli_sendf(__func__,
-		    NURS_PYIPC_T_REQ_TIMER_DEL, NLM_F_REQUEST,
+		    NURS_PYIPC_T_REQ_TIMER_UNREGISTER, NLM_F_REQUEST,
 		    0, "pI", ptimer);
 	pycli_recvf(__func__,
-		    NURS_PYIPC_T_ACK_TIMER_DEL, NLM_F_ACK,
+		    NURS_PYIPC_T_ACK_TIMER_UNREGISTER, NLM_F_ACK,
 		    NULL, "I", &ret);
 
 	return ret;

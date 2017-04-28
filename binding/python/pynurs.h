@@ -45,15 +45,11 @@ enum pynus_nlmsg_type {
 	NURS_PYIPC_T_REQ_FILTER_INTERP,		/* p>c nurs_filter_interp_t */
 	NURS_PYIPC_T_REQ_CONSUMER_INTERP,	/* p>c nurs_consumer_interp_t */
 
-	NURS_PYIPC_T_REQ_FD_CREATE,		/* c>p nurs_fd_create */
-	NURS_PYIPC_T_REQ_FD_DESTROY,		/* c>p nurs_fd_destroy */
 	NURS_PYIPC_T_REQ_FD_CALLBACK,		/* p>c nurs_fd_cb_t */
 
-	NURS_PYIPC_T_REQ_TIMER_CREATE,		/* c>p nurs_timer_create */
-	NURS_PYIPC_T_REQ_TIMER_DESTROY,		/* c>p nurs_timer_destroy */
-	NURS_PYIPC_T_REQ_TIMER_ADD,		/* c>p nurs_timer_add */
-	NURS_PYIPC_T_REQ_ITIMER_ADD,		/* c>p nurs_itimer_add */
-	NURS_PYIPC_T_REQ_TIMER_DEL,		/* c>p nurs_timer_del */
+	NURS_PYIPC_T_REQ_TIMER_REGISTER,	/* c>p nurs_timer_add */
+	NURS_PYIPC_T_REQ_ITIMER_REGISTER,	/* c>p nurs_itimer_add */
+	NURS_PYIPC_T_REQ_TIMER_UNREGISTER,	/* c>p nurs_timer_del */
 	NURS_PYIPC_T_REQ_TIMER_PENDING,		/* c>p nurs_timer_pending */
 	NURS_PYIPC_T_REQ_TIMER_CALLBACK,	/* p>c nurs_timer_cb_t */
 
@@ -86,15 +82,11 @@ enum pynus_nlmsg_type {
 	NURS_PYIPC_T_ACK_FILTER_INTERP,		/* c>p nurs_filter_interp_t return */
 	NURS_PYIPC_T_ACK_CONSUMER_INTERP,	/* c>p nurs_consumer_interp_t return */
 
-	NURS_PYIPC_T_ACK_FD_CREATE,		/* c>p nurs_fd_create return */
-	NURS_PYIPC_T_ACK_FD_DESTROY,		/* c>p nurs_fd_destroy return */
 	NURS_PYIPC_T_ACK_FD_CALLBACK,		/* c>p nurs_fd_cb_t return */
 
-	NURS_PYIPC_T_ACK_TIMER_CREATE,		/* p>c nurs_timer_create return */
-	NURS_PYIPC_T_ACK_TIMER_DESTROY,		/* p>c nurs_timer_destroy return */
-	NURS_PYIPC_T_ACK_TIMER_ADD,		/* p>p nurs_timer_add return */
-	NURS_PYIPC_T_ACK_ITIMER_ADD,		/* p>p nurs_itimer_add return */
-	NURS_PYIPC_T_ACK_TIMER_DEL,		/* p>p nurs_timer_del return */
+	NURS_PYIPC_T_ACK_TIMER_REGISTER,	/* p>p nurs_timer_add return */
+	NURS_PYIPC_T_ACK_ITIMER_REGISTER,	/* p>p nurs_itimer_add return */
+	NURS_PYIPC_T_ACK_TIMER_UNREGISTER,	/* p>p nurs_timer_del return */
 	NURS_PYIPC_T_ACK_TIMER_PENDING,		/* p>p nurs_timer_pending return */
 	NURS_PYIPC_T_ACK_TIMER_CALLBACK,	/* c>p nurs_timer_cb_t return */
 
@@ -155,7 +147,8 @@ struct py_timer {
 
 struct pynurs_timer {
 	PyObject_HEAD
-	struct py_timer *timer;
+	struct py_timer *raw;
+        PyObject *cb, *data;
 };
 
 
@@ -181,15 +174,13 @@ void __pynurs_log(int level, char *file, int line, char *format, ...);
 
 void pycli_init(int fd, const char *path, const char *modname);
 
-struct py_nfd *pycli_fd_create(int fd, uint16_t when);
-void pycli_fd_destroy(struct py_nfd *pfd);
-int pycli_fd_register(struct py_nfd *pfd, void *data);
+struct py_nfd *pycli_fd_register(int fd, uint16_t when, struct pynurs_fd *data);
 int pycli_fd_unregister(struct py_nfd *pfd);
-struct py_timer *pycli_timer_create(const nurs_timer_cb_t cb, void *data);
-void pycli_timer_destroy(struct py_timer *ptimer);
-int pycli_timer_add(struct py_timer *ptimer, timer_t sc);
-int pycli_itimer_add(struct py_timer *ptimer, timer_t sc, timer_t per);
-int pycli_timer_del(struct py_timer *ptimer);
+struct py_timer *
+pycli_timer_register(time_t sc, struct pynurs_timer *data);
+struct py_timer *
+pycli_itimer_register(time_t ini, time_t per, struct pynurs_timer *data);
+int pycli_timer_unregister(struct py_timer *ptimer);
 int pycli_timer_pending(struct py_timer *ptimer);
 int pycli_publish(struct nurs_output *output);
 struct nurs_output *pycli_get_output(struct nurs_producer *producer);
@@ -219,5 +210,5 @@ enum nurs_return_t py_filter_interp(struct nurs_plugin *plugin,
 enum nurs_return_t py_consumer_interp(struct nurs_plugin *plugin,
 				      struct nurs_input *input);
 enum nurs_return_t py_fd_callback(struct pynurs_fd *nfd, uint16_t when);
-enum nurs_return_t py_timer_callback(struct py_timer *timer);
+enum nurs_return_t py_timer_callback(struct pynurs_timer *timer);
 #endif

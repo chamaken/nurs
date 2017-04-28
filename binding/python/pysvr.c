@@ -415,7 +415,7 @@ pysvr_consumer_interp(const struct nurs_plugin *plugin,
  * fd
  */
 static enum nurs_return_t
-pysvr_fd_callback(const struct nurs_fd *nfd, uint16_t when)
+pysvr_fd_callback(struct nurs_fd *nfd, uint16_t when)
 {
         struct py_nfd *pfd = nurs_fd_get_data(nfd);
 	return _talk_active(pfd->priv,
@@ -425,14 +425,14 @@ pysvr_fd_callback(const struct nurs_fd *nfd, uint16_t when)
                             "pH", pfd->data, when);
 }
 
-static int pysvr_fd_create(struct py_priv *priv, struct nlmsghdr *nlh, int fd)
+static int pysvr_fd_register(struct py_priv *priv, struct nlmsghdr *nlh, int fd)
 {
 	struct py_nfd *pfd;
-	int ret;
-	uint16_t when;
+	void *data;
+        uint16_t when;
 
-	if (unpack_nlmsg(nlh, "B", &when)) {
-		svr_log(NURS_ERROR, priv, "failed to unpack fd_create: %s\n",
+	if (unpack_nlmsg(nlh, "Bp", &when, &data)) {
+		svr_log(NURS_ERROR, priv, "failed to unpack fd_register: %s\n",
 			_sys_errlist[errno]);
 		return -1;
 	}
@@ -444,69 +444,26 @@ static int pysvr_fd_create(struct py_priv *priv, struct nlmsghdr *nlh, int fd)
 		goto sendf;
 	}
 
-	pfd->priv = priv;
-	pfd->nfd = nurs_fd_create(fd, when);
-	if (!pfd->nfd) {
-		free(pfd);
-		pfd = NULL;
-	}
+        pfd->nfd = nurs_fd_register(fd, when, pysvr_fd_callback, pfd);
+	if (!pfd->nfd)
+                goto error_free;
+        pfd->priv = priv;
+        pfd->data = data;
+        goto sendf;
 
+error_free:
+        free(pfd);
+        pfd = NULL;
 sendf:
-	ret = priv->sendf(priv, NURS_PYIPC_T_ACK_FD_CREATE, NLM_F_ACK,
-			  0, "p", pfd);
-	if (ret && pfd) {
-		nurs_fd_destroy(pfd->nfd);
-		free(pfd);
-		pfd = NULL;
-	}
-
-	return ret;
-}
-
-static int pysvr_fd_destroy(struct py_priv *priv, struct nlmsghdr *nlh, int fd)
-{
-	struct py_nfd *pfd;
-
-	if (unpack_nlmsg(nlh, "p", &pfd)) {
-		svr_log(NURS_ERROR, priv, "failed to unpack fd_destroy: %s\n",
-			_sys_errlist[errno]);
-		return -1;
-	}
-
-	if (pfd) {
-		nurs_fd_destroy(pfd->nfd);
-		free(pfd);
-	}
-
-	return 0;
-}
-
-static int pysvr_fd_register(struct py_priv *priv, struct nlmsghdr *nlh, int fd)
-{
-	struct py_nfd *pfd;
-	void *data;
-	enum nurs_return_t ret = NURS_RET_ERROR;
-
-	if (unpack_nlmsg(nlh, "pp", &pfd, &data)) {
-		svr_log(NURS_ERROR, priv, "failed to unpack fd_register: %s\n",
-			_sys_errlist[errno]);
-		return -1;
-	}
-
-	if (pfd) {
-		ret = nurs_fd_register(pfd->nfd, pysvr_fd_callback, pfd);
-		if (!ret) {
-			pfd->priv = priv;
-                        pfd->data = data;
-		}
-	}
 	return priv->sendf(priv, NURS_PYIPC_T_ACK_FD_REGISTER, NLM_F_ACK,
-			   0, "I", ret);
+                           0, "p", pfd);
+        /* release pfd the above fails? */
 }
 
 static int pysvr_fd_unregister(struct py_priv *priv, struct nlmsghdr *nlh, int fd)
 {
 	struct py_nfd *pfd;
+        int ret;
 
 	if (unpack_nlmsg(nlh, "p", &pfd)) {
 		svr_log(NURS_ERROR, priv, "failed to unpack fd unregister: %s\n",
@@ -514,14 +471,17 @@ static int pysvr_fd_unregister(struct py_priv *priv, struct nlmsghdr *nlh, int f
 		return -1;
 	}
 
+        ret = nurs_fd_unregister(pfd->nfd);
+        if (!ret)
+                free(pfd);
 	return priv->sendf(priv, NURS_PYIPC_T_ACK_FD_UNREGISTER, NLM_F_ACK,
-			   0, "I", nurs_fd_unregister(pfd->nfd));
+			   0, "I", ret);
 }
 
 static enum nurs_return_t
-pysvr_timer_callback(struct nurs_timer *timer, void *data)
+pysvr_timer_callback(struct nurs_timer *timer)
 {
-	struct py_timer *ptimer = data;
+	struct py_timer *ptimer = nurs_timer_get_data(timer);
 
 	return _talk_active(ptimer->priv,
 			    NURS_PYIPC_T_REQ_TIMER_CALLBACK,
@@ -529,15 +489,14 @@ pysvr_timer_callback(struct nurs_timer *timer, void *data)
 			    0, "p", ptimer);
 }
 
-static int pysvr_timer_create(struct py_priv *priv, struct nlmsghdr *nlh, int fd)
+static int pysvr_timer_register(struct py_priv *priv, struct nlmsghdr *nlh, int fd)
 {
 	struct py_timer *ptimer;
-	nurs_timer_cb_t timer_cb;
 	void *data;
-	int ret;
+	time_t sc; /* XXX: as 32bit */
 
-	if (unpack_nlmsg(nlh, "pp", &timer_cb, &data)) {
-		svr_log(NURS_ERROR, priv, "failed to unpack timer create: %d\n",
+	if (unpack_nlmsg(nlh, "Ip", &sc, &data)) {
+		svr_log(NURS_ERROR, priv, "failed to unpack timer add: %s\n",
 			_sys_errlist[errno]);
 		return -1;
 	}
@@ -549,72 +508,60 @@ static int pysvr_timer_create(struct py_priv *priv, struct nlmsghdr *nlh, int fd
 			_sys_errlist[errno]);
 		goto sendf;
 	}
-	ptimer->priv = priv;
-	ptimer->timer = nurs_timer_create(pysvr_timer_callback, ptimer);
-	if (!ptimer->timer) {
-		free(ptimer);
-		ptimer = NULL;
-	}
+
+        ptimer->timer = nurs_timer_register(sc, pysvr_timer_callback, ptimer);
+        if (!ptimer->timer)
+                goto error_free;
+        ptimer->priv = priv;
+        ptimer->data = data;
+
+error_free:
+        free(ptimer);
+        ptimer = NULL;
 sendf:
-	ret = priv->sendf(priv, NURS_PYIPC_T_ACK_TIMER_CREATE, NLM_F_ACK,
-			  0, "p", ptimer);
-	if (ret && ptimer) {
-		nurs_timer_destroy(ptimer->timer);
-		free(ptimer);
-	}
-	return ret;
+	return priv->sendf(priv, NURS_PYIPC_T_ACK_TIMER_REGISTER, NLM_F_ACK,
+			   0, "p", ptimer);
+        /* release pfd the above fails? */
 }
 
-static int pysvr_timer_destroy(struct py_priv *priv, struct nlmsghdr *nlh, int fd)
+static int pysvr_itimer_register(struct py_priv *priv,
+                                 struct nlmsghdr *nlh, int fd)
 {
 	struct py_timer *ptimer;
-	int ret;
+	void *data;
+	time_t ini, per; /* XXX: as 32bit */
 
-	if (unpack_nlmsg(nlh, "p", &ptimer)) {
-		svr_log(NURS_ERROR, priv,
-			"failed to unpack timer destroy: %s\n",
-			_sys_errlist[errno]);
-		return -1;
-	}
-
-	ret = nurs_timer_destroy(ptimer->timer);
-	free(ptimer);
-
-	return priv->sendf(priv, NURS_PYIPC_T_ACK_TIMER_DESTROY, NLM_F_ACK,
-			   0, "I", ret);
-}
-
-static int pysvr_timer_add(struct py_priv *priv, struct nlmsghdr *nlh, int fd)
-{
-	struct py_timer *ptimer;
-	time_t sc; /* XXX: as 32bit */
-
-	if (unpack_nlmsg(nlh, "pI", &ptimer, &sc)) {
+	if (unpack_nlmsg(nlh, "IIp", &ini, &per, &data)) {
 		svr_log(NURS_ERROR, priv, "failed to unpack timer add: %s\n",
 			_sys_errlist[errno]);
 		return -1;
 	}
 
-	return priv->sendf(priv, NURS_PYIPC_T_ACK_TIMER_ADD, NLM_F_ACK,
-			   0, "I", nurs_timer_add(ptimer->timer, sc));
-}
-
-static int pysvr_itimer_add(struct py_priv *priv, struct nlmsghdr *nlh, int fd)
-{
-	struct py_timer *ptimer;
-	time_t ini, sc; /* XXX: as 32bit */
-
-	if (unpack_nlmsg(nlh, "pII", &ptimer, &ini, &sc)) {
-		svr_log(NURS_ERROR, priv, "failed to unpack itimer add: %s\n",
+	ptimer = calloc(1, sizeof(struct py_timer));
+	if (!ptimer) {
+		svr_log(NURS_ERROR, priv,
+			"failed to alloc timer for python: %s\n",
 			_sys_errlist[errno]);
-		return -1;
+		goto sendf;
 	}
 
-	return priv->sendf(priv, NURS_PYIPC_T_ACK_ITIMER_ADD, NLM_F_ACK,
-			   0, "I", nurs_itimer_add(ptimer->timer, ini, sc));
+        ptimer->timer = nurs_itimer_register(ini, per,
+                                             pysvr_timer_callback, ptimer);
+        if (!ptimer->timer)
+                goto error_free;
+        ptimer->priv = priv;
+        ptimer->data = data;
+
+error_free:
+        free(ptimer);
+        ptimer = NULL;
+sendf:
+	return priv->sendf(priv, NURS_PYIPC_T_ACK_ITIMER_REGISTER, NLM_F_ACK,
+			   0, "p", ptimer);
+        /* release pfd the above fails? */
 }
 
-static int pysvr_timer_del(struct py_priv *priv, struct nlmsghdr *nlh, int fd)
+static int pysvr_timer_unregister(struct py_priv *priv, struct nlmsghdr *nlh, int fd)
 {
 	struct py_timer *ptimer;
 
@@ -624,8 +571,8 @@ static int pysvr_timer_del(struct py_priv *priv, struct nlmsghdr *nlh, int fd)
 		return -1;
 	}
 
-	return priv->sendf(priv, NURS_PYIPC_T_ACK_TIMER_DEL, NLM_F_ACK,
-			   0, "I", nurs_timer_del(ptimer->timer));
+	return priv->sendf(priv, NURS_PYIPC_T_ACK_TIMER_UNREGISTER, NLM_F_ACK,
+			   0, "I", nurs_timer_unregister(ptimer->timer));
 }
 
 static int pysvr_timer_pending(struct py_priv *priv, struct nlmsghdr *nlh, int fd)
@@ -694,16 +641,12 @@ static int pysvr_put_output(struct py_priv *priv, struct nlmsghdr *nlh, int fd)
 static int (*passive_funcs[NURS_PYIPC_T_REQ_MAX])
 	(struct py_priv *, struct nlmsghdr *, int)  = {
 	[NURS_PYIPC_T_REQ_LOG]			= pysvr_log,
-	[NURS_PYIPC_T_REQ_FD_CREATE]		= pysvr_fd_create,
-	[NURS_PYIPC_T_REQ_FD_DESTROY]		= pysvr_fd_destroy,
 	[NURS_PYIPC_T_REQ_FD_REGISTER]		= pysvr_fd_register,
 	[NURS_PYIPC_T_REQ_FD_UNREGISTER]	= pysvr_fd_unregister,
-	[NURS_PYIPC_T_REQ_TIMER_CREATE]		= pysvr_timer_create,
-	[NURS_PYIPC_T_REQ_TIMER_DESTROY]	= pysvr_timer_destroy,
-	[NURS_PYIPC_T_REQ_TIMER_ADD]		= pysvr_timer_add,
-	[NURS_PYIPC_T_REQ_ITIMER_ADD]		= pysvr_itimer_add,
-	[NURS_PYIPC_T_REQ_TIMER_DEL]		= pysvr_timer_del,
+	[NURS_PYIPC_T_REQ_TIMER_REGISTER]	= pysvr_timer_register,
+	[NURS_PYIPC_T_REQ_ITIMER_REGISTER]	= pysvr_itimer_register,
 	[NURS_PYIPC_T_REQ_TIMER_PENDING]	= pysvr_timer_pending,
+	[NURS_PYIPC_T_REQ_TIMER_UNREGISTER]	= pysvr_timer_unregister,
 	[NURS_PYIPC_T_REQ_PUBLISH]		= pysvr_publish,
 	[NURS_PYIPC_T_REQ_GET_OUTPUT]		= pysvr_get_output,
 	[NURS_PYIPC_T_REQ_PUT_OUTPUT]		= pysvr_put_output,

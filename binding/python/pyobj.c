@@ -78,7 +78,6 @@ int py_init(const char *modname)
 	_resolve_cb(signal);
 	_resolve_cb(interp);
 #undef _resolve_cb
-
 	PyErr_Clear();
 	nurs = PyInit_nurs();
 	if (PyErr_Occurred()) {
@@ -1273,9 +1272,10 @@ enum nurs_return_t py_fd_callback(struct pynurs_fd *nfd, uint16_t when)
 
 static void pynurs_fd_dealloc(struct pynurs_fd *self)
 {
+	if (self->raw && pycli_fd_unregister(self->raw))
+		PyErr_SetString(PyExc_Exception, "failed to unregister cb");
+
 	Py_XDECREF(self->file);
-        self->file = NULL;
-        /* might be decrefed at unregister */
 	Py_XDECREF(self->cb);
 	Py_XDECREF(self->data);
 
@@ -1284,11 +1284,12 @@ static void pynurs_fd_dealloc(struct pynurs_fd *self)
 
 static int pynurs_fd_init(struct pynurs_fd *self, PyObject *args)
 {
-	PyObject *file, *fileno, *value;
+	PyObject *file, *cb, *data, *fileno, *value;
 	uint16_t when;
 
-	if (!PyArg_ParseTuple(args, "OH", &file, &when))
+	if (!PyArg_ParseTuple(args, "OHOO", &file, &when, &cb, &data))
 		return -1;
+
 	fileno = PyObject_GetAttrString(file, "fileno");
 	if (!fileno || !PyCallable_Check(fileno)) {
 		PyErr_SetString(PyExc_TypeError, "first arg has no fileno()");
@@ -1303,68 +1304,28 @@ static int pynurs_fd_init(struct pynurs_fd *self, PyObject *args)
 				"fileno() must return an integer");
 		return -1;
 	}
+	if (!PyCallable_Check(cb)) {
+		PyErr_SetString(PyExc_TypeError, "cb is not callable");
+                Py_DECREF(value);
+		return -1;
+	}
 
-	self->raw = pycli_fd_create((int)PyLong_AsLong(value), when);
+	self->raw = pycli_fd_register((int)PyLong_AsLong(value), when, self);
 	Py_DECREF(value);
 	if (!self->raw) {
 		PyErr_SetString(PyExc_Exception,
 				"failed to create fd");
 		return -1;
 	}
-
 	self->file = file;
+	self->cb = cb;
+	self->data = data;
 	Py_INCREF(self->file);
+	Py_INCREF(self->cb);
+	Py_INCREF(self->data);
 
 	return 0;
 }
-
-static PyObject *
-pynurs_fd_register(struct pynurs_fd *self, PyObject *args)
-{
-	PyObject *cb, *data;
-
-	if (!PyArg_ParseTuple(args, "OO", &cb, &data))
-		return NULL;
-	if (!PyCallable_Check(cb)) {
-		PyErr_SetString(PyExc_TypeError, "cb is not callable");
-		return NULL;
-	}
-	if (pycli_fd_register(self->raw, self)) {
-		PyErr_SetString(PyExc_Exception, "failed to register cb");
-		return NULL;
-	}
-
-	self->cb = cb;
-	self->data = data;
-        Py_INCREF(self);
-	Py_INCREF(self->cb);
-	Py_INCREF(self->data);
-	Py_RETURN_NONE;
-}
-
-static PyObject *
-pynurs_fd_unregister(struct pynurs_fd *self)
-{
-	if (pycli_fd_unregister(self->raw)) {
-		PyErr_SetString(PyExc_Exception, "failed to unregister cb");
-		return NULL;
-	}
-
-	Py_XDECREF(self->cb);
-	Py_XDECREF(self->data);
-	Py_XDECREF(self);
-	self->cb = NULL;
-	self->data = NULL;
-	Py_RETURN_NONE;
-}
-
-static PyMethodDef pynurs_fd_methods[] = {
-	{ "register", (PyCFunction)pynurs_fd_register, METH_VARARGS,
-	  "register callback", },
-	{ "unregister", (PyCFunction)pynurs_fd_unregister, METH_NOARGS,
-	  "unregister callback", },
-	{ NULL, },
-};
 
 /* below accessors are valid only at callback */
 static PyObject *pynurs_fd_get_fd(struct pynurs_fd *self)
@@ -1375,7 +1336,7 @@ static PyObject *pynurs_fd_get_fd(struct pynurs_fd *self)
 
 static PyObject *pynurs_fd_get_data(struct pynurs_fd *self)
 {
-        Py_INCREF(self->data);
+	Py_INCREF(self->data);
         return self->data;
 }
 
@@ -1405,7 +1366,7 @@ static PyTypeObject pynurs_fd_type = {
 	.tp_dealloc	= (destructor)pynurs_fd_dealloc,
 	.tp_flags	= Py_TPFLAGS_DEFAULT,
 	.tp_doc		= "struct nurs_fd",
-	.tp_methods	= pynurs_fd_methods,
+	.tp_methods	= NULL,
 	.tp_init	= (initproc)pynurs_fd_init,
         .tp_getset	= pynurs_fd_getseters,
 };
@@ -1413,13 +1374,99 @@ static PyTypeObject pynurs_fd_type = {
 /****
  * struct nurs_timer
  */
-enum nurs_return_t py_timer_callback(struct py_timer *timer)
+
+enum nurs_return_t py_timer_callback(struct pynurs_timer *timer)
 {
-	return NURS_RET_ERROR;
+	return py_nurs_return(
+		PyObject_CallFunction(timer->cb, "O", timer));
 }
 
+static void pynurs_timer_dealloc(struct pynurs_timer *self)
+{
+	if (self->raw && pycli_timer_unregister(self->raw))
+		PyErr_SetString(PyExc_Exception, "failed to unregister cb");
 
+	Py_XDECREF(self->cb);
+	Py_XDECREF(self->data);
 
+	Py_TYPE(self)->tp_free((PyObject *)self);
+}
+
+static int pynurs_timer_init(struct pynurs_timer *self, PyObject *args)
+{
+	PyObject *cb, *data;
+        time_t ini, per = 0;
+
+	if (!PyArg_ParseTuple(args, "IOO|I", &ini, &cb, &data, &per))
+		return -1;
+
+	if (!PyCallable_Check(cb)) {
+		PyErr_SetString(PyExc_TypeError, "cb is not callable");
+		return -1;
+	}
+
+        if (per)
+                self->raw = pycli_itimer_register(ini, per, self);
+        else
+                self->raw = pycli_timer_register(ini, self);
+	if (!self->raw) {
+		PyErr_SetString(PyExc_Exception,
+				"failed to create fd");
+		return -1;
+	}
+
+	self->cb = cb;
+	self->data = data;
+        Py_INCREF(self);
+	Py_INCREF(self->cb);
+	Py_INCREF(self->data);
+
+	return 0;
+}
+
+static PyObject *
+pynurs_timer_pending(struct pynurs_timer *self)
+{
+        if (self)
+                Py_RETURN_TRUE;
+        Py_RETURN_FALSE;
+}
+
+static PyMethodDef pynurs_timer_methods[] = {
+	{ "pending", (PyCFunction)pynurs_timer_pending, METH_NOARGS,
+	  "is pending", },
+	{ NULL, },
+};
+
+static PyObject *pynurs_timer_get_data(struct pynurs_timer *self)
+{
+        Py_INCREF(self->data);
+        return self->data;
+}
+
+static PyGetSetDef pynurs_timer_getseters[] = {
+        {
+                "data",
+                (getter)pynurs_timer_get_data,
+                NULL,
+                "nurs.Fd",
+                NULL,
+        },
+        { NULL },
+};
+
+static PyTypeObject pynurs_timer_type = {
+	PyVarObject_HEAD_INIT(NULL, 0)
+	.tp_name	= "nurs.Timer",
+	.tp_basicsize	= sizeof(struct pynurs_timer),
+	.tp_new		= PyType_GenericNew,
+	.tp_dealloc	= (destructor)pynurs_timer_dealloc,
+	.tp_flags	= Py_TPFLAGS_DEFAULT,
+	.tp_doc		= "struct nurs_timer",
+	.tp_methods	= pynurs_timer_methods,
+	.tp_init	= (initproc)pynurs_timer_init,
+        .tp_getset	= pynurs_timer_getseters,
+};
 
 
 /****
@@ -1451,6 +1498,8 @@ PyMODINIT_FUNC PyInit_nurs(void)
 		return NULL;
 	if (PyType_Ready(&pynurs_fd_type) < 0)
 		return NULL;
+	if (PyType_Ready(&pynurs_timer_type) < 0)
+		return NULL;
 
 	/* nurs_module.m_methods = pynurs_methods; */
 	m = PyModule_Create(&nurs_module);
@@ -1478,7 +1527,8 @@ PyMODINIT_FUNC PyInit_nurs(void)
 	Py_INCREF(&pynurs_fd_type);
 	PyModule_AddObject(m, "Fd", (PyObject *)&pynurs_fd_type);
 
-
+	Py_INCREF(&pynurs_timer_type);
+	PyModule_AddObject(m, "Timer", (PyObject *)&pynurs_timer_type);
 
 	PyModule_AddIntMacro(m, NURS_KEY_T_BOOL);
 	PyModule_AddIntMacro(m, NURS_KEY_T_INT8);
