@@ -64,20 +64,6 @@ int nfd_fini(void)
 	return ret;
 }
 
-struct nurs_fd *nurs_fd_create(int fd, uint16_t when)
-{
-	struct nurs_fd *nfd = calloc(1, sizeof(struct nurs_fd));
-
-	if (!nfd)
-		return NULL;
-
-	nfd->fd = fd;
-	nfd->when = when;
-
-	return nfd;
-}
-EXPORT_SYMBOL(nurs_fd_create);
-
 int nurs_fd_get_fd(const struct nurs_fd *nfd)
 {
         return nfd->fd;
@@ -90,47 +76,55 @@ void *nurs_fd_get_data(const struct nurs_fd *nfd)
 }
 EXPORT_SYMBOL(nurs_fd_get_data);
 
-void nurs_fd_destroy(struct nurs_fd *nfd)
+struct nurs_fd *nurs_fd_register(int fd, uint16_t when, nurs_fd_cb_t cb, void *data)
 {
-	free(nfd);
-}
-EXPORT_SYMBOL(nurs_fd_destroy);
-
-int nurs_fd_register(struct nurs_fd *nfd, nurs_fd_cb_t cb, void *data)
-{
+	struct nurs_fd *nfd;
 	struct epoll_event ev = {0, {0}};
 	int flags;
 
 	/* make FD non blocking */
-	flags = fcntl(nfd->fd, F_GETFL);
+	flags = fcntl(fd, F_GETFL);
 	if (flags < 0)
-		return -1;
+		return NULL;
 
 	flags |= O_NONBLOCK;
-	flags = fcntl(nfd->fd, F_SETFL, flags);
+	flags = fcntl(fd, F_SETFL, flags);
 	if (flags < 0)
-		return -1;
+		return NULL;
 
-	if (nfd->when & NURS_FD_F_READ)
+	if (when & NURS_FD_F_READ)
 		ev.events |= EPOLLIN;
-	if (nfd->when & NURS_FD_F_WRITE)
+	if (when & NURS_FD_F_WRITE)
 		ev.events |= EPOLLOUT;
-	if (nfd->when & NURS_FD_F_EXCEPT) {
+	if (when & NURS_FD_F_EXCEPT) {
 		/* intend to be a fd_set *exceptfds, right? */
 		ev.events |= EPOLLRDHUP | EPOLLPRI | EPOLLERR;
 	}
 
+        nfd = calloc(1, sizeof(struct nurs_fd));
+        if (!nfd)
+                return NULL;
+
+        nfd->fd = fd;
+        nfd->when = when;
 	nfd->cb = cb;
 	nfd->data = data;
 	ev.data.ptr = nfd;
 
-	return epoll_ctl(epollfd, EPOLL_CTL_ADD, nfd->fd, &ev);
+	if (epoll_ctl(epollfd, EPOLL_CTL_ADD, fd, &ev) == -1) {
+                free(nfd);
+                return NULL;
+        }
+
+        return nfd;
+
 }
 EXPORT_SYMBOL(nurs_fd_register);
 
 int nurs_fd_unregister(struct nurs_fd *nfd)
 {
 	struct epoll_event ev = {0, {0}};
+        int ret;
 
 	if (nfd->when & NURS_FD_F_READ)
 		ev.events |= EPOLLIN;
@@ -142,7 +136,12 @@ int nurs_fd_unregister(struct nurs_fd *nfd)
 		ev.events |= EPOLLRDHUP | EPOLLPRI | EPOLLERR;
 
 	ev.data.ptr = nfd;
-	return epoll_ctl(epollfd, EPOLL_CTL_DEL, nfd->fd, &ev);
+        ret = epoll_ctl(epollfd, EPOLL_CTL_DEL, nfd->fd, &ev);
+        if (ret == -1)
+                return ret;
+
+        free(nfd);
+        return 0;
 }
 EXPORT_SYMBOL(nurs_fd_unregister);
 
@@ -199,6 +198,8 @@ int nfd_loop(void)
 				    !getsockopt(nfd->fd, SOL_SOCKET, SO_ERROR,
 						&err, &errlen))
 					errno = err;
+                                nurs_log(NURS_DEBUG, "might be a fd error"
+                                         " event: %s\n", strerror(errno));
 			}
 
 			if (flags & nfd->when) {
@@ -241,7 +242,7 @@ int nfd_cancel(void)
 }
 
 static enum nurs_return_t
-timer_cb(const struct nurs_fd *nfd, uint16_t when)
+timer_cb(struct nurs_fd *nfd, uint16_t when)
 {
 	struct nurs_timer *timer = nurs_fd_get_data(nfd);
 	enum nurs_return_t ret;
@@ -249,14 +250,13 @@ timer_cb(const struct nurs_fd *nfd, uint16_t when)
         int fd = nurs_fd_get_fd(nfd);
 
 	read(fd, &exp, sizeof(uint64_t)); /* just consuming */
-	/* unregister first since cb may call add_timer */
 	if (nurs_fd_unregister(timer->nfd)) {
 		nurs_log(NURS_ERROR, "could not unregister fd: %s\n",
 			 _sys_errlist[errno]);
 		return NURS_RET_ERROR;
 	}
 
-	ret = timer->cb(timer, timer->data);
+	ret = timer->cb(timer);
 	if (ret != NURS_RET_OK) {
 		nurs_log(NURS_ERROR, "timer cb failed: %d\n", ret);
 		return ret;
@@ -266,7 +266,7 @@ timer_cb(const struct nurs_fd *nfd, uint16_t when)
 }
 
 static enum nurs_return_t
-itimer_cb(const struct nurs_fd *nfd, uint16_t when)
+itimer_cb(struct nurs_fd *nfd, uint16_t when)
 {
 	struct nurs_timer *timer = nurs_fd_get_data(nfd);
 	enum nurs_return_t ret;
@@ -274,7 +274,7 @@ itimer_cb(const struct nurs_fd *nfd, uint16_t when)
         int fd = nurs_fd_get_fd(nfd);
 
 	read(fd, &exp, sizeof(uint64_t));
-	ret = timer->cb(timer, timer->data);
+	ret = timer->cb(timer);
 	if (ret != NURS_RET_OK) {
 		nurs_log(NURS_ERROR, "timer cb failed: %d\n", ret);
 		return ret;
@@ -283,96 +283,106 @@ itimer_cb(const struct nurs_fd *nfd, uint16_t when)
 	return NURS_RET_OK;
 }
 
-struct nurs_timer *nurs_timer_create(const nurs_timer_cb_t cb, void *data)
+static struct nurs_timer *
+_nurs_timer_register(time_t ini, time_t per,
+                     const nurs_timer_cb_t cb, void *data,
+                     int (*stcb)(int, time_t, time_t),
+                     nurs_fd_cb_t fdcb)
 {
-	struct nurs_timer *timer = calloc(1, sizeof(struct nurs_timer));
+	struct nurs_timer *timer;
 	int timerfd;
-
-	if (timer == NULL)
-		return NULL;
 
 	timerfd = timerfd_create(CLOCK_MONOTONIC, 0);
 	if (timerfd == -1)
-		goto fail_free_timer;
+		return NULL;
 
-	timer->nfd = nurs_fd_create(timerfd, NURS_FD_F_READ);
+        if (stcb(timerfd, ini, per))
+                goto error_close;
+
+        timer = calloc(1, sizeof(struct nurs_timer));
+        if (!timer)
+                goto error_close;
+
+	timer->nfd = nurs_fd_register(timerfd, NURS_FD_F_READ, fdcb, timer);
 	if (timer->nfd == NULL)
-		goto fail_free_timer;
+		goto error_free;
 
-	timer->cb = cb;
-	timer->data = data;
-	return timer;
+        timer->cb = cb;
+        timer->data = data;
 
-fail_free_timer:
-	free(timer);
-	return NULL;
+        return timer;
+
+error_free:
+        free(timer);
+error_close:
+        close(timerfd);
+        return NULL;
 }
-EXPORT_SYMBOL(nurs_timer_create);
 
-int nurs_timer_destroy(struct nurs_timer *timer)
+static int itimer_stcb(int timerfd, time_t ini, time_t per)
 {
-	if (close(timer->nfd->fd))
-		return -1;
-
-	nurs_fd_destroy(timer->nfd);
-	free(timer);
-
-	return 0;
+        /* XXX: check ini and per is 0 or disarm */
+	struct itimerspec its = {{per, 0}, {ini, 0}};
+        return timerfd_settime(timerfd, 0, &its, NULL);
 }
-EXPORT_SYMBOL(nurs_timer_destroy);
 
-int nurs_itimer_add(struct nurs_timer *timer, time_t ini, time_t per)
+struct nurs_timer *nurs_itimer_register(time_t ini, time_t per,
+                                        const nurs_timer_cb_t cb, void *data)
 {
-	struct itimerspec its;
-
-        its.it_interval.tv_sec = per;
-        its.it_interval.tv_nsec = 0;
-        its.it_value.tv_sec = ini;
-        its.it_value.tv_nsec = 0;
-        if (timerfd_settime(timer->nfd->fd, 0, &its, NULL))
-                return -1;
-
-        return nurs_fd_register(timer->nfd, itimer_cb, timer);
+        return _nurs_timer_register(ini, per, cb, data, itimer_stcb, itimer_cb);
 }
-EXPORT_SYMBOL(nurs_itimer_add);
+EXPORT_SYMBOL(nurs_itimer_register);
 
-int nurs_timer_add(struct nurs_timer *timer, time_t sc)
+static int timer_stcb(int timerfd, time_t ini, time_t per)
 {
-	struct itimerspec its;
+	struct itimerspec its = {{0, 0}, {ini, 0}}; /* interval, initial */
 
-        its.it_interval.tv_sec = 0;
-        its.it_interval.tv_nsec = 0;
-        its.it_value.tv_sec = sc;
 	/* caller want to be called just after now */
-        if (sc == 0)
+        if (ini == 0)
                 its.it_value.tv_nsec = 1;
         else
                 its.it_value.tv_nsec = 0;
 
-        if (timerfd_settime(timer->nfd->fd, 0, &its, NULL))
-                return -1;
-
-        return nurs_fd_register(timer->nfd, timer_cb, timer);
+        return timerfd_settime(timerfd, 0, &its, NULL);
 }
-EXPORT_SYMBOL(nurs_timer_add);
 
-int nurs_timer_del(struct nurs_timer *timer)
+struct nurs_timer *nurs_timer_register(time_t ini,
+                                       const nurs_timer_cb_t cb, void *data)
+{
+        return _nurs_timer_register(ini, 0, cb, data, timer_stcb, timer_cb);
+}
+EXPORT_SYMBOL(nurs_timer_register);
+
+int nurs_timer_unregister(struct nurs_timer *timer)
 {
 	struct itimerspec spec = {{0, 0}, {0, 0}};
+
+        if (!timer) {
+                nurs_log(NURS_NOTICE, "not a registered timer\n");
+                return 0;
+        }
 
 	if (nurs_fd_unregister(timer->nfd))
 		return -1;
 
         return timerfd_settime(timer->nfd->fd, 0, &spec, NULL);
 }
-EXPORT_SYMBOL(nurs_timer_del);
+EXPORT_SYMBOL(nurs_timer_unregister);
 
-int nurs_timer_pending(struct nurs_timer *timer)
+bool nurs_timer_pending(const struct nurs_timer *timer)
 {
         struct itimerspec its;
 
-        if (timerfd_gettime(timer->nfd->fd, &its))
-                return -1;
+        if (!timer) {
+                nurs_log(NURS_NOTICE, "not a registered timer\n");
+                return false;
+        }
+
+        if (timerfd_gettime(timer->nfd->fd, &its)) {
+                nurs_log(NURS_ERROR, "timerfd_gettime: %s\n",
+                         strerror(errno));
+                return false;
+        }
 
         return its.it_interval.tv_sec > 0
                 || its.it_interval.tv_nsec > 0
@@ -380,3 +390,9 @@ int nurs_timer_pending(struct nurs_timer *timer)
                 || its.it_value.tv_nsec > 0;
 }
 EXPORT_SYMBOL(nurs_timer_pending);
+
+void *nurs_timer_get_data(const struct nurs_timer *timer)
+{
+        return timer->data;
+}
+EXPORT_SYMBOL(nurs_timer_get_data);

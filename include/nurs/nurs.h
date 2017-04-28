@@ -547,29 +547,32 @@ enum nurs_fd_event {
 };
 
 struct nurs_fd;
+/* nfd is not const since cb may call unregister */
 typedef enum nurs_return_t
-	(*nurs_fd_cb_t)(const struct nurs_fd *nfd, uint16_t when);
+	(*nurs_fd_cb_t)(struct nurs_fd *nfd, uint16_t when);
 
-struct nurs_fd *nurs_fd_create(int fd, uint16_t when);
+struct nurs_fd *
+nurs_fd_register(int fd, uint16_t when, nurs_fd_cb_t cb, void *data);
+int nurs_fd_unregister(struct nurs_fd *nfd);
 int nurs_fd_get_fd(const struct nurs_fd *nfd);
 void *nurs_fd_get_data(const struct nurs_fd *nfd);
-void nurs_fd_destroy(struct nurs_fd *nfd);
-int nurs_fd_register(struct nurs_fd *nfd, nurs_fd_cb_t cb, void *data);
-int nurs_fd_unregister(struct nurs_fd *nfd);
 
 /*
  * timer
  */
 struct nurs_timer;
 typedef enum nurs_return_t
-	(*nurs_timer_cb_t)(struct nurs_timer *timer, void *data);
+	(*nurs_timer_cb_t)(struct nurs_timer *timer);
 
-struct nurs_timer *nurs_timer_create(const nurs_timer_cb_t cb, void *data);
-int nurs_timer_destroy(struct nurs_timer *timer);
-int nurs_timer_add(struct nurs_timer *timer, time_t sc);
-int nurs_itimer_add(struct nurs_timer *timer, time_t ini, time_t per);
-int nurs_timer_del(struct nurs_timer *timer);
-int nurs_timer_pending(struct nurs_timer *timer);
+struct nurs_timer *
+nurs_timer_register(time_t sc,
+                    const nurs_timer_cb_t cb, void *data);
+struct nurs_timer *
+nurs_itimer_register(time_t ini, time_t per,
+                     const nurs_timer_cb_t cb, void *data);
+int nurs_timer_unregister(struct nurs_timer *timer);
+bool nurs_timer_pending(const struct nurs_timer *timer);
+void *nurs_timer_get_data(const struct nurs_timer *timer);
 
 /*
  * misc

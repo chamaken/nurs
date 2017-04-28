@@ -213,8 +213,7 @@ static void stop_handler(uint32_t signal)
 	nfd_cancel();
 }
 
-static enum nurs_return_t
-signal_cb(const struct nurs_fd *nfd, uint16_t when)
+static enum nurs_return_t signal_cb(struct nurs_fd *nfd, uint16_t when)
 {
 	struct signalfd_siginfo fdsi;
 	FILE *prevfd;
@@ -298,40 +297,41 @@ int signal_nfd_init(void)
 	if (sigfd < 0) {
 		nurs_log(NURS_FATAL, "failed to signalfd: %s\n",
 			 strerror(errno));
-		return -1;
+                goto error_sigmask;
 	}
 
-	signal_nfd = nurs_fd_create(sigfd, NURS_FD_F_READ);
+        signal_nfd = nurs_fd_register(sigfd, NURS_FD_F_READ, signal_cb, NULL);
 	if (!signal_nfd) {
-		nurs_log(NURS_FATAL, "failed to create signal nfd: %s\n",
-			 strerror(errno));
-		return -1;
-	}
-
-	if (nurs_fd_register(signal_nfd, signal_cb, NULL)) {
 		nurs_log(NURS_ERROR, "failed to register signalfd: %s\n",
 			 strerror(errno));
-		return -1;
+                goto error_close;
 	}
 
 	return 0;
+
+error_close:
+        close(sigfd);
+error_sigmask:
+	sigprocmask(SIG_UNBLOCK, &mask, NULL);
+
+        return -1;
 }
 
 int signal_nfd_fini(void)
 {
 	sigset_t mask;
+        int signal_fd = nurs_fd_get_fd(signal_nfd);
 
 	if (nurs_fd_unregister(signal_nfd)) {
 		nurs_log(NURS_ERROR, "failed to unregister signalfd: %s\n",
 			 strerror(errno));
 		return -1;
 	}
-	if (close(signal_nfd->fd)) {
+	if (close(signal_fd)) {
 		nurs_log(NURS_ERROR, "failed to close signalfd: %s\n",
 			 strerror(errno));
 		return -1;
 	}
-	nurs_fd_destroy(signal_nfd);
 	signal_nfd = NULL;
 
 	sigemptyset(&mask);
