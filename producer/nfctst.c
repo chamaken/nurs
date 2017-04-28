@@ -185,7 +185,7 @@ static int nfctst_mnl_cb(const struct nlmsghdr *nlh, void *data)
 	return MNL_CB_OK;
 }
 
-static enum nurs_return_t nfctst_read_cb(const struct nurs_fd *nfd, uint16_t when)
+static enum nurs_return_t nfctst_read_cb(struct nurs_fd *nfd, uint16_t when)
 {
         struct nurs_producer *producer = nurs_fd_get_data(nfd);
 	struct nfctst_priv *priv = nurs_producer_context(producer);
@@ -222,9 +222,9 @@ static enum nurs_return_t nfctst_read_cb(const struct nurs_fd *nfd, uint16_t whe
 	return NURS_RET_OK;
 }
 
-static enum nurs_return_t nfctst_timer_cb(struct nurs_timer *t, void *data)
+static enum nurs_return_t nfctst_timer_cb(struct nurs_timer *t)
 {
-	struct nurs_producer *producer = data;
+        struct nurs_producer *producer = nurs_timer_get_data(t);
 	struct nfctst_priv *priv = nurs_producer_context(producer);
 	struct nlmsghdr *nlh = (struct nlmsghdr *)priv->dumpreq;
 
@@ -275,23 +275,8 @@ static enum nurs_return_t nfctst_organize(struct nurs_producer *producer)
 	nfh->version = NFNETLINK_V0;
 	nfh->res_id = 0;
 
-	priv->timer = nurs_timer_create(nfctst_timer_cb, producer);
-	if (!priv->timer) {
-		nurs_log(NURS_ERROR, "failed to create timer: %s\n",
-			 strerror(errno));
-		goto err_close;
-	}
-	priv->fd = nurs_fd_create(mnl_socket_get_fd(priv->nls), NURS_FD_F_READ);
-	if (!priv->fd) {
-		nurs_log(NURS_ERROR, "failed to create fd: %s\n",
-			 strerror(errno));
-		goto err_destroy_timer;
-	}
-
 	return NURS_RET_OK;
 
-err_destroy_timer:
-	nurs_timer_destroy(priv->timer);
 err_close:
 	mnl_socket_close(priv->nls);
 err_exit:
@@ -301,12 +286,7 @@ err_exit:
 static enum nurs_return_t nfctst_disorganize(struct nurs_producer *producer)
 {
 	struct nfctst_priv *priv = nurs_producer_context(producer);
-	int ret = 0;
-
-	ret |= nurs_timer_destroy(priv->timer);
-	nurs_fd_destroy(priv->fd);
-
-	if (ret)
+	if (mnl_socket_close(priv->nls) == -1)
 		return NURS_RET_ERROR;
 
 	return NURS_RET_OK;
@@ -315,15 +295,20 @@ static enum nurs_return_t nfctst_disorganize(struct nurs_producer *producer)
 static enum nurs_return_t nfctst_start(struct nurs_producer *producer)
 {
 	struct nfctst_priv *priv = nurs_producer_context(producer);
-	int pollint = config_pollint(producer);
+	time_t pollint = config_pollint(producer);
 
-	if (nurs_fd_register(priv->fd, nfctst_read_cb, producer)) {
+        priv->fd = nurs_fd_register(mnl_socket_get_fd(priv->nls),
+                                    NURS_FD_F_READ,
+                                    nfctst_read_cb, producer);
+	if (!priv->fd) {
 		nurs_log(NURS_ERROR, "failed to register fd: %s\n",
 			 strerror(errno));
 		goto err_exit;
 	}
 
-	if (nurs_itimer_add(priv->timer, pollint, pollint)) {
+        priv->timer = nurs_itimer_register((time_t)pollint, pollint,
+                                           nfctst_timer_cb, producer);
+	if (!priv->timer) {
 		nurs_log(NURS_ERROR, "failed to add itimer: %s\n",
 			 strerror(errno));
 		goto err_unregister_fd;
@@ -342,7 +327,7 @@ static enum nurs_return_t nfctst_stop(struct nurs_producer *producer)
 	struct nfctst_priv *priv = nurs_producer_context(producer);
 	int ret = 0;
 
-	ret |= nurs_timer_del(priv->timer);
+	ret |= nurs_timer_unregister(priv->timer);
 	ret |= nurs_fd_unregister(priv->fd);
 
 	if (ret)

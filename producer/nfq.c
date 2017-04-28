@@ -30,31 +30,15 @@ struct nfq_priv {
 
 static enum nurs_return_t nfq_organize(struct nurs_producer *producer)
 {
-	struct nfq_priv *priv = nurs_producer_context(producer);
-
-	if (nfq_common_organize(producer) != NURS_RET_OK)
-		return NURS_RET_ERROR;
-
-	priv->fd = nurs_fd_create(mnl_socket_get_fd(priv->nl),
-				  NURS_FD_F_READ);
-	if (!priv->fd)
-		goto fail;
-	return NURS_RET_OK;
-fail:
-	mnl_socket_close(priv->nl);
-	return NURS_RET_ERROR;
-
+	return nfq_common_organize(producer);
 }
 
 static enum nurs_return_t nfq_disorganize(struct nurs_producer *producer)
 {
-	struct nfq_priv *priv = nurs_producer_context(producer);
-
-	nurs_fd_destroy(priv->fd);
 	return nfq_common_disorganize(producer);
 }
 
-static enum nurs_return_t _nfq_read_cb(const struct nurs_fd *nfd, uint16_t when)
+static enum nurs_return_t _nfq_read_cb(struct nurs_fd *nfd, uint16_t when)
 {
         return nfq_read_cb(nurs_fd_get_fd(nfd), when,
                            nurs_fd_get_data(nfd));
@@ -67,7 +51,10 @@ static enum nurs_return_t nfq_start(struct nurs_producer *producer)
 	if (config_nfq(producer))
 		return NURS_RET_ERROR;
 
-	if (nurs_fd_register(priv->fd, _nfq_read_cb, producer)) {
+        priv ->fd = nurs_fd_register(
+                mnl_socket_get_fd(priv->nl), NURS_FD_F_READ,
+                _nfq_read_cb, producer);
+	if (!priv->fd) {
 		nurs_log(NURS_ERROR, "nurs_fd_register failed: %s\n",
 			 strerror(errno));
 		return NURS_RET_ERROR;

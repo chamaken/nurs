@@ -536,7 +536,7 @@ static int events_cb(const struct nlmsghdr *nlh, void *data)
 	return ret;
 }
 
-static int nftnl_fd_cb(const struct nurs_fd *nfd, uint16_t what)
+static int nftnl_fd_cb(struct nurs_fd *nfd, uint16_t what)
 {
         struct nurs_producer *producer = nurs_fd_get_data(nfd);
 	struct nftnl_priv *priv = nurs_producer_context(producer);
@@ -576,12 +576,8 @@ static int nftnl_organize(struct nurs_producer *producer)
 		goto err_close;
 	}
 
-	priv->fd = nurs_fd_create(mnl_socket_get_fd(priv->nls),
-				  NURS_FD_F_READ);
-	if (!priv->fd)
-		goto err_close;
-
 	return NURS_RET_OK;
+
 err_close:
 	mnl_socket_close(priv->nls);
 err_exit:
@@ -592,7 +588,6 @@ static int nftnl_disorganize(struct nurs_producer *producer)
 {
 	struct nftnl_priv *priv = nurs_producer_context(producer);
 
-	nurs_fd_destroy(priv->fd);
 	if (mnl_socket_close(priv->nls)) {
 		nurs_log(NURS_ERROR, "mnl_socket_close: %s\n",
 			 strerror(errno));
@@ -606,7 +601,10 @@ static int nftnl_start(struct nurs_producer *producer)
 {
 	struct nftnl_priv *priv = nurs_producer_context(producer);
 
-	if (nurs_fd_register(priv->fd, nftnl_fd_cb, producer)) {
+        priv->fd = nurs_fd_register(
+                mnl_socket_get_fd(priv->nls), NURS_FD_F_READ,
+                nftnl_fd_cb, producer);
+        if (!priv->fd) {
 		nurs_log(NURS_ERROR, "nurs_fd_register failed: %s\n",
 			 strerror(errno));
 		return NURS_RET_ERROR;

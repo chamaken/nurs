@@ -467,7 +467,7 @@ static int nflog_mnl_cb(const struct nlmsghdr *nlh, void *data)
 }
 
 static enum nurs_return_t
-nflog_copy_frame(const struct nurs_fd *nfd)
+nflog_copy_frame(struct nurs_fd *nfd)
 {
         struct nurs_producer *producer = nurs_fd_get_data(nfd);
         struct nflog_priv *priv = nurs_producer_context(producer);
@@ -521,7 +521,7 @@ fail:
 }
 
 static enum nurs_return_t
-nflog_read_cb(const struct nurs_fd *nfd, uint16_t when)
+nflog_read_cb(struct nurs_fd *nfd, uint16_t when)
 {
         return nflog_copy_frame(nfd);
 }
@@ -816,11 +816,6 @@ static enum nurs_return_t nflog_organize(struct nurs_producer *producer)
 		}
 	}
 
-	priv->fd = nurs_fd_create(mnl_socket_get_fd(priv->nl),
-				  NURS_FD_F_READ);
-	if (!priv->fd)
-		goto error_close;
-
 	return NURS_RET_OK;
 
 error_close:
@@ -832,8 +827,6 @@ static enum nurs_return_t nflog_disorganize(struct nurs_producer *producer)
 {
 	struct nflog_priv *priv = nurs_producer_context(producer);
 	int ret = 0;
-
-	nurs_fd_destroy(priv->fd);
 
 	if (mnl_socket_close(priv->nl)) {
 		nurs_log(NURS_ERROR, "mnl_socket_close: %s\n", strerror(errno));
@@ -849,7 +842,10 @@ static enum nurs_return_t nflog_start(struct nurs_producer *producer)
 {
 	struct nflog_priv *priv = nurs_producer_context(producer);
 
-	if (nurs_fd_register(priv->fd, nflog_read_cb, producer)) {
+        priv -> fd = nurs_fd_register(
+                mnl_socket_get_fd(priv->nl),  NURS_FD_F_READ,
+                nflog_read_cb, producer);
+	if (!priv->fd) {
 		nurs_log(NURS_ERROR, "nurs_fd_register failed: %s\n",
 			 strerror(errno));
 		return NURS_RET_ERROR;

@@ -400,7 +400,7 @@ static int update_bufsize(const struct nurs_producer *producer)
 }
 
 static enum nurs_return_t
-nfct_event_cb(const struct nurs_fd *nfd, uint16_t when)
+nfct_event_cb(struct nurs_fd *nfd, uint16_t when)
 {
         struct nurs_producer *producer = nurs_fd_get_data(nfd);
 	struct nfct_priv *priv = nurs_producer_context(producer);
@@ -453,7 +453,7 @@ nfct_copy_frame(int fd, void *arg)
 }
 
 static enum nurs_return_t
-nfct_dump_cb(const struct nurs_fd *nfd, uint16_t when)
+nfct_dump_cb(struct nurs_fd *nfd, uint16_t when)
 {
         struct nurs_producer *producer = nurs_fd_get_data(nfd);
 	struct nfct_priv *priv = nurs_producer_context(producer);
@@ -520,9 +520,9 @@ static int clear_counters(const struct nurs_producer *producer)
 	return 0;
 }
 
-static enum nurs_return_t nfct_itimer_cb(struct nurs_timer *t, void *data)
+static enum nurs_return_t nfct_itimer_cb(struct nurs_timer *t)
 {
-	struct nurs_producer *producer = data;
+	struct nurs_producer *producer = nurs_timer_get_data(t);
 	struct nfct_priv *priv = nurs_producer_context(producer);
 	ssize_t ret;
 
@@ -687,11 +687,6 @@ static int open_event_socket(const struct nurs_producer *producer)
 		}
 	}
 
-	priv->event_fd = nurs_fd_create(mnl_socket_get_fd(priv->event_nl),
-					NURS_FD_F_READ);
-	if (!priv->event_fd)
-		goto error_close;
-
 	return NURS_RET_OK;
 
 error_close:
@@ -724,11 +719,6 @@ static int open_dump_socket(const struct nurs_producer *producer)
 			goto error_close;
 		}
 	}
-
-	priv->dump_fd = nurs_fd_create(mnl_socket_get_fd(priv->dump_nl),
-				       NURS_FD_F_READ);
-	if (!priv->dump_fd)
-		goto error_close;
 
 	return NURS_RET_OK;
 
@@ -779,17 +769,8 @@ static enum nurs_return_t nfct_organize(struct nurs_producer *producer)
 	if (open_dump_socket(producer))
 		goto error_close_event;
 
-	priv->timer = nurs_timer_create(&nfct_itimer_cb, producer);
-	if (!priv->timer) {
-		nurs_log(NURS_ERROR, "nurs_timer_create: %s\n",
-			 strerror(errno));
-		goto error_close_dump;
-	}
-
 	return NURS_RET_OK;
 
-error_close_dump:
-	mnl_socket_close(priv->dump_nl);
 error_close_event:
 	mnl_socket_close(priv->event_nl);
 
@@ -801,13 +782,10 @@ static enum nurs_return_t nfct_disorganize(struct nurs_producer *producer)
 	struct nfct_priv *priv = nurs_producer_context(producer);
 
 	if (!config_destroy_only(producer)) {
-		nurs_timer_destroy(priv->timer);
-		nurs_fd_destroy(priv->dump_fd);
 		mnl_socket_close(priv->dump_nl);
 	}
 
 	free(priv->dump_request);
-	nurs_fd_destroy(priv->event_fd);
 	mnl_socket_close(priv->event_nl);
 
 	return NURS_RET_OK;
@@ -818,7 +796,10 @@ static enum nurs_return_t nfct_start(struct nurs_producer *producer)
 	struct nfct_priv *priv = nurs_producer_context(producer);
 	time_t interval = config_pollint(producer);
 
-	if (nurs_fd_register(priv->event_fd, nfct_event_cb, producer)) {
+        priv->event_fd = nurs_fd_register(
+                mnl_socket_get_fd(priv->event_nl), NURS_FD_F_READ,
+                nfct_event_cb, producer);
+	if (!priv->event_fd) {
 		nurs_log(NURS_ERROR, "nurs_fd_register failed: %s\n",
 			 strerror(errno));
 		return NURS_RET_ERROR;
@@ -827,13 +808,19 @@ static enum nurs_return_t nfct_start(struct nurs_producer *producer)
 	if (config_destroy_only(producer))
 		return NURS_RET_OK;
 
-	if (nurs_fd_register(priv->dump_fd, nfct_dump_cb, producer)) {
+        priv->dump_fd = nurs_fd_register(
+                mnl_socket_get_fd(priv->dump_nl), NURS_FD_F_READ,
+                nfct_dump_cb, producer);
+	if (!priv->dump_fd) {
 		nurs_log(NURS_ERROR, "nurs_register_fd: %s\n",
 			 strerror(errno));
 		goto error_unregister_event;
 	}
 
-	if (nurs_itimer_add(priv->timer, interval, interval)) {
+        priv->timer = nurs_itimer_register(
+                interval, interval,
+                nfct_itimer_cb, producer);
+	if (!priv->timer) {
 		nurs_log(NURS_ERROR, "nurs_add_itimer: %s\n",
 			 strerror(errno));
 		goto error_unregister_dump;
@@ -855,7 +842,7 @@ static enum nurs_return_t nfct_stop(struct nurs_producer *producer)
 	int ret = NURS_RET_OK;
 
 	if (!config_destroy_only(producer)) {
-		if (nurs_timer_del(priv->timer)) {
+		if (nurs_timer_unregister(priv->timer)) {
 			nurs_log(NURS_ERROR, "nurs_del_timer: %s\n",
 				 strerror(errno));
 			ret = NURS_RET_ERROR;

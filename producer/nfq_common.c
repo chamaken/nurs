@@ -339,12 +339,8 @@ nfq_common_organize(const struct nurs_producer *producer)
 		goto error_close;
 	}
 
-	priv->fd = nurs_fd_create(mnl_socket_get_fd(priv->nl),
-				  NURS_FD_F_READ);
-	if (!priv->fd)
-		goto error_close;
-
 	return NURS_RET_OK;
+
 error_close:
 	mnl_socket_close(priv->nl);
 	return NURS_RET_ERROR;

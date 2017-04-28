@@ -578,7 +578,20 @@ static int setnlbufsiz(const struct nurs_producer *producer, unsigned int size)
 	return 0;
 }
 
-static int read_cb_nfct(const struct nurs_fd *nfd, uint16_t when)
+static enum nurs_return_t
+overrun_timeout(struct nurs_timer *a)
+{
+	struct nurs_producer *producer = nurs_timer_get_data(a);
+	struct nfct_priv *priv = nurs_producer_context(producer);
+
+	nfct_send(priv->ovh, NFCT_Q_DUMP_FILTER, priv->filter_dump);
+        nurs_timer_unregister(priv->ov_timer);
+        priv->ov_timer = NULL;
+
+	return NURS_RET_OK;
+}
+
+static int read_cb_nfct(struct nurs_fd *nfd, uint16_t when)
 {
         struct nurs_producer *producer = nurs_fd_get_data(nfd);
 	struct nfct_priv *priv = nurs_producer_context(producer);
@@ -612,9 +625,11 @@ static int read_cb_nfct(const struct nurs_fd *nfd, uint16_t when)
 				 * seconds, this parameter is configurable
 				 * via config. Note that we don't re-schedule
 				 * a resync if it's already in progress. */
-				if (!nurs_timer_pending(priv->ov_timer)) {
-					nurs_timer_add(priv->ov_timer,
-						       config_nlresynctimeout(producer));
+				if (!priv->ov_timer &&
+                                    !nurs_timer_pending(priv->ov_timer)) {
+                                        priv->ov_timer = nurs_timer_register(
+                                                config_nlresynctimeout(producer),
+                                                overrun_timeout, producer);
 				}
 			}
 		}
@@ -686,7 +701,7 @@ static int overrun_handler(enum nf_conntrack_msg_type type,
 	return NFCT_CB_CONTINUE;
 }
 
-static int read_cb_ovh(const struct nurs_fd *nfd, uint16_t when)
+static int read_cb_ovh(struct nurs_fd *nfd, uint16_t when)
 {
 	struct nurs_producer *producer = nurs_fd_get_data(nfd);
 	struct nfct_priv *priv = nurs_producer_context(producer);
@@ -698,9 +713,11 @@ static int read_cb_ovh(const struct nurs_fd *nfd, uint16_t when)
 	if (nfct_catch(priv->ovh) == -1) {
 		/* enobufs in the overrun buffer? very rare */
 		if (errno == ENOBUFS) {
-			if (!nurs_timer_pending(priv->ov_timer)) {
-				nurs_timer_add(priv->ov_timer,
-					       config_nlresynctimeout(producer));
+			if (!priv-> ov_timer &&
+                            !nurs_timer_pending(priv->ov_timer)) {
+                                priv->ov_timer = nurs_timer_register(
+                                        config_nlresynctimeout(producer),
+                                        overrun_timeout, producer);
 			}
 		}
 	}
@@ -775,14 +792,13 @@ static void get_ctr_zero(struct nurs_producer *producer)
 }
 
 static enum nurs_return_t
-polling_timer_cb(struct nurs_timer *t, void *data)
+polling_timer_cb(struct nurs_timer *t)
 {
-	struct nurs_producer *producer = data;
+	struct nurs_producer *producer = nurs_timer_get_data(t);
 	struct nfct_priv *priv = nurs_producer_context(producer);
 
 	nfct_query(priv->pgh, NFCT_Q_DUMP_FILTER, priv->filter_dump);
 	hashtable_iterate(priv->ct_active, producer, do_purge);
-	nurs_timer_add(priv->timer, config_pollint(producer));
 
 	return NURS_RET_OK;
 }
@@ -848,16 +864,6 @@ invalid_error:
 	return -1;
 }
 
-static enum nurs_return_t
-overrun_timeout(struct nurs_timer *a, void *data)
-{
-	struct nurs_producer *producer = data;
-	struct nfct_priv *priv = nurs_producer_context(producer);
-
-	nfct_send(priv->ovh, NFCT_Q_DUMP_FILTER, priv->filter_dump);
-	return NURS_RET_OK;
-}
-
 static enum nurs_return_t nfct_organize_events(struct nurs_producer *producer)
 {
 	struct nfct_priv *priv = nurs_producer_context(producer);
@@ -895,12 +901,6 @@ static enum nurs_return_t nfct_organize_events(struct nurs_producer *producer)
 			 "has been enabled.\n");
 	}
 
-	priv->nfct_fd = nurs_fd_create(nfct_fd(priv->cth), NURS_FD_F_READ);
-	if (!priv->nfct_fd) {
-		nurs_log(NURS_FATAL, "failed to create event nurs_fd\n");
-		goto close_cth;
-	}
-
 	if (config_usehash(producer)) {
 		/* we use a hashtable to cache entries in userspace. */
 		priv->ct_active =
@@ -910,7 +910,7 @@ static enum nurs_return_t nfct_organize_events(struct nurs_producer *producer)
 					 compare);
 		if (!priv->ct_active) {
 			nurs_log(NURS_FATAL, "error allocating hash\n");
-			goto destroy_cth;
+			goto close_cth;
 		}
 		priv->ovh = nfct_open(NFNL_SUBSYS_CTNETLINK, 0);
 		if (!priv->ovh) {
@@ -918,38 +918,20 @@ static enum nurs_return_t nfct_organize_events(struct nurs_producer *producer)
 			goto destroy_hashtable;
 		}
 
-		priv->nfct_ov = nurs_fd_create(nfct_fd(priv->ovh), NURS_FD_F_READ);
-		if (!priv->nfct_ov) {
-			nurs_log(NURS_FATAL, "failed to create ov nurs_fd\n");
-			goto close_ovh;
-		}
-
-		priv->ov_timer = nurs_timer_create(overrun_timeout, producer);
-		if (!priv->ov_timer) {
-			nurs_log(NURS_FATAL, "failed to create ov timer\n");
-			goto destroy_ovh;
-		}
-
 		/* we use this to purge old entries during overruns.*/
 		priv->pgh = nfct_open(NFNL_SUBSYS_CTNETLINK, 0);
 		if (!priv->pgh) {
 			nurs_log(NURS_FATAL, "error opening ctnetlink\n");
-			goto destroy_ovtimer;
+			goto close_ovh;
 		}
 	}
 
 	return NURS_RET_OK;
 
-destroy_ovtimer:
-	nurs_timer_destroy(priv->ov_timer);
-destroy_ovh:
-	nurs_fd_destroy(priv->nfct_ov);
 close_ovh:
 	nfct_close(priv->ovh);
 destroy_hashtable:
 	hashtable_destroy(priv->ct_active);
-destroy_cth:
-	nurs_fd_destroy(priv->nfct_fd);
 close_cth:
 	nfct_close(priv->cth);
 
@@ -989,16 +971,8 @@ static enum nurs_return_t nfct_organize_polling(struct nurs_producer *producer)
 		goto close_pgh;
 	}
 
-	priv->timer = nurs_timer_create(polling_timer_cb, producer);
-	if (!priv->timer) {
-		nurs_log(NURS_FATAL, "failed to create polling timer\n");
-		goto destroy_hashtable;
-	}
-
 	return NURS_RET_OK;
 
-destroy_hashtable:
-	hashtable_destroy(priv->ct_active);
 close_pgh:
 	nfct_close(priv->pgh);
 	return NURS_RET_ERROR;
@@ -1040,18 +1014,13 @@ nfct_disorganize_events(struct nurs_producer *producer)
 			nurs_log(NURS_ERROR, "failed to close pgh\n");
 			ret = -1;
 		}
-		if (nurs_timer_destroy(priv->ov_timer)) {
-			nurs_log(NURS_ERROR, "failed to destroy ov timer\n");
-			ret = -1;
-		}
-		nurs_fd_destroy(priv->nfct_ov);
 		if (nfct_close(priv->ovh)) {
 			nurs_log(NURS_ERROR, "failed to close ovh\n");
 			ret = -1;
 		}
 		hashtable_destroy(priv->ct_active);
 	}
-	nurs_fd_destroy(priv->nfct_fd);
+
 	if (nfct_close(priv->cth)) {
 		nurs_log(NURS_ERROR, "failed to close cth\n");
 		ret = -1;
@@ -1068,8 +1037,9 @@ nfct_disorganize_polling(struct nurs_producer *producer)
 	struct nfct_priv *priv = nurs_producer_context(producer);
 	int ret = 0;
 
-	if (nurs_timer_destroy(priv->timer)) {
-		nurs_log(NURS_ERROR, "failed to destroy timer\n");
+        if (nurs_timer_unregister(priv->timer)) {
+		nurs_log(NURS_ERROR, "failed to unregister timer: %s\n",
+                         strerror(errno));
 		ret = -1;
 	}
 	hashtable_destroy(priv->ct_active);
@@ -1114,7 +1084,9 @@ static enum nurs_return_t nfct_start_events(struct nurs_producer *producer)
 		return NURS_RET_ERROR;
 	}
 
-	if (nurs_fd_register(priv->nfct_fd, &read_cb_nfct, producer)) {
+        priv->nfct_fd = nurs_fd_register(nfct_fd(priv->cth), NURS_FD_F_READ,
+                                         read_cb_nfct, producer);
+	if (!priv->nfct_fd) {
 		nurs_log(NURS_FATAL, "failed to register nurs fd\n");
 		goto unregister_cth;
 	}
@@ -1145,7 +1117,10 @@ static enum nurs_return_t nfct_start_events(struct nurs_producer *producer)
 			goto unregister_nfd;
 		}
 
-		if (nurs_fd_register(priv->nfct_ov, read_cb_ovh, producer)) {
+                priv->nfct_ov = nurs_fd_register(
+                        nfct_fd(priv->ovh), NURS_FD_F_READ,
+                        read_cb_ovh, producer);
+                if (!priv->nfct_ov) {
 			nurs_log(NURS_FATAL, "failed to register overrun"
 				 " nurs fd\n");
 			goto unregister_ovh;
@@ -1175,10 +1150,16 @@ static enum nurs_return_t nfct_start_polling(struct nurs_producer *producer)
 		return NURS_RET_ERROR;
 	}
 
-	if (config_pollint(producer) &&
-	    nurs_timer_add(priv->timer, config_pollint(producer))) {
-		nurs_log(NURS_FATAL, "failed to add timer\n");
-		goto unregister_pgh;
+	if (config_pollint(producer)) {
+                priv->timer = nurs_itimer_register(
+                        config_pollint(producer),
+                        config_pollint(producer),
+                        polling_timer_cb, producer);
+                if (!priv->timer) {
+                        nurs_log(NURS_FATAL, "failed to add timer: %s\n",
+                                 strerror(errno));
+                        goto unregister_pgh;
+                }
 	}
 
 	nurs_log(NURS_NOTICE, "NFCT working in polling mode\n");
