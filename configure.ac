@@ -227,6 +227,7 @@ AC_CONFIG_FILES([Makefile
 		 examples/nfq_accept/Makefile
 		 examples/mtnfq_accept/Makefile
 		 examples/mtnfq_repeat/Makefile
+		 examples/echo/Makefile
 		 ])
 AC_OUTPUT
 

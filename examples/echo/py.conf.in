@@ -1,0 +1,29 @@
+# example configuration for nursd. run at this dir
+# NURS_PYSON=listen_py.json ../../src/nursd py.conf
+
+[global]
+
+# plugin:
+# 1. load the plugins _first_ from the global section
+# 2. options for each plugin in seperate section below
+plugin  = "@builddir@/binding/python/.libs/nurs_PYTHON.so"
+plugin	= "@cwd@/.libs/nurs_consumer_LOG.so"
+
+# stack
+# each element represented id:name, separated by ,
+stack	= "listen:PY_LISTEN, log:LOG"
+
+# number of workers
+workers	= 8
+
+# number of iosets per stack
+iosets	= 8
+
+# each pluginstance settings
+
+[listen]
+path = "@cwd@"
+module = "listen"
+
+host = "127.0.0.1"
+port = 55555

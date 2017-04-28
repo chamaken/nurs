@@ -1,0 +1,26 @@
+{
+    "producer": [
+	{
+	    "version": "@VERSION@",
+	    "name": "PY_LISTEN",
+	    "config": [
+		{ "name": "path",
+		  "type": "NURS_CONFIG_T_STRING"},
+		{ "name": "module",
+		  "type": "NURS_CONFIG_T_STRING"},
+		{ "name": "host",
+		  "type": "NURS_CONFIG_T_STRING",
+		  "flags": ["NURS_CONFIG_F_MANDATORY"] },
+		{ "name": "port",
+		  "type": "NURS_CONFIG_T_INTEGER",
+		  "flags": ["NURS_CONFIG_F_MANDATORY"] }
+	    ],
+	    "output" : [
+		{ "name": "message",
+		  "type": "NURS_KEY_T_EMBED",
+		  "flags": ["NURS_OKEY_F_ALWAYS"],
+                  "len": 4096 }
+	    ]
+	}
+    ]
+}
