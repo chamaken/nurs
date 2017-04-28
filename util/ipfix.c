@@ -18,6 +18,7 @@
 #include <sys/socket.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <sys/un.h>
 #include <unistd.h>
 
 #include <libnetfilter_conntrack/libnetfilter_conntrack.h>
@@ -33,7 +34,12 @@
  * in case of socket. file will be stdout if proto is file and
  * no filename specified.
  */
-int open_connect_descriptor(const char *dest)
+
+typedef int (*handle_sockcb_t)
+	(int sockfd, const struct sockaddr *addr, socklen_t addrlen);
+
+static int open_descriptor(const char *dest, int flags, mode_t mode,
+                    handle_sockcb_t cb)
 {
 	char *proto = NULL, *host, *port;
 	struct addrinfo hint, *result = NULL, *rp = NULL;
@@ -61,10 +67,19 @@ int open_connect_descriptor(const char *dest)
 
 	/* file */
 	if (!strcasecmp(proto, "file")) {
-		if (strlen(host) == 0)
-			fd = STDOUT_FILENO;
-		else
-			fd = open(host, O_CREAT|O_WRONLY|O_APPEND, 0600);
+		if (strlen(host) == 0) {
+                        if (flags & O_WRONLY) {
+                                fd = STDOUT_FILENO;
+                        } else if (flags & O_RDONLY) {
+                                fd = STDIN_FILENO;
+                        } else {
+                                nurs_log(NURS_ERROR, "invalid flag for"
+                                                     " std(in|out)\n");
+                                return -1;
+                        }
+                } else {
+			fd = open(host, flags, mode);
+                }
 		free(proto);
 		return fd;
 	}
@@ -85,6 +100,24 @@ int open_connect_descriptor(const char *dest)
 	} else if (!strcasecmp(proto, "tcp")) {
 		hint.ai_socktype = SOCK_STREAM;
 		hint.ai_protocol = IPPROTO_TCP;
+        } else if (!strcasecmp(proto, "unix")) {
+                struct sockaddr_un unaddr = { AF_UNIX, {0} };
+                memcpy(unaddr.sun_path, host, 108);
+
+                /* XXX: fixed socket type */
+                fd = socket(AF_UNIX, SOCK_STREAM, 0);
+                if (fd == -1) {
+                        nurs_log(NURS_ERROR, "socket error: %s\n",
+                                 strerror(errno));
+                        goto error;
+                }
+                if (cb(fd, (const struct sockaddr *)&unaddr,
+                       sizeof(struct sockaddr_un)) >= 0) {
+                        rp = &hint; /* sentinel for error */
+                } else {
+                        close(fd);
+                }
+                goto error;
 	} else {
 		nurs_log(NURS_ERROR, "unknown protocol `%s'\n",
 			  proto);
@@ -102,8 +135,6 @@ int open_connect_descriptor(const char *dest)
 
 	/* rp == NULL indicates could not get valid sockfd */
 	for (rp = result; rp != NULL; rp = rp->ai_next) {
-		int on = 1;
-
 		fd = socket(rp->ai_family, rp->ai_socktype,
 			    rp->ai_protocol);
 		if (fd == -1) {
@@ -121,18 +152,10 @@ int open_connect_descriptor(const char *dest)
 				goto error;
 			}
 		}
-		ret = setsockopt(fd, SOL_SOCKET, SO_REUSEADDR,
-				 (void *)&on, sizeof(on));
-		if (ret < 0) {
-			nurs_log(NURS_ERROR, "error on set SO_REUSEADDR: %s",
-				  strerror(errno));
-			close(fd);
-			rp = NULL;
+                ret = cb(fd, rp->ai_addr, rp->ai_addrlen);
+                if (ret >= 0)
 			break;
-		}
 
-		if (connect(fd, rp->ai_addr, rp->ai_addrlen) == 0)
-			break;
 		close(fd);
 	}
 
@@ -143,11 +166,88 @@ error:
 		freeaddrinfo(result);
 
 	if (rp == NULL) {
-		nurs_log(NURS_ERROR, "could not connect\n");
+		nurs_log(NURS_ERROR, "failed to open descriptor\n");
 		fd = -1;
 	}
 
 	return fd;
+}
+
+static int connect_cb(int fd, const struct sockaddr *addr, socklen_t addrlen)
+{
+        int on = 1;
+
+        if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR,
+                       (void *)&on, sizeof(on)) == -1) {
+                nurs_log(NURS_ERROR, "failed to set SO_REUSEADDR: %s\n",
+                         strerror(errno));
+                return -1;
+        }
+
+        if (connect(fd, addr, addrlen) == -1) {
+                nurs_log(NURS_ERROR, "failed to connect: %s\n",
+                         strerror(errno));
+                return -1;
+        }
+
+        return fd;
+}
+
+int open_connect_descriptor(const char *dest)
+{
+        return open_descriptor(dest,
+                               O_CREAT|O_WRONLY|O_APPEND, 0600,
+                               connect_cb);
+}
+
+static int listen_cb(int fd, const struct sockaddr *addr, socklen_t addrlen)
+{
+        int on = 1;
+
+        if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on))) {
+                nurs_log(NURS_ERROR, "failed to set SO_REUSEADDR: %s\n",
+                         strerror(errno));
+                return -1;
+        }
+
+        if (bind(fd, addr, addrlen) == -1) {
+                nurs_log(NURS_ERROR, "failed to bind: %s\n",
+                         strerror(errno));
+                return -1;
+        }
+
+        if (listen(fd, 0) == -1) {
+                nurs_log(NURS_ERROR, "failed to listen: %s\n",
+                         strerror(errno));
+                return -1;
+        }
+
+        return fd;
+}
+
+int open_listen_socket(const char *dest)
+{
+        struct stat sb;
+        int fd = open_descriptor(dest, O_RDONLY, 0, listen_cb);
+
+        if (fd < 0)
+                return fd;
+        if (fstat(fd, &sb) == -1) {
+                nurs_log(NURS_ERROR, "failed to call fstat: %s\n",
+                         strerror(errno));
+                goto error;
+        }
+
+        if (!S_ISSOCK(sb.st_mode)) {
+                nurs_log(NURS_ERROR, "not a socket");
+                goto error;
+        }
+
+        return fd;
+
+error:
+        close(fd);
+        return -1;
 }
 
 /*

@@ -33,6 +33,7 @@
 #endif
 
 int open_connect_descriptor(const char *dest);
+int open_listen_socket(const char *dest);
 int nurs_key_putn(const struct nurs_input *input, uint16_t idx,
 		  void *buf, size_t buflen);
 uint8_t event_ct_to_firewall(uint32_t ct_event);
