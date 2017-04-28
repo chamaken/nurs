@@ -23,8 +23,8 @@ type tickPriv struct {
 
 var privs = make(map[*nurs.Producer] *tickPriv)
 
-func timerCb(timer *nurs.Timer, data interface{}) nurs.ReturnType {
-	producer := data.(*nurs.Producer)
+func timerCb(timer *nurs.Timer) nurs.ReturnType {
+	producer := timer.Data().(*nurs.Producer)
 	priv := privs[producer]
 	output, _ := producer.GetOutput()
 
@@ -38,14 +38,8 @@ func timerCb(timer *nurs.Timer, data interface{}) nurs.ReturnType {
 
 //export tickOrganize
 func tickOrganize(cproducer *C.struct_nurs_producer) C.enum_nurs_return_t {
-	var err error
 	producer := (*nurs.Producer)(cproducer)
 	priv := &tickPriv{}
-
-	if priv.timer, err = nurs.NewTimer(timerCb, producer); err != nil {
-		nurs.Log(nurs.ERROR, "failed to create timer\n")
-		return C.enum_nurs_return_t(nurs.RET_ERROR)
-	}
 
 	config := producer.Config()
 	priv.myname, _ = config.String(0)
@@ -57,23 +51,17 @@ func tickOrganize(cproducer *C.struct_nurs_producer) C.enum_nurs_return_t {
 //export tickDisorganize
 func tickDisorganize(cproducer *C.struct_nurs_producer) C.enum_nurs_return_t {
 	producer := (*nurs.Producer)(cproducer)
-	priv := privs[producer]
-
-	if err := priv.timer.Destroy(); err != nil {
-		nurs.Log(nurs.ERROR, "failed to destroy timer\n")
-		return C.enum_nurs_return_t(nurs.RET_ERROR)
-	}
-
 	delete(privs, producer)
 	return C.enum_nurs_return_t(nurs.RET_OK)
 }
 
 //export tickStart
 func tickStart(cproducer *C.struct_nurs_producer) C.enum_nurs_return_t {
+	var err error
+
 	producer := (*nurs.Producer)(cproducer)
 	priv := privs[producer]
-
-	if err := priv.timer.AddInterval(1, 1); err != nil {
+	if priv.timer, err = nurs.RegisterITimer(1, 1, timerCb, producer); err != nil {
 		nurs.Log(nurs.ERROR, "failed to add itimer\n")
 		return C.enum_nurs_return_t(nurs.RET_ERROR)
 	}
@@ -86,7 +74,7 @@ func tickStop(cproducer *C.struct_nurs_producer) C.enum_nurs_return_t {
 	producer := (*nurs.Producer)(cproducer)
 	priv := privs[producer]
 
-	if err := priv.timer.Del(); err != nil {
+	if err := priv.timer.Unregister(); err != nil {
 		nurs.Log(nurs.ERROR, "failed to del timer\n")
 		return C.enum_nurs_return_t(nurs.RET_ERROR)
 	}

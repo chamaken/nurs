@@ -142,8 +142,8 @@ func dataCb(nlh *mnl.Nlmsg, data interface{}) (int, syscall.Errno) {
 	return mnl.MNL_CB_OK, 0
 }
 
-func fdCb(fd int, when nurs.FdEvent, data interface{}) nurs.ReturnType {
-	producer := data.(*nurs.Producer)
+func fdCb(fd *nurs.Fd, when nurs.FdEvent) nurs.ReturnType {
+	producer := fd.Data().(*nurs.Producer)
 	priv := privs[producer]
 	buf := make([]byte, mnl.MNL_SOCKET_BUFFER_SIZE)
 
@@ -179,31 +179,13 @@ func organize(cproducer *C.struct_nurs_producer) C.enum_nurs_return_t {
 			return C.enum_nurs_return_t(nurs.RET_ERROR)
 		}
 
-	if priv.fd, err = nurs.NewFd(priv.nl.Fd(), nurs.FD_F_READ); err != nil {
-		nurs.Log(nurs.ERROR, "failed to create nurs_fd: %s\n", err)
-		return C.enum_nurs_return_t(nurs.RET_ERROR)
-	}
-
 	privs[producer] = priv
 	return C.enum_nurs_return_t(nurs.RET_OK)
 }
 
 //export disorganize
 func disorganize(cproducer *C.struct_nurs_producer) C.enum_nurs_return_t {
-	var err error
 	producer := (*nurs.Producer)(cproducer)
-	priv := privs[producer]
-	failed := false
-
-	priv.fd.Destroy()
-	if err = priv.nl.Close(); err != nil {
-		failed = true
-		nurs.Log(nurs.ERROR, "failed to close mnl_socket: %s\n", err)
-	}
-
-	if failed {
-		return C.enum_nurs_return_t(nurs.RET_ERROR)
-	}
 
 	delete(privs, producer)
 	return C.enum_nurs_return_t(nurs.RET_OK)
@@ -211,10 +193,11 @@ func disorganize(cproducer *C.struct_nurs_producer) C.enum_nurs_return_t {
 
 //export start
 func start(cproducer *C.struct_nurs_producer) C.enum_nurs_return_t {
+	var err error
 	producer := (*nurs.Producer)(cproducer)
 	priv := privs[producer]
 
-	if err := priv.fd.Register(fdCb, producer); err != nil {
+	if priv.fd, err = nurs.RegisterFd(priv.nl.Fd(), nurs.FD_F_READ, fdCb, producer); err != nil {
 		nurs.Log(nurs.ERROR, "failed to register fd: %s\n", err)
 		return C.enum_nurs_return_t(nurs.RET_ERROR)
 	}

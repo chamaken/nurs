@@ -58,9 +58,9 @@ struct tick_priv {
 };
 
 static enum nurs_return_t
-tick_timer_cb(struct nurs_timer *timer, void *data)
+tick_timer_cb(struct nurs_timer *timer)
 {
-	struct nurs_producer *producer = data;
+        struct nurs_producer *producer = nurs_timer_get_data(timer);
 	struct tick_priv *priv = nurs_producer_context(producer);
 	struct nurs_output *output = nurs_get_output(producer);
 
@@ -75,25 +75,7 @@ static enum nurs_return_t tick_organize(struct nurs_producer *producer)
 {
 	struct tick_priv *priv = nurs_producer_context(producer);
 
-	priv->timer = nurs_timer_create(tick_timer_cb, producer);
-	if (!priv->timer) {
-		nurs_log(NURS_ERROR, "failed to create timer\n");
-		return NURS_RET_ERROR;
-	}
 	priv->myname = nurs_config_string(nurs_producer_config(producer), 0);
-
-	return NURS_RET_OK;
-}
-
-static enum nurs_return_t
-tick_disorganize(struct nurs_producer *producer)
-{
-	struct tick_priv *priv = nurs_producer_context(producer);
-
-	if (nurs_timer_destroy(priv->timer)) {
-		nurs_log(NURS_ERROR, "failed to destroy timer\n");
-		return NURS_RET_ERROR;
-	}
 
 	return NURS_RET_OK;
 }
@@ -102,8 +84,9 @@ static enum nurs_return_t tick_start(struct nurs_producer *producer)
 {
 	struct tick_priv *priv = nurs_producer_context(producer);
 
-	if (nurs_itimer_add(priv->timer, 1, 1)) {
-		nurs_log(NURS_ERROR, "failed to add itimer\n");
+        priv->timer = nurs_itimer_register(1, 1, tick_timer_cb, producer);
+	if (!priv->timer) {
+		nurs_log(NURS_ERROR, "failed to register itimer\n");
 		return NURS_RET_ERROR;
 	}
 
@@ -114,7 +97,7 @@ static enum nurs_return_t tick_stop(struct nurs_producer *producer)
 {
 	struct tick_priv *priv = nurs_producer_context(producer);
 
-	if (nurs_timer_del(priv->timer)) {
+	if (nurs_timer_unregister(priv->timer)) {
 		nurs_log(NURS_ERROR, "failed to del timer\n");
 		return NURS_RET_ERROR;
 	}
@@ -130,7 +113,7 @@ static struct nurs_producer_def tick_producer = {
 	.config_def	= &tick_config,
 	.output_def	= &tick_output,
 	.organize	= tick_organize,
-	.disorganize	= tick_disorganize,
+	.disorganize	= NULL,
 	.start		= tick_start,
 	.stop		= tick_stop,
 };

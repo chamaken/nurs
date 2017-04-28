@@ -100,10 +100,10 @@ def data_cb(nlh, producer):
     return mnl.MNL_CB_OK
 
 
-def nursfd_cb(fd, when, producer):
+def nursfd_cb(nfd, when):
     buf = bytearray(mnl.MNL_SOCKET_BUFFER_SIZE)
-    ret = fd.recv_into(buf)
-    ret = mnl.cb_run(buf[:ret], 0, 0, data_cb, producer)
+    ret = nfd.fd.recv_into(buf)
+    ret = mnl.cb_run(buf[:ret], 0, 0, data_cb, nfd.data)
     if ret == mnl.MNL_CB_OK:
         return nurs.NURS_RET_OK
     return nurs.NURS_RET_ERROR
@@ -148,7 +148,6 @@ def disorganize(producer):
 
         # nurs.Fd has no destroy() method
         # destroy in dealloc()
-        nlfd = None
         nlsk.close()
         nlfd = None
     except Exception as e:

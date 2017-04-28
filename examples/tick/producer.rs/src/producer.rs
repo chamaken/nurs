@@ -1,5 +1,3 @@
-use std::any::Any;
-
 extern crate libc;
 use libc::c_int;
 
@@ -14,8 +12,8 @@ struct TickPriv <'a> {
     myname: &'a str,
 }
 
-fn timercb(_: &mut nurs::Timer, data: &mut Any) -> nurs::ReturnType {
-    let mut producer = data.downcast_mut::<nurs::Producer>().unwrap();
+fn itimercb(timer: &mut nurs::Timer) -> nurs::ReturnType {
+    let mut producer = timer.data::<nurs::Producer>();
     let mut ctx = producer.context::<TickPriv>().unwrap();
     let mut output = producer.get_output().unwrap();
     if let Err(errno) = output.set_u64(0, ctx.counter) {
@@ -40,7 +38,13 @@ pub extern fn tick_organize(producer: &mut nurs::Producer) -> c_int {
     let config = producer.config().unwrap();
     ctx.myname = config.string(0).unwrap();
     ctx.counter = 0;
-    match nurs::Timer::create(timercb, producer) {
+    nurs_return!(OK)
+}
+
+#[no_mangle]
+pub extern fn tick_start(producer: &mut nurs::Producer) -> c_int {
+    let mut ctx = producer.context::<TickPriv>().unwrap();
+    match nurs::Timer::iregister(1, 1, itimercb, producer) {
         Ok(timer)  => {
             ctx.timer = timer;
             nurs_return!(OK)
@@ -53,31 +57,9 @@ pub extern fn tick_organize(producer: &mut nurs::Producer) -> c_int {
 }
 
 #[no_mangle]
-pub extern fn tick_disorganize(producer: &mut nurs::Producer) -> c_int {
-    let mut ctx = producer.context::<TickPriv>().unwrap();
-    if let Err(errno) = ctx.timer.destroy() {
-        nurs_log!(ERROR, "failed to destroy timer: {}", errno);
-        nurs_return!(ERROR)
-    } else {
-        nurs_return!(OK)
-    }
-}
-
-#[no_mangle]
-pub extern fn tick_start(producer: &mut nurs::Producer) -> c_int {
-    let mut ctx = producer.context::<TickPriv>().unwrap();
-    if let Err(errno) = ctx.timer.iadd(1, 1) {
-        nurs_log!(ERROR, "failed to add itimer: {}", errno);
-        nurs_return!(ERROR)
-    } else {
-        nurs_return!(OK)
-    }
-}
-
-#[no_mangle]
 pub extern fn tick_stop(producer: &mut nurs::Producer) -> c_int {
     let mut ctx = producer.context::<TickPriv>().unwrap();
-    if let Err(errno) = ctx.timer.del() {
+    if let Err(errno) = ctx.timer.unregister::<nurs::Producer>() {
         nurs_log!(ERROR, "failed to del timer: {}", errno);
         nurs_return!(ERROR)
     } else {
@@ -104,7 +86,6 @@ static JSONRC: &'static str = r#"
 	  "len":  32 }
     ],
     "organize":		"tick_organize",
-    "disorganize":	"tick_disorganize",
     "start":		"tick_start",
     "stop":		"tick_stop"
 }"#;
