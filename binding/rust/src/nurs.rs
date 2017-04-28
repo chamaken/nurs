@@ -3,19 +3,65 @@
 
 #![allow(dead_code)]
 
-use std::any::Any;
 use std::ffi::{CStr, CString};
 use std::io::Error;
+use std::io;
 use std::net::{Ipv4Addr, Ipv6Addr};
 use std::os::raw::{c_char, c_void};
-use std::os::unix::io::AsRawFd;
+use std::os::unix::io::{ RawFd, AsRawFd, FromRawFd };
 use std::ptr;
-use std::io;
 
 extern crate libc;
 use libc::{c_int, uint8_t, uint16_t, uint32_t, uint64_t, in_addr_t, in6_addr, time_t};
 
 // enum / #![feature(associated_consts)]
+
+
+extern {
+    fn __nurs_log(level: c_int, file: *const c_char, line: c_int, message: *const c_char, ...);
+}
+
+pub const NURS_DEBUG:  c_int = 0;
+pub const NURS_INFO:   c_int = 1;
+pub const NURS_NOTICE: c_int = 2;
+pub const NURS_ERROR:  c_int = 3;
+pub const NURS_FATAL:  c_int = 4;
+
+pub enum LogLevel {
+    DEBUG,
+    INFO,
+    NOTICE,
+    ERROR,
+    FATAL,
+}
+
+pub fn loglevel_cint(lvl: LogLevel) -> c_int {
+    match lvl {
+        LogLevel::DEBUG  => NURS_DEBUG,
+        LogLevel::INFO   => NURS_INFO,
+        LogLevel::NOTICE => NURS_NOTICE,
+        LogLevel::ERROR  => NURS_ERROR,
+        LogLevel::FATAL  => NURS_FATAL,
+    }
+}
+
+pub fn __log(level: c_int, file: &str, lineno: c_int, message: &str) {
+    let fname = CString::new(file).unwrap(); // .as_ptr() here won't work?
+    let fmt = CString::new("%s\n").unwrap();
+    let msg = CString::new(message).unwrap();
+    unsafe {
+        __nurs_log(level, fname.as_ptr(), lineno, fmt.as_ptr(), msg.as_ptr());
+    }
+}
+
+#[macro_export]
+macro_rules! nurs_log {
+    ($lvl:ident, $($arg:tt)*) =>
+        ($crate::__log($crate::loglevel_cint($crate::LogLevel::$lvl),
+                       file!(),
+                       line!() as c_int,
+                       &(format!($($arg)*))))
+}
 
 /**
  * config
@@ -169,6 +215,7 @@ pub const RET_STOP: c_int = -2;
 pub const RET_OK: c_int = 0;
 
 // #[repr(C)]
+#[derive(Debug)]
 pub enum ReturnType {
     ERROR,
     STOP,
@@ -246,13 +293,12 @@ pub const FD_F_WRITE: u16 = 2;
 pub const FD_F_EXCEPT: u16 = 4;
 
 pub enum Fd{}
-type CFdCb = extern "C" fn(c_int, uint16_t, *mut c_void) -> c_int;
+type CFdCb = extern "C" fn(*mut Fd, uint16_t) -> c_int;
 
 extern {
-    fn nurs_fd_create(fd: c_int, when: uint16_t) -> *mut Fd;
-    fn nurs_fd_destroy(nfd: *mut Fd);
-    // fn nurs_fd_register(nfd: *mut Fd, cb: *const CFdCb, data: *mut c_void) -> c_int;
-    fn nurs_fd_register(nfd: *mut Fd, cb: CFdCb, data: *mut c_void) -> c_int;
+    fn nurs_fd_get_fd(nfd: *const Fd) -> c_int;
+    fn nurs_fd_get_data(nfd: *const Fd) -> *mut c_void;
+    fn nurs_fd_register(fd: c_int, when: uint16_t, cb: CFdCb, data: *mut c_void) -> *mut Fd;
     fn nurs_fd_unregister(nfd: *mut Fd) -> c_int;
 }
 
@@ -260,16 +306,14 @@ extern {
  * timer
  */
 pub enum Timer{}
-type CTimerCb = extern "C" fn(*mut Timer, *mut c_void) -> c_int;
+type CTimerCb = extern "C" fn(*mut Timer) -> c_int;
 
 extern {
-    // fn nurs_timer_create(cb: *const CTimerCb, data: *mut c_void) -> *mut Timer;
-    fn nurs_timer_create(cb: CTimerCb, data: *mut c_void) -> *mut Timer;
-    fn nurs_timer_destroy(timer: *mut Timer) -> c_int;
-    fn nurs_timer_add(timer: *mut Timer, sc: time_t) -> c_int;
-    fn nurs_itimer_add(timer: *mut Timer, ini: time_t, per: time_t) -> c_int;
-    fn nurs_timer_del(timer: *mut Timer) -> c_int;
-    fn nurs_timer_pending(timer: *mut Timer) -> c_int;
+    fn nurs_timer_get_data(timer: *const Timer) -> *mut c_void;
+    fn nurs_timer_register(sc: time_t, cb: CTimerCb, data: *mut c_void) -> *mut Timer;
+    fn nurs_itimer_register(ini: time_t, per: time_t, cb: CTimerCb, data: *mut c_void) -> *mut Timer;
+    fn nurs_timer_unregister(timer: *mut Timer) -> c_int;
+    fn nurs_timer_pending(timer: *const Timer) -> c_int;
 }
 
 /*
@@ -419,13 +463,13 @@ impl Input {
     }
 
     // http://stackoverflow.com/questions/24191249/working-with-c-void-in-an-ffi
-    pub fn get_pointer(&self, idx: u16) -> io::Result<Option<*const c_void>> {
+    pub fn get_pointer<T>(&self, idx: u16) -> io::Result<Option<&T>> {
         match cvt_may_error!(nurs_input_pointer(self, idx), ptr::null()) {
             Ok(ret) => {
                 if ret.is_null() {
                     Ok(None)
                 } else {
-                    Ok(Some(ret))
+                    Ok(Some(unsafe {&*(ret as *const T)}))
                 }
             },
             Err(errno) => Err(errno),
@@ -463,7 +507,7 @@ impl Input {
     }
 }
 
-impl Output {
+impl <'a> Output {
     pub fn len(&self) -> u16 {
         unsafe { nurs_output_len(self) }
     }
@@ -535,13 +579,13 @@ impl Output {
         Ok(())
     }
 
-    pub fn get_pointer(&self, idx: u16) -> io::Result<Option<*mut c_void>> {
+    pub fn get_pointer<T>(&self, idx: u16) -> io::Result<Option<&'a mut T>> {
         match cvt_may_error!(nurs_output_pointer(self, idx), ptr::null_mut()) {
             Ok(ret) => {
                 if ret.is_null() {
                     Ok(None)
                 } else {
-                    Ok(Some(ret))
+                    Ok(Some(unsafe {&mut *(ret as *mut T)}))
                 }
             },
             Err(errno) => Err(errno),
@@ -694,7 +738,7 @@ impl <'a> Producer {
         }
     }
 
-    pub fn get_output(&mut self) -> io::Result<&mut Output> {
+    pub fn get_output(&mut self) -> io::Result<&'a mut Output> {
         let ret = unsafe { nurs_get_output(self) };
         if ! ret.is_null() {
             unsafe { Ok(&mut(*ret)) }
@@ -704,22 +748,17 @@ impl <'a> Producer {
     }
 }
 
-/*
-struct FdCbData <'a> {
-    cb: &'a FdCb,
-    data: &'a Any,
-}
-static FDS: HashMap <*mut Fd, FdCbData <'static>>= HashMap::new();
- */
-pub type FdCb = fn(c_int, u16, &mut Any) -> ReturnType;
-struct FdCbData <'a> {
+pub type FdCb = fn(&mut Fd, u16) -> ReturnType;
+struct FdData <T> {
     cb: FdCb,
-    data: &'a mut Any,
+    data: T,
 }
 
-extern fn fdcb(fd: c_int, what: uint16_t, data: *mut c_void) -> c_int {
-    let mut cbdata = unsafe { Box::from_raw(data as *mut Box<FdCbData>) };
-    let ret = (cbdata.cb)(fd, what, cbdata.data);
+extern fn fdcb<T>(nfd: *mut Fd, what: uint16_t) -> c_int {
+    let cbdata = unsafe {
+        Box::from_raw(nurs_fd_get_data(nfd) as *mut FdData<T>)
+    };
+    let ret = (cbdata.cb)(unsafe { &mut *nfd }, what);
     Box::into_raw(cbdata);
     match ret {
         ReturnType::OK   => RET_OK,
@@ -728,44 +767,52 @@ extern fn fdcb(fd: c_int, what: uint16_t, data: *mut c_void) -> c_int {
     }
 }
 
-impl Fd {
-    pub fn create(fd: &AsRawFd, when: u16) -> io::Result<&mut Fd> {
+impl <'a> Fd {
+    pub fn register<T>(fd: RawFd, when: u16, cb: FdCb, data: T) -> io::Result<&'a mut Fd> {
         let errval: *const Fd = ptr::null();
-        match cvt_may_error!(nurs_fd_create(fd.as_raw_fd(), when), errval as *mut Fd) {
-            Ok(ret) => unsafe { Ok(&mut(*ret)) },
-            Err(errno) => Err(errno),
+        let cbdata = Box::new(FdData { cb: cb, data: data });
+        let nfd = try!(cvt_may_error!(
+            nurs_fd_register(fd, when, fdcb::<T>,
+                             Box::into_raw(cbdata) as *mut c_void),
+            errval as *mut Fd));
+        Ok(unsafe { &mut *nfd })
+    }
+
+    pub fn data<T>(&self) -> &'a mut T {
+        unsafe {
+            let rawdata = Box::from_raw(nurs_fd_get_data(self) as *mut FdData<T>);
+            &mut (*Box::into_raw(rawdata)).data
         }
     }
 
-    pub fn destroy(&mut self) {
-        unsafe { nurs_fd_destroy(self as *mut Fd) }
-    }
-
-    pub fn register(&mut self, cb: FdCb, data: &mut Any) -> io::Result<()> {
-        let mut cbdata = Box::new(FdCbData {cb: cb, data: data});
-        let pdata: *mut c_void = &mut cbdata as *mut _ as *mut c_void;
-        try!(cvt_may_error!(nurs_fd_register(self, fdcb, pdata), -1));
-        Box::into_raw(cbdata); // XXX: leaks
-        Ok(())
-    }
-
-    pub fn unregister(&mut self) -> io::Result<()> {
-        // XXX: cbdata leaks.
+    pub fn unregister<T: FromRawFd, U>(&mut self) -> io::Result<()> {
         try!(cvt_may_error!(nurs_fd_unregister(self), -1));
+        unsafe {
+            Box::from_raw(nurs_fd_get_data(self) as *mut FdData<U>);
+            T::from_raw_fd(nurs_fd_get_fd(self));
+            // fd.close()
+        };
         Ok(())
     }
 }
 
-pub type TimerCb = fn(&mut Timer, &mut Any) -> ReturnType;
-struct TimerCbData <'a> {
-    cb: TimerCb,
-    data: &'a mut Any,
+impl AsRawFd for Fd {
+    fn as_raw_fd(&self) -> RawFd {
+        unsafe { nurs_fd_get_fd(self) }
+    }
 }
 
-extern fn timercb(timer: *mut Timer, data: *mut c_void) -> c_int {
-    let mut cbdata = unsafe { Box::from_raw(data as *mut Box<TimerCbData>) };
-    let t = unsafe {&mut(*timer)};
-    let ret = (cbdata.cb)(t, cbdata.data);
+pub type TimerCb = fn(&mut Timer) -> ReturnType;
+struct TimerData <T> {
+    cb: TimerCb,
+    data: T,
+}
+
+extern fn timercb<T>(timer: *mut Timer) -> c_int {
+    let cbdata = unsafe {
+        Box::from_raw(nurs_timer_get_data(timer) as *mut Box<TimerData<T>>)
+    };
+    let ret = (cbdata.cb)(unsafe { &mut *timer });
     Box::into_raw(cbdata);
     match ret {
         ReturnType::OK   => RET_OK,
@@ -775,39 +822,42 @@ extern fn timercb(timer: *mut Timer, data: *mut c_void) -> c_int {
 }
 
 impl <'a> Timer {
-    pub fn create(cb: TimerCb, data: &mut Any) -> io::Result<&'a mut Timer> {
-        let mut cbdata = Box::new(TimerCbData {cb: cb, data: data});
-        let pdata: *mut c_void = &mut cbdata as *mut _ as *mut c_void;
-        let errval: *const Fd = ptr::null();
-        let ret = cvt_may_error!(nurs_timer_create(timercb, pdata), errval as *mut Timer);
-        Box::into_raw(cbdata); // XXX: leaks
-        match ret {
-            Ok(ret) => unsafe { Ok(&mut(*ret)) },
-            Err(errno) => Err(errno),
+    pub fn register<T>(sc: time_t, cb: TimerCb, data: T) -> io::Result<&'a mut Timer> {
+        let errval: *const Timer = ptr::null();
+        let cbdata = Box::new(TimerData { cb: cb, data: data });
+        let timer = try!(cvt_may_error!(
+            nurs_timer_register(sc, timercb::<T>,
+                                Box::into_raw(cbdata) as *mut c_void),
+            errval as *mut Timer));
+        Ok(unsafe { &mut *timer })
+    }
+
+    pub fn iregister<T>(ini: time_t, per: time_t, cb: TimerCb, data: T) -> io::Result<&'a mut Timer> {
+        let errval: *const Timer = ptr::null();
+        let cbdata = Box::new(TimerData { cb: cb, data: data });
+        let timer = try!(cvt_may_error!(
+            nurs_itimer_register(ini, per, timercb::<T>,
+                                 Box::into_raw(cbdata) as *mut c_void),
+            errval as *mut Timer));
+        Ok(unsafe { &mut *timer })
+    }
+
+    pub fn data<T>(&self) -> &mut T {
+        unsafe {
+            let rawdata = Box::from_raw(nurs_timer_get_data(self) as *mut TimerData<T>);
+            &mut (*Box::into_raw(rawdata)).data
         }
     }
 
-    pub fn destroy(&mut self) -> io::Result<()> {
-        try!(cvt_may_error!(nurs_timer_destroy(self), -1));
+    pub fn unregister<T>(&mut self) -> io::Result<()> {
+        try!(cvt_may_error!(nurs_timer_unregister(self), -1));
+        unsafe {
+            Box::from_raw(nurs_timer_get_data(self) as *mut Box<TimerData<T>>)
+        };
         Ok(())
     }
 
-    pub fn add(&mut self, sc: time_t) -> io::Result<()> {
-        try!(cvt_may_error!(nurs_timer_add(self, sc), -1));
-        Ok(())
-    }
-
-    pub fn iadd(&mut self, ini: time_t, per: time_t) -> io::Result<()> {
-        try!(cvt_may_error!(nurs_itimer_add(self, ini, per), -1));
-        Ok(())
-    }
-
-    pub fn del(&mut self) -> io::Result<()> {
-        try!(cvt_may_error!(nurs_timer_del(self), -1));
-        Ok(())
-    }
-
-    pub fn pending(&mut self) -> io::Result<bool> {
+    pub fn pending(&self) -> io::Result<bool> {
         match cvt_may_error!(nurs_timer_pending(self), -1) {
             Ok(ret) => match ret {
                 0 => Ok(false),
@@ -816,50 +866,4 @@ impl <'a> Timer {
             Err(errno) => Err(errno),
         }
     }
-}
-
-extern {
-    fn __nurs_log(level: c_int, file: *const c_char, line: c_int, message: *const c_char, ...);
-}
-
-pub const NURS_DEBUG:  c_int = 0;
-pub const NURS_INFO:   c_int = 1;
-pub const NURS_NOTICE: c_int = 2;
-pub const NURS_ERROR:  c_int = 3;
-pub const NURS_FATAL:  c_int = 4;
-
-pub enum LogLevel {
-    DEBUG,
-    INFO,
-    NOTICE,
-    ERROR,
-    FATAL,
-}
-
-pub fn loglevel_cint(lvl: LogLevel) -> c_int {
-    match lvl {
-        LogLevel::DEBUG  => NURS_DEBUG,
-        LogLevel::INFO   => NURS_INFO,
-        LogLevel::NOTICE => NURS_NOTICE,
-        LogLevel::ERROR  => NURS_ERROR,
-        LogLevel::FATAL  => NURS_FATAL,
-    }
-}
-
-pub fn __log(level: c_int, file: &str, lineno: c_int, message: &str) {
-    let fname = CString::new(file).unwrap(); // .as_ptr() here won't work?
-    let fmt = CString::new("%s\n").unwrap();
-    let msg = CString::new(message).unwrap();
-    unsafe {
-        __nurs_log(level, fname.as_ptr(), lineno, fmt.as_ptr(), msg.as_ptr());
-    }
-}
-
-#[macro_export]
-macro_rules! nurs_log {
-    ($lvl:ident, $($arg:tt)*) =>
-        ($crate::__log($crate::loglevel_cint($crate::LogLevel::$lvl),
-                       file!(),
-                       line!() as c_int,
-                       &(format!($($arg)*))))
 }
