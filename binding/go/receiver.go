@@ -191,10 +191,6 @@ func (producer *Producer) GetOutput() (*Output, error) {
 	return nursGetOutput(producer)
 }
 
-func NewFd(fd int, when FdEvent) (*Fd, error) {
-	return nursFdCreate(fd, when)
-}
-
 func (fd *Fd) Fd() int {
 	return nursFdGetFd(fd)
 }
@@ -203,36 +199,28 @@ func (fd *Fd) Data() interface{} {
 	return nursFdGetData(fd)
 }
 
-func (fd *Fd) Destroy() {
-	nursFdDestroy(fd)
-}
-
-func (fd *Fd) Register(cb FdCb, data interface{}) error {
-	return nursFdRegister(fd, cb, data)
+func RegisterFd(fd int, when FdEvent, cb FdCb, data interface{}) (*Fd, error) {
+	return nursFdRegister(fd, when, cb, data)
 }
 
 func (fd *Fd) Unregister() error {
 	return nursFdUnregister(fd)
 }
 
-func NewTimer(cb TimerCb, data interface{}) (*Timer, error) {
-	return nursTimerCreate(cb, data)
+func RegisterTimer(sc uint, cb TimerCb, data interface{}) (*Timer, error) {
+	return nursTimerRegister(sc, cb, data)
 }
 
-func (timer *Timer) Destroy() error {
-	return nursTimerDestroy(timer)
+func RegisterITimer(ini uint, per uint, cb TimerCb, data interface{}) (*Timer, error) {
+	return nursITimerRegister(ini, per, cb, data)
 }
 
-func (timer *Timer) Add(sc uint) error {
-	return nursTimerAdd(timer, sc)
+func (fd *Timer) Data() interface{} {
+	return nursTimerGetData(fd)
 }
 
-func (timer *Timer) AddInterval(ini, per uint) error {
-	return nursItimerAdd(timer, ini, per)
-}
-
-func (timer *Timer) Del() error {
-	return nursTimerDel(timer)
+func (timer *Timer) Unregister() error {
+	return nursTimerUnregister(timer)
 }
 
 func (timer *Timer) IsPending() (bool, error) {

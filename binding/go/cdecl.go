@@ -495,7 +495,7 @@ const (
 type Fd C.struct_nurs_fd
 
 // typedef enum nurs_return_t
-//	(*nurs_fd_cb_t)(const struct nurs_fd *nfd, uint16_t when);
+//	(*nurs_fd_cb_t)(struct nurs_fd *nfd, uint16_t when);
 type FdCb func(*Fd, FdEvent) ReturnType
 
 type fdCbData struct {
@@ -505,26 +505,13 @@ type fdCbData struct {
 // https://gist.github.com/dwbuiten/c9865c4afb38f482702e
 var fds = make(map[*Fd] *fdCbData) // XXX: needs mutex for async
 
-// struct nurs_fd *nurs_fd_create(int fd, uint16_t when);
-func nursFdCreate(fd int, when FdEvent) (*Fd, error) {
-	ret, err := C.nurs_fd_create(C.int(fd), C.uint16_t(when))
-	return (*Fd)(ret), err
-}
-
-// int nurs_fd_get_fd(const struct nurs_fd *nfd);
 func nursFdGetFd(fd *Fd) int {
 	return int(C.nurs_fd_get_fd((*C.struct_nurs_fd)(fd)))
 }
 
-// void *nurs_fd_get_data(const struct nurs_fd *nfd);
 func nursFdGetData(fd *Fd) interface{} {
 	fcb := C.nurs_fd_get_data((*C.struct_nurs_fd)(fd))
 	return ((*fdCbData)(fcb)).data
-}
-
-// void nurs_fd_destroy(struct nurs_fd *nfd);
-func nursFdDestroy(fd *Fd) {
-	C.nurs_fd_destroy((*C.struct_nurs_fd)(fd))
 }
 
 //export goFdCb
@@ -538,13 +525,15 @@ func goFdCb(nfd *C.struct_nurs_fd, when C.uint16_t) C.enum_nurs_return_t {
 }
 
 // int nurs_fd_register(struct nurs_fd *nfd, nurs_fd_cb_t cb, void *data);
-func nursFdRegister(fd *Fd, cb FdCb, data interface{}) error {
+func nursFdRegister(fd int, when FdEvent, cb FdCb, data interface{}) (*Fd, error) {
 	cbdata := &fdCbData{cb, data}
-	_, err := C.nurs_fd_register_helper((*C.struct_nurs_fd)(fd), unsafe.Pointer(cbdata))
-	if err == nil {
-		fds[fd] = cbdata
+	cfd, err := C.nurs_fd_register_helper(C.int(fd), C.uint16_t(when), unsafe.Pointer(cbdata))
+	if err != nil {
+		return nil, err
 	}
-	return err
+	nfd := (*Fd)(cfd)
+	fds[nfd] = cbdata
+	return nfd, nil
 }
 
 // int nurs_fd_unregister(struct nurs_fd *nfd);
@@ -560,7 +549,7 @@ type Timer C.struct_nurs_timer
 
 // typedef enum nurs_return_t
 //	(*nurs_timer_cb_t)(struct nurs_timer *timer, void *data);
-type TimerCb func(*Timer, interface{}) ReturnType
+type TimerCb func(*Timer) ReturnType
 
 type timerCbData struct {
 	cb   TimerCb
@@ -569,53 +558,52 @@ type timerCbData struct {
 var timers = make(map[*Timer] *timerCbData) // XXX: needs mutex for async
 
 //export goTimerCb
-func goTimerCb(timer *C.struct_nurs_timer, data unsafe.Pointer) C.enum_nurs_return_t {
-	tcb := (*timerCbData)(data)
-	return C.enum_nurs_return_t(tcb.cb((*Timer)(timer), tcb.data))
+func goTimerCb(timer *C.struct_nurs_timer) C.enum_nurs_return_t {
+	tcb, err := C.nurs_timer_get_data((*C.struct_nurs_timer)(timer))
+	if err != nil {
+		Log(ERROR, "failed to get data from timer\n");
+		return C.NURS_RET_ERROR
+	}
+	return C.enum_nurs_return_t(((*timerCbData)(tcb)).cb((*Timer)(timer)))
 }
 
-// struct nurs_timer *nurs_timer_create(const nurs_timer_cb_t cb, void *data);
-func nursTimerCreate(cb TimerCb, data interface{}) (*Timer, error) {
+func nursTimerRegister(sc uint, cb TimerCb, data interface{}) (*Timer, error) {
 	cbdata := &timerCbData{cb, data}
-	ctimer, err := C.nurs_timer_create_helper(unsafe.Pointer(cbdata))
+	ctimer, err := C.nurs_timer_register_helper(C.time_t(sc), unsafe.Pointer(cbdata))
 	timer := (*Timer)(ctimer)
-	if err == nil {
-		timers[timer] = cbdata
+	if err != nil {
+		return nil, err
 	}
-	return timer, err
+	timers[timer] = cbdata
+	return timer, nil
 }
 
-// int nurs_timer_destroy(struct nurs_timer *timer);
-func nursTimerDestroy(timer *Timer) error {
-	_, err := C.nurs_timer_destroy((*C.struct_nurs_timer)(timer))
-	if err == nil {
-		delete(timers, timer)
+func nursITimerRegister(ini uint, per uint, cb TimerCb, data interface{}) (*Timer, error) {
+	cbdata := &timerCbData{cb, data}
+	ctimer, err := C.nurs_itimer_register_helper(C.time_t(ini), C.time_t(per), unsafe.Pointer(cbdata))
+	timer := (*Timer)(ctimer)
+	if err != nil {
+		return nil, err
 	}
-	return err
+	timers[timer] = cbdata
+	return timer, nil
 }
 
-// int nurs_timer_add(struct nurs_timer *timer, time_t sc);
-func nursTimerAdd(timer *Timer, sc uint) error {
-	_, err := C.nurs_timer_add((*C.struct_nurs_timer)(timer), C.time_t(sc))
-	return err
+// void *nurs_timer_get_data(const struct nurs_timer *nfd);
+func nursTimerGetData(timer *Timer) interface{} {
+	tcb := C.nurs_timer_get_data((*C.struct_nurs_timer)(timer))
+	return ((*timerCbData)(tcb)).data
 }
 
-// int nurs_itimer_add(struct nurs_timer *timer, time_t ini, time_t per);
-func nursItimerAdd(timer *Timer, ini, per uint) error {
-	_, err := C.nurs_itimer_add((*C.struct_nurs_timer)(timer), C.time_t(ini), C.time_t(per))
-	return err
-}
-
-// int nurs_timer_del(struct nurs_timer *timer);
-func nursTimerDel(timer *Timer) error {
-	_, err := C.nurs_timer_del((*C.struct_nurs_timer)(timer))
+func nursTimerUnregister(timer *Timer) error {
+	_, err := C.nurs_timer_unregister((*C.struct_nurs_timer)(timer))
 	return err
 }
 
 // int nurs_timer_pending(struct nurs_timer *timer);
 func nursTimerPending(timer *Timer) (bool, error) {
 	ret, err := C.nurs_timer_pending((*C.struct_nurs_timer)(timer))
-	return ret != 0, err
+	return bool(ret), err
 }
 
 type LogLevel C.enum_nurs_log_level

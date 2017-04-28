@@ -14,7 +14,11 @@
 #define _NURS_CGO_H
 
 void nurs_glog(int level, char *file, int line, char *msg);
-struct nurs_timer *nurs_timer_create_helper(void *data);
-int nurs_fd_register_helper(struct nurs_fd *nfd, void *data);
+struct nurs_fd *
+nurs_fd_register_helper(int fd, uint16_t when, void *data);
+struct nurs_timer *
+nurs_timer_register_helper(time_t sc, void *data);
+struct nurs_timer *
+nurs_itimer_register_helper(time_t ini, time_t per, void *data);
 
 #endif
