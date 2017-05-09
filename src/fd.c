@@ -356,16 +356,22 @@ EXPORT_SYMBOL(nurs_timer_register);
 int nurs_timer_unregister(struct nurs_timer *timer)
 {
 	struct itimerspec spec = {{0, 0}, {0, 0}};
+        int ret;
 
         if (!timer) {
                 nurs_log(NURS_NOTICE, "not a registered timer\n");
                 return 0;
         }
 
+        ret = timerfd_settime(timer->nfd->fd, 0, &spec, NULL);
+        if (ret == -1)
+                return ret;
+
 	if (nurs_fd_unregister(timer->nfd))
 		return -1;
 
-        return timerfd_settime(timer->nfd->fd, 0, &spec, NULL);
+        free(timer);
+        return 0;
 }
 EXPORT_SYMBOL(nurs_timer_unregister);
 
