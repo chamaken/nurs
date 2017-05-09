@@ -8,12 +8,12 @@ extern crate nurs;
 
 struct TickPriv <'a> {
     counter: u64,
-    timer: &'a mut nurs::Timer,
+    timer: &'a mut nurs::Timer<&'a mut nurs::Producer>,
     myname: &'a str,
 }
 
-fn itimercb(timer: &mut nurs::Timer) -> nurs::ReturnType {
-    let mut producer = timer.data::<nurs::Producer>();
+fn itimercb(timer: &mut nurs::Timer<&mut nurs::Producer>) -> nurs::ReturnType {
+    let mut producer = timer.data();
     let mut ctx = producer.context::<TickPriv>().unwrap();
     let mut output = producer.get_output().unwrap();
     if let Err(errno) = output.set_u64(0, ctx.counter) {
@@ -59,7 +59,7 @@ pub extern fn tick_start(producer: &mut nurs::Producer) -> c_int {
 #[no_mangle]
 pub extern fn tick_stop(producer: &mut nurs::Producer) -> c_int {
     let mut ctx = producer.context::<TickPriv>().unwrap();
-    if let Err(errno) = ctx.timer.unregister::<nurs::Producer>() {
+    if let Err(errno) = ctx.timer.unregister() {
         nurs_log!(ERROR, "failed to del timer: {}", errno);
         nurs_return!(ERROR)
     } else {

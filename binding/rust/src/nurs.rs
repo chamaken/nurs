@@ -306,15 +306,15 @@ extern {
 /**
  * timer
  */
-pub enum Timer{}
-type CTimerCb = extern "C" fn(*mut Timer) -> c_int;
+pub enum RawTimer{}
+type CTimerCb = extern "C" fn(*mut RawTimer) -> c_int;
 
 extern {
-    fn nurs_timer_get_data(timer: *const Timer) -> *mut c_void;
-    fn nurs_timer_register(sc: time_t, cb: CTimerCb, data: *mut c_void) -> *mut Timer;
-    fn nurs_itimer_register(ini: time_t, per: time_t, cb: CTimerCb, data: *mut c_void) -> *mut Timer;
-    fn nurs_timer_unregister(timer: *mut Timer) -> c_int;
-    fn nurs_timer_pending(timer: *const Timer) -> c_int;
+    fn nurs_timer_get_data(timer: *const RawTimer) -> *mut c_void;
+    fn nurs_timer_register(sc: time_t, cb: CTimerCb, data: *mut c_void) -> *mut RawTimer;
+    fn nurs_itimer_register(ini: time_t, per: time_t, cb: CTimerCb, data: *mut c_void) -> *mut RawTimer;
+    fn nurs_timer_unregister(timer: *mut RawTimer) -> c_int;
+    fn nurs_timer_pending(timer: *const RawTimer) -> c_int;
 }
 
 /*
@@ -784,6 +784,7 @@ impl <'a, S, T> Fd <S, T> where S: AsRawFd + IntoRawFd + FromRawFd {
     }
 
     pub fn data(&self) -> &'a mut T {
+        // XXX: or change &self to &mut self, then just return &mut self.data
         unsafe {
             let rawdata = Box::from_raw(nurs_fd_get_data(self.raw) as *mut Fd<S, T>);
             &mut (*Box::into_raw(rawdata)).data
@@ -811,18 +812,19 @@ impl <'a, S, T> Fd <S, T> where S: AsRawFd + IntoRawFd + FromRawFd {
     }
 }
 
-pub type TimerCb = fn(&mut Timer) -> ReturnType;
-struct TimerData <T> {
-    cb: TimerCb,
+pub type TimerCb<T> = fn(&mut Timer<T>) -> ReturnType;
+pub struct Timer <T> {
+    raw: *mut RawTimer,
+    cb: TimerCb<T>,
     data: T,
 }
 
-extern fn timercb<T>(timer: *mut Timer) -> c_int {
-    let cbdata = unsafe {
-        Box::from_raw(nurs_timer_get_data(timer) as *mut Box<TimerData<T>>)
+extern fn timercb<T>(timer: *mut RawTimer) -> c_int {
+    let mut cbdata = unsafe {
+        Box::from_raw(nurs_timer_get_data(timer) as *mut Timer<T>)
     };
-    let ret = (cbdata.cb)(unsafe { &mut *timer });
-    Box::into_raw(cbdata);
+    let ret = (cbdata.cb)(&mut cbdata);
+    mem::forget(cbdata);
     match ret {
         ReturnType::OK   => RET_OK,
         ReturnType::STOP => RET_STOP,
@@ -830,44 +832,47 @@ extern fn timercb<T>(timer: *mut Timer) -> c_int {
     }
 }
 
-impl <'a> Timer {
-    pub fn register<T>(sc: time_t, cb: TimerCb, data: T) -> io::Result<&'a mut Timer> {
-        let errval: *const Timer = ptr::null();
-        let cbdata = Box::new(TimerData { cb: cb, data: data });
-        let timer = try!(cvt_may_error!(
-            nurs_timer_register(sc, timercb::<T>,
-                                Box::into_raw(cbdata) as *mut c_void),
-            errval as *mut Timer));
-        Ok(unsafe { &mut *timer })
+impl <'a, T> Timer <T> {
+    pub fn register(sc: time_t, cb: TimerCb<T>, data: T) -> io::Result<&'a mut Timer<T>> {
+        let errval: *mut RawTimer = ptr::null_mut();
+        let cbdata = Box::into_raw(Box::new(Timer { raw: errval, cb: cb, data: data }));
+        let rawtimer = try!(cvt_may_error!(
+            nurs_timer_register(sc, timercb::<T>, cbdata as *mut c_void),
+            errval));
+        unsafe { (*cbdata).raw = rawtimer; }
+        Ok(unsafe { &mut *cbdata })
     }
 
-    pub fn iregister<T>(ini: time_t, per: time_t, cb: TimerCb, data: T) -> io::Result<&'a mut Timer> {
-        let errval: *const Timer = ptr::null();
-        let cbdata = Box::new(TimerData { cb: cb, data: data });
-        let timer = try!(cvt_may_error!(
-            nurs_itimer_register(ini, per, timercb::<T>,
-                                 Box::into_raw(cbdata) as *mut c_void),
-            errval as *mut Timer));
-        Ok(unsafe { &mut *timer })
+    pub fn iregister(ini: time_t, per: time_t, cb: TimerCb<T>, data: T) -> io::Result<&'a mut Timer<T>> {
+        let errval: *mut RawTimer = ptr::null_mut();
+        let cbdata = Box::into_raw(Box::new(Timer { raw: errval, cb: cb, data: data }));
+        let rawtimer = try!(cvt_may_error!(
+            nurs_itimer_register(ini, per, timercb::<T>, cbdata as *mut c_void),
+            errval));
+        unsafe { (*cbdata).raw = rawtimer; }
+        Ok(unsafe { &mut *cbdata })
     }
 
-    pub fn data<T>(&self) -> &mut T {
+    pub fn data(&self) -> &mut T {
         unsafe {
-            let rawdata = Box::from_raw(nurs_timer_get_data(self) as *mut TimerData<T>);
+            let rawdata = Box::from_raw(nurs_timer_get_data(self.raw) as *mut Timer<T>);
             &mut (*Box::into_raw(rawdata)).data
         }
     }
 
-    pub fn unregister<T>(&mut self) -> io::Result<()> {
-        try!(cvt_may_error!(nurs_timer_unregister(self), -1));
-        unsafe {
-            Box::from_raw(nurs_timer_get_data(self) as *mut Box<TimerData<T>>)
+    pub fn unregister(&mut self) -> io::Result<()> {
+        let cbdata = unsafe {
+            Box::from_raw(nurs_timer_get_data(self.raw) as *mut Timer<T>)
         };
+        if let Err(err) = cvt_may_error!(nurs_timer_unregister(cbdata.raw), -1) {
+            mem::forget(cbdata);
+            return Err(err);
+        }
         Ok(())
     }
 
     pub fn pending(&self) -> io::Result<bool> {
-        match cvt_may_error!(nurs_timer_pending(self), -1) {
+        match cvt_may_error!(nurs_timer_pending(self.raw), -1) {
             Ok(ret) => match ret {
                 0 => Ok(false),
                 _ => Ok(true),
