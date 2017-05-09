@@ -88,9 +88,7 @@ fn listen_fd_cb(nfd: &mut nurs::Fd<TcpListener, &mut nurs::Producer>, what: u16)
             nurs_log!(ERROR, "failed to accept: {}\n", errno);
             return nurs::ReturnType::ERROR;
         },
-        Ok((s, _)) => {
-            s
-        },
+        Ok((s, _)) => s,
     };
 
     if let Err(errno) = nurs::Fd::register(sock, nurs::FD_F_READ,
@@ -99,16 +97,6 @@ fn listen_fd_cb(nfd: &mut nurs::Fd<TcpListener, &mut nurs::Producer>, what: u16)
         return nurs::ReturnType::ERROR;
     }
     nurs::ReturnType::OK
-}
-
-#[no_mangle]
-pub extern fn listen_organize(producer: &mut nurs::Producer) -> c_int {
-    nurs_return!(OK)
-}
-
-#[no_mangle]
-pub extern fn listen_disorganize(producer: &mut nurs::Producer) -> c_int {
-    nurs_return!(OK)
 }
 
 #[no_mangle]
@@ -162,8 +150,6 @@ static JSONRC: &'static str = r#"
 	  "flags": ["NURS_OKEY_F_ALWAYS"],
 	  "len":  4096 }
     ],
-    "organize":		"listen_organize",
-    "disorganize":	"listen_disorganize",
     "start":		"listen_start",
     "stop":		"listen_stop"
 }"#;
