@@ -114,11 +114,6 @@ static int producer_check(const struct nurs_plugin_def *defbase)
 		= (const struct nurs_producer_def *)defbase;
 	int ret = 0;
 
-	if (!def->organize) {
-		nurs_log(NURS_ERROR, "plugin: %s, no organize cb\n",
-			 def->name);
-		ret = -1;
-	}
 	if (!def->output_def || !def->output_def->len) {
 		nurs_log(NURS_ERROR, "plugin: %s, no output\n", def->name);
 		ret = -1;
