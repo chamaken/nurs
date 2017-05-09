@@ -8,8 +8,9 @@ use std::io::Error;
 use std::io;
 use std::net::{Ipv4Addr, Ipv6Addr};
 use std::os::raw::{c_char, c_void};
-use std::os::unix::io::{ RawFd, AsRawFd, FromRawFd };
+use std::os::unix::io::{ AsRawFd, FromRawFd, IntoRawFd };
 use std::ptr;
+use std::mem;
 
 extern crate libc;
 use libc::{c_int, uint8_t, uint16_t, uint32_t, uint64_t, in_addr_t, in6_addr, time_t};
@@ -292,14 +293,14 @@ pub const FD_F_READ: u16 = 1;
 pub const FD_F_WRITE: u16 = 2;
 pub const FD_F_EXCEPT: u16 = 4;
 
-pub enum Fd{}
-type CFdCb = extern "C" fn(*mut Fd, uint16_t) -> c_int;
+enum RawNfd{}
+type CFdCb = extern "C" fn(*mut RawNfd, uint16_t) -> c_int;
 
 extern {
-    fn nurs_fd_get_fd(nfd: *const Fd) -> c_int;
-    fn nurs_fd_get_data(nfd: *const Fd) -> *mut c_void;
-    fn nurs_fd_register(fd: c_int, when: uint16_t, cb: CFdCb, data: *mut c_void) -> *mut Fd;
-    fn nurs_fd_unregister(nfd: *mut Fd) -> c_int;
+    fn nurs_fd_get_fd(nfd: *const RawNfd) -> c_int;
+    fn nurs_fd_get_data(nfd: *const RawNfd) -> *mut c_void;
+    fn nurs_fd_register(fd: c_int, when: uint16_t, cb: CFdCb, data: *mut c_void) -> *mut RawNfd;
+    fn nurs_fd_unregister(nfd: *mut RawNfd) -> c_int;
 }
 
 /**
@@ -748,18 +749,20 @@ impl <'a> Producer {
     }
 }
 
-pub type FdCb = fn(&mut Fd, u16) -> ReturnType;
-struct FdData <T> {
-    cb: FdCb,
+pub type FdCb<S, T> = fn(&mut Fd<S, T>, u16) -> ReturnType;
+pub struct Fd <S: AsRawFd + IntoRawFd + FromRawFd, T> {
+    raw: *mut RawNfd,
+    fd: S,
+    cb: FdCb<S, T>,
     data: T,
 }
 
-extern fn fdcb<T>(nfd: *mut Fd, what: uint16_t) -> c_int {
-    let cbdata = unsafe {
-        Box::from_raw(nurs_fd_get_data(nfd) as *mut FdData<T>)
+extern fn fdcb<S, T>(rawnfd: *mut RawNfd, what: uint16_t) -> c_int where S: AsRawFd + IntoRawFd + FromRawFd {
+    let mut cbdata = unsafe {
+        Box::from_raw(nurs_fd_get_data(rawnfd) as *mut Fd<S, T>)
     };
-    let ret = (cbdata.cb)(unsafe { &mut *nfd }, what);
-    Box::into_raw(cbdata);
+    let ret = (cbdata.cb)(&mut cbdata, what);
+    mem::forget(cbdata);
     match ret {
         ReturnType::OK   => RET_OK,
         ReturnType::STOP => RET_STOP,
@@ -767,38 +770,44 @@ extern fn fdcb<T>(nfd: *mut Fd, what: uint16_t) -> c_int {
     }
 }
 
-impl <'a> Fd {
-    pub fn register<T>(fd: RawFd, when: u16, cb: FdCb, data: T) -> io::Result<&'a mut Fd> {
-        let errval: *const Fd = ptr::null();
-        let cbdata = Box::new(FdData { cb: cb, data: data });
-        let nfd = try!(cvt_may_error!(
-            nurs_fd_register(fd, when, fdcb::<T>,
-                             Box::into_raw(cbdata) as *mut c_void),
-            errval as *mut Fd));
-        Ok(unsafe { &mut *nfd })
+impl <'a, S, T> Fd <S, T> where S: AsRawFd + IntoRawFd + FromRawFd {
+    pub fn register(fd: S, when: u16, cb: FdCb<S, T>, data: T) -> io::Result<&'a mut Fd<S, T>> {
+        let errval: *mut RawNfd = ptr::null_mut();
+        let rawfd = fd.as_raw_fd();
+        let cbdata = Box::into_raw(Box::new(Fd { raw: errval, fd: fd, cb: cb, data: data }));
+        let rawnfd = try!(cvt_may_error!(
+            nurs_fd_register(rawfd, when,
+                             fdcb::<S, T>, cbdata as *mut c_void),
+            errval));
+        unsafe { (*cbdata).raw = rawnfd; }
+        Ok(unsafe { &mut *cbdata })
     }
 
-    pub fn data<T>(&self) -> &'a mut T {
+    pub fn data(&self) -> &'a mut T {
         unsafe {
-            let rawdata = Box::from_raw(nurs_fd_get_data(self) as *mut FdData<T>);
+            let rawdata = Box::from_raw(nurs_fd_get_data(self.raw) as *mut Fd<S, T>);
             &mut (*Box::into_raw(rawdata)).data
         }
     }
 
-    pub fn unregister<T: FromRawFd, U>(&mut self) -> io::Result<()> {
-        try!(cvt_may_error!(nurs_fd_unregister(self), -1));
+    pub fn fd(&self) -> &'a mut S {
         unsafe {
-            Box::from_raw(nurs_fd_get_data(self) as *mut FdData<U>);
-            T::from_raw_fd(nurs_fd_get_fd(self));
-            // fd.close()
-        };
-        Ok(())
+            let rawdata = Box::from_raw(nurs_fd_get_data(self.raw) as *mut Fd<S, T>);
+            &mut (*Box::into_raw(rawdata)).fd
+        }
     }
-}
 
-impl AsRawFd for Fd {
-    fn as_raw_fd(&self) -> RawFd {
-        unsafe { nurs_fd_get_fd(self) }
+    pub fn unregister(&mut self) -> io::Result<()> {
+        let cbdata = unsafe {
+            Box::from_raw(nurs_fd_get_data(self.raw) as *mut Fd<S, T>)
+        };
+        if let Err(err) = cvt_may_error!(nurs_fd_unregister(cbdata.raw), -1) {
+            mem::forget(cbdata);
+            return Err(err);
+        }
+        // XXX: Box drop close fd it?
+        // unsafe { S::from_raw_fd(nurs_fd_get_fd(cbdata.raw)); }
+        Ok(())
     }
 }
 
