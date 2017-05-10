@@ -93,7 +93,7 @@ fn listen_fd_cb(nfd: &mut nurs::Fd<TcpListener, &mut nurs::Producer>, what: u16)
 
     if let Err(errno) = nurs::Fd::register(sock, nurs::FD_F_READ,
                                            accept_fd_cb, producer) {
-        nurs_log!(ERROR, "failed to register listen fd: {}", errno);
+        nurs_log!(ERROR, "failed to register accept fd: {}", errno);
         return nurs::ReturnType::ERROR;
     }
     nurs::ReturnType::OK
@@ -106,7 +106,7 @@ pub extern fn listen_start(producer: &mut nurs::Producer) -> c_int {
 
     let listener = match TcpListener::bind(config.string(0).unwrap()) {
         Err(err) => {
-            nurs_log!(FATAL, "failed to open bind: {}", err);
+            nurs_log!(FATAL, "failed to bind: {}", err);
             return nurs_return!(ERROR);
         },
         Ok(s) => s

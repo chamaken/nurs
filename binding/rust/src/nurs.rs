@@ -806,7 +806,7 @@ impl <'a, S, T> Fd <S, T> where S: AsRawFd + IntoRawFd + FromRawFd {
             mem::forget(cbdata);
             return Err(err);
         }
-        // XXX: Box drop close fd it?
+        // XXX: assume Box drop closes fd.
         // unsafe { S::from_raw_fd(nurs_fd_get_fd(cbdata.raw)); }
         Ok(())
     }
