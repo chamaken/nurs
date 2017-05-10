@@ -19,6 +19,7 @@ import "C"
 import (
 	"encoding/binary"
 	"net"
+	"reflect"
 	"unsafe"
 )
 
@@ -92,4 +93,9 @@ func IfNametoindex(name string) (int, error) {
 		return 0, err
 	}
 	return int(ret), nil
+}
+
+func SocketSysFd(sock interface{}) int {
+	fdValue := reflect.Indirect(reflect.Indirect(reflect.ValueOf(sock)).FieldByName("fd"))
+	return int(fdValue.FieldByName("sysfd").Int())
 }
