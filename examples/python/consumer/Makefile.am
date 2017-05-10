@@ -6,4 +6,4 @@ EXTRA_DIST = \
 	nflog_log.py	nflog_log.json.in \
 	nfq_accept.py	nfq_accept.json.in \
 	nfq_repeat.py	nfq_repeat.json.in
-include $(top_srcdir)/examples.inc
+include $(top_srcdir)/examples/examples.inc

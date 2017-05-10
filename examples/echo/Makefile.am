@@ -34,4 +34,4 @@ target/debug/liblisten.so: Cargo.toml src/listen.rs
 endif
 
 
-include $(top_srcdir)/examples.inc
+include $(top_srcdir)/examples/examples.inc

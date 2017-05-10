@@ -46,4 +46,4 @@ consumer.rs/target/debug/libconsumer.so: consumer.rs/Cargo.toml consumer.rs/src/
 	cargo build --manifest-path $<
 endif
 
-include $(top_srcdir)/examples.inc
+include $(top_srcdir)/examples/examples.inc
