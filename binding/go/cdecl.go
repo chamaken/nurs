@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"net"
 	"path/filepath"
+	"reflect"
 	"runtime"
 	"unsafe"
 )
@@ -183,6 +184,24 @@ func nursInputPointer(input *Input, idx uint16) (unsafe.Pointer, error) {
 	return ret, err
 }
 
+func nursInputBytes(input *Input, idx uint16) ([]byte, error) {
+	var b []byte
+
+	h := (*reflect.SliceHeader)(unsafe.Pointer(&b))
+	size, err := nursInputSize(input, idx)
+	if err != nil {
+		return nil, err
+	}
+	h.Cap = int(size)
+	h.Len = int(size)
+	ptr, err := nursInputPointer(input, idx)
+	if err != nil {
+		return nil, err
+	}
+	h.Data = uintptr(ptr)
+	return b, nil
+}
+
 // const char *nurs_input_string(const struct nurs_input *input, uint16_t idx);
 func nursInputString(input *Input, idx uint16) (string, error) {
 	ret, err := C.nurs_input_string((*C.struct_nurs_input)(input), C.uint16_t(idx))
@@ -323,6 +342,24 @@ func nursOutputSetString(output *Output, idx uint16, value string) error {
 func nursOutputPointer(output *Output, idx uint16) (unsafe.Pointer, error) {
 	ret, err := C.nurs_output_pointer((*C.struct_nurs_output)(output), C.uint16_t(idx))
 	return ret, err
+}
+
+func nursOutputBytes(output *Output, idx uint16) ([]byte, error) {
+	var b []byte
+
+	h := (*reflect.SliceHeader)(unsafe.Pointer(&b))
+	size, err := nursOutputSize(output, idx)
+	if err != nil {
+		return nil, err
+	}
+	h.Cap = int(size)
+	h.Len = int(size)
+	ptr, err := nursOutputPointer(output, idx)
+	if err != nil {
+		return nil, err
+	}
+	h.Data = uintptr(ptr)
+	return b, nil
 }
 
 // int nurs_output_set_valid(struct nurs_output *output, uint16_t idx);

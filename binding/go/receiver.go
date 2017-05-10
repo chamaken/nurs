@@ -91,6 +91,10 @@ func (input *Input) Pointer(idx uint16) (unsafe.Pointer, error) {
 	return nursInputPointer(input, idx)
 }
 
+func (input *Input) Bytes(idx uint16) ([]byte, error) {
+	return nursInputBytes(input, idx)
+}
+
 func (input *Input) String(idx uint16) (string, error) {
 	return nursInputString(input, idx)
 }
@@ -165,6 +169,10 @@ func (output *Output) SetString(idx uint16, value string) error {
 
 func (output *Output) Pointer(idx uint16) (unsafe.Pointer, error) {
 	return nursOutputPointer(output, idx)
+}
+
+func (output *Output) Bytes(idx uint16) ([]byte, error) {
+	return nursOutputBytes(output, idx)
 }
 
 func (output *Output) SetValid(idx uint16) error {
