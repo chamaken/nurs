@@ -12,9 +12,14 @@ nurs_consumer_LOG_la_LDFLAGS = -avoid-version -module
 
 EXTRA_DIST = listen.py \
 	echo.conf.in py.conf.in listen_py.json.in \
-	rs.conf.in \
-	src/listen.rs Cargo.toml.in
-noinst_DATA = echo.conf py.conf rs.conf listen_py.json
+	rs.conf.in go.conf.in \
+	src/listen.rs Cargo.toml.in \
+	listen.go
+noinst_DATA = echo.conf py.conf rs.conf go.conf listen_py.json
+
+if HAVE_GO
+noinst_DATA += listen.gso
+endif
 
 if HAVE_RUST
 noinst_DATA += target/debug/liblisten.so \

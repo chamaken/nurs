@@ -1,0 +1,26 @@
+# example configuration for nursd. run at this dir
+# ../../src/nursd go.conf
+
+[global]
+
+# plugin:
+# 1. load the plugins _first_ from the global section
+# 2. options for each plugin in seperate section below
+plugin	= "@cwd@/.libs/nurs_consumer_LOG.so"
+plugin	= "@cwd@/listen.gso"
+
+# stack
+# each element represented id:name, separated by ,
+stack	= "listen:GO_LISTEN, log:LOG"
+
+# number of workers
+workers	= 8
+
+# number of iosets per stack
+iosets	= 8
+
+# each pluginstance settings
+
+[listen]
+proto = "tcp"
+laddr = "127.0.0.1:55555"
