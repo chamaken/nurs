@@ -47,7 +47,6 @@ enum {
 	NFQ_OUTPUT_NLATTRS,
 	NFQ_OUTPUT_FAMILY,
 	NFQ_OUTPUT_RES_ID,
-	NFQ_OUTPUT_FRAME,
         NFQ_OUTPUT_RECV_BUFFER,
 	NFQ_OUTPUT_MAX,
 };
@@ -57,12 +56,8 @@ struct nfq_common_priv {
 	struct mnl_socket	*nl;
 	uint32_t		portid;
 	struct nurs_fd		*fd;
-#ifdef NLMMAP
-	struct mnl_ring		*nlr;
-#endif
 };
 
-void frame_destructor(void *data);
 int nfq_read_cb(int fd, uint16_t when, void *data);
 
 enum nurs_return_t

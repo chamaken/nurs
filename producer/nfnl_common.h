@@ -16,7 +16,6 @@
 #include <libmnl/libmnl.h>
 
 int mnl_socket_set_reliable(struct mnl_socket *nl);
-void frame_destructor(void *data);
 struct mnl_socket *nurs_mnl_socket(const char *ns, int bus);
 
 enum nurs_return_t nurs_ret_from_mnl(int cbret);

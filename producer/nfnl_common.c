@@ -20,12 +20,6 @@ int mnl_socket_set_reliable(struct mnl_socket *nl)
 	return 0;
 }
 
-void frame_destructor(void *data)
-{
-	struct nl_mmap_hdr *frame = data;
-	frame->nm_status = NL_MMAP_STATUS_UNUSED;
-}
-
 struct mnl_socket *nurs_mnl_socket(const char *ns, int bus)
 {
 	int fd;

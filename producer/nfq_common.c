@@ -70,6 +70,12 @@ struct nurs_config_def nfq_config = {
 			.name	= "reliable",
 			.type	= NURS_CONFIG_T_BOOLEAN,
 		},
+                [NFQ_CONFIG_NAMESPACE] = {
+			.name	 = "namespace",
+			.type	 = NURS_CONFIG_T_STRING,
+			.flags   = NURS_CONFIG_F_NONE,
+			.string	 = "",
+		},
 	},
 };
 
@@ -92,12 +98,6 @@ struct nurs_output_def nfq_output = {
 			.name	= "nfq.res_id",
 			.type	= NURS_KEY_T_UINT16,
 			.flags	= NURS_OKEY_F_ALWAYS,
-		},
-		[NFQ_OUTPUT_FRAME] = {
-			.name	= "nfq.frame",
-			.type	= NURS_KEY_T_POINTER,
-			.flags	= NURS_OKEY_F_ALWAYS | NURS_OKEY_F_DESTRUCT,
-			.destructor = frame_destructor,
 		},
                 [NFQ_OUTPUT_RECV_BUFFER] = {
                         .type	= NURS_KEY_T_EMBED,
@@ -129,10 +129,9 @@ static int nfq_mnl_cb(const struct nlmsghdr *nlh, void *data)
 	return MNL_CB_OK;
 }
 
-static enum nurs_return_t
-nfq_copy_frame(int fd, void *arg)
+enum nurs_return_t nfq_read_cb(int fd, uint16_t when, void *data)
 {
-        struct nurs_producer *producer = arg;
+        struct nurs_producer *producer = data;
         struct nfq_common_priv *priv = nurs_producer_context(producer);
         struct nurs_output *output = nurs_get_output(producer);
         ssize_t nrecv;
@@ -177,11 +176,6 @@ nfq_copy_frame(int fd, void *arg)
 fail:
         nurs_put_output(output);
         return NURS_RET_ERROR;
-}
-
-enum nurs_return_t nfq_read_cb(int fd, uint16_t when, void *data)
-{
-        return nfq_copy_frame(fd, data);
 }
 
 static int check_config_response(struct nfq_common_priv *priv)

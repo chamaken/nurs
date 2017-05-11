@@ -165,7 +165,6 @@ enum {
 	NFLOG_OUTPUT_RAW_MAC_SADDR,
 	NFLOG_OUTPUT_RAW_MAC_ADDRLEN,
 	NFLOG_OUTPUT_NLATTRS,
-	NFLOG_OUTPUT_FRAME,
         NFLOG_OUTPUT_RECV_BUFFER,
 	NFLOG_OUTPUT_MAX,
 };
@@ -343,13 +342,6 @@ static struct nurs_output_def nflog_output = {
 			.flags	= NURS_OKEY_F_ALWAYS,
 			.len	= sizeof(struct nlattr *) * (NFULA_MAX + 1),
 		},
-		[NFLOG_OUTPUT_FRAME] = {
-			/* only for set frame unused status */
-			.type	= NURS_KEY_T_POINTER,
-			.flags	= NURS_OKEY_F_OPTIONAL | NURS_OKEY_F_DESTRUCT,
-			.name	= "nflog.frame",
-			.destructor = frame_destructor,
-		},
                 [NFLOG_OUTPUT_RECV_BUFFER] = {
                         .type	= NURS_KEY_T_EMBED,
                         .flags	= NURS_OKEY_F_OPTIONAL, /* NURS_OKEY_NONE? */
@@ -467,7 +459,7 @@ static int nflog_mnl_cb(const struct nlmsghdr *nlh, void *data)
 }
 
 static enum nurs_return_t
-nflog_copy_frame(struct nurs_fd *nfd)
+nflog_read_cb(struct nurs_fd *nfd, uint16_t when)
 {
         struct nurs_producer *producer = nurs_fd_get_data(nfd);
         struct nflog_priv *priv = nurs_producer_context(producer);
@@ -518,12 +510,6 @@ nflog_copy_frame(struct nurs_fd *nfd)
 fail:
         nurs_put_output(output);
         return NURS_RET_ERROR;
-}
-
-static enum nurs_return_t
-nflog_read_cb(struct nurs_fd *nfd, uint16_t when)
-{
-        return nflog_copy_frame(nfd);
 }
 
 static int check_config_response(struct nflog_priv *priv)

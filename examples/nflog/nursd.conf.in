@@ -20,9 +20,6 @@ plugin	= "@pkglibdir@/nurs_PYTHON.so"
 stack	= "nflog:NFLOG, log:PY_NFLOG_LOG"
 
 [nflog]
-# block_size = 8192
-# block_nr = 32
-# frame_size = 8192
 # bind = false
 # unbind = true
 group = 8

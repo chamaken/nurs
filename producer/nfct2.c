@@ -432,33 +432,14 @@ nfct_event_cb(struct nurs_fd *nfd, uint16_t when)
 }
 
 static enum nurs_return_t
-nfct_copy_frame(int fd, void *arg)
-{
-	struct mnl_cbarg *cbarg = arg;
-	struct nfct_priv *priv = nurs_producer_context(cbarg->producer);
-        char buf[MNL_SOCKET_BUFFER_SIZE];
-        ssize_t nrecv;
-
-        nrecv = recv(fd, buf, sizeof(buf), MSG_DONTWAIT);
-        if (nrecv == -1) {
-                nurs_log(NURS_ERROR, "failed to recv COPY frame: %s\n",
-                         strerror(errno));
-                return NURS_RET_ERROR;
-        }
-
-        return nurs_ret_from_mnl(
-                mnl_cb_run(buf, (size_t)nrecv,
-                           priv->dump_request->nlmsg_seq, priv->dump_pid,
-                           nfct_mnl_cb, cbarg));
-}
-
-static enum nurs_return_t
 nfct_dump_cb(struct nurs_fd *nfd, uint16_t when)
 {
         struct nurs_producer *producer = nurs_fd_get_data(nfd);
 	struct nfct_priv *priv = nurs_producer_context(producer);
+        char buf[MNL_SOCKET_BUFFER_SIZE];
+        int ret, fd = nurs_fd_get_fd(nfd);
+        ssize_t nrecv;
 	struct timeval tv;
-	enum nurs_return_t ret;
         struct mnl_cbarg cbarg = {
                 .producer	= producer,
                 .recent		= &tv,
@@ -469,13 +450,20 @@ nfct_dump_cb(struct nurs_fd *nfd, uint16_t when)
 
 	gettimeofday(&tv, NULL);
         do {
-                ret = nfct_copy_frame(nurs_fd_get_fd(nfd), &cbarg);
-        } while (ret == NURS_RET_OK);
+                nrecv = recv(fd, buf, sizeof(buf), MSG_DONTWAIT);
+                if (nrecv == -1) {
+                        nurs_log(NURS_ERROR, "failed to recv COPY frame: %s\n",
+                                 strerror(errno));
+                        return NURS_RET_ERROR;
+                }
+
+                ret = mnl_cb_run(buf, (size_t)nrecv,
+                                 priv->dump_request->nlmsg_seq, priv->dump_pid,
+                                 nfct_mnl_cb, &cbarg);
+        } while (ret == MNL_CB_OK);
 
 	priv->dump_prev = tv;
-        if (ret == NURS_RET_STOP)
-                return NURS_RET_OK;
-	return ret;
+        return NURS_RET_OK;
 }
 
 static int clear_counters(const struct nurs_producer *producer)

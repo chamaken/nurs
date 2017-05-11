@@ -20,10 +20,6 @@ plugin	= "@pkglibdir@/nurs_PYTHON.so"
 stack	= "nfq:NFQ, accept:PY_NFQ_ACCEPT"
 
 [nfq]
-# block_size	= 8192
-# compare to mtnfq: default 32 * 4
-block_nr	= 128
-# frame_size	= 8192
 queue_num	= 4
 copy_mode	= packet
 # fail_open	= off

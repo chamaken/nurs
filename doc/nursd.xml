@@ -326,35 +326,6 @@
 	  </listitem>
 	</varlistentry>
 	<varlistentry>
-	  <term>block_size (integer)</term>
-	  <listitem>
-	    <para>linux/Documentation/netlink_mmap.txt</para>
-	    <para>
-	      must be a multiple of the architectures memory page size. The
-	      getpagesize() function can be used to get the page size.
-	    </para>
-	  </listitem>
-	</varlistentry>
-	<varlistentry>
-	  <term>frame_size (integer)</term>
-	  <listitem>
-	    <para>
-	      mmaped netlink socket frames are grouped into blocks, where each
-	      block is a continuous region of memory and holds block_size /
-	      frame_size frames. The total number of frames in the ring is
-	      frame_nr.
-	    </para>
-	  </listitem>
-	</varlistentry>
-	<varlistentry>
-	  <term>block_nr (integer)</term>
-	  <listitem>
-	    <para>
-	      number of blocks to allocate.
-	    </para>
-	  </listitem>
-	</varlistentry>
-	<varlistentry>
 	  <term>bind (boolean)</term>
 	  <listitem>
 	    <para>
@@ -589,15 +560,6 @@
 	  </listitem>
 	</varlistentry>
 	<varlistentry>
-	  <term>block_size (integer)</term>
-	  <term>block_nr (integer)</term>
-	  <term>frame_size (integer)</term>
-	  <term>namespace (string)</term>
-	  <listitem>
-	    <para>same as NFLOG above.</para>
-	  </listitem>
-	</varlistentry>
-	<varlistentry>
 	  <term>destroy_only (boolean)</term>
 	  <listitem>
 	    <para>
@@ -614,16 +576,6 @@
 	libnetfilter_queue installed on your system.
       </para>
       <variablelist>
-	<varlistentry>
-	  <term>block_size (integer)</term>
-	  <term>block_nr (integer)</term>
-	  <term>frame_size (integer)</term>
-	  <term>reliable (boolean)</term>
-	  <term>namespace (string)</term>
-	  <listitem>
-	    <para>same as NFLOG above.</para>
-	  </listitem>
-	</varlistentry>
 	<varlistentry>
 	  <term>queue_num (integer)</term>
 	  <listitem>
