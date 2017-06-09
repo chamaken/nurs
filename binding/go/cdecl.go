@@ -25,6 +25,7 @@ import (
 	"path/filepath"
 	"reflect"
 	"runtime"
+	"sync"
 	"unsafe"
 )
 
@@ -539,8 +540,14 @@ type fdCbData struct {
 	cb   FdCb
 	data interface{}
 }
+
+// for just holding, means prevene GCed
 // https://gist.github.com/dwbuiten/c9865c4afb38f482702e
-var fds = make(map[*Fd] *fdCbData) // XXX: needs mutex for async
+// https://blog.golang.org/go-maps-in-action
+var fds = struct {
+	sync.RWMutex
+	m map[*Fd]*fdCbData
+}{m: make(map[*Fd]*fdCbData)}
 
 func nursFdGetFd(fd *Fd) int {
 	return int(C.nurs_fd_get_fd((*C.struct_nurs_fd)(fd)))
@@ -569,7 +576,9 @@ func nursFdRegister(fd int, when FdEvent, cb FdCb, data interface{}) (*Fd, error
 		return nil, err
 	}
 	nfd := (*Fd)(cfd)
-	fds[nfd] = cbdata
+	fds.Lock()
+	fds.m[nfd] = cbdata
+	fds.Unlock()
 	return nfd, nil
 }
 
@@ -577,7 +586,9 @@ func nursFdRegister(fd int, when FdEvent, cb FdCb, data interface{}) (*Fd, error
 func nursFdUnregister(fd *Fd) error {
 	_, err := C.nurs_fd_unregister((*C.struct_nurs_fd)(fd))
 	if err == nil {
-		delete(fds, fd)
+		fds.Lock()
+		delete(fds.m, fd)
+		fds.Unlock()
 	}
 	return err
 }
@@ -592,13 +603,17 @@ type timerCbData struct {
 	cb   TimerCb
 	data interface{}
 }
-var timers = make(map[*Timer] *timerCbData) // XXX: needs mutex for async
+
+var timers = struct {
+	sync.RWMutex
+	m map[*Timer]*timerCbData
+}{m: make(map[*Timer]*timerCbData)}
 
 //export goTimerCb
 func goTimerCb(timer *C.struct_nurs_timer) C.enum_nurs_return_t {
 	tcb, err := C.nurs_timer_get_data((*C.struct_nurs_timer)(timer))
 	if err != nil {
-		Log(ERROR, "failed to get data from timer\n");
+		Log(ERROR, "failed to get data from timer\n")
 		return C.NURS_RET_ERROR
 	}
 	return C.enum_nurs_return_t(((*timerCbData)(tcb)).cb((*Timer)(timer)))
@@ -611,7 +626,9 @@ func nursTimerRegister(sc uint, cb TimerCb, data interface{}) (*Timer, error) {
 	if err != nil {
 		return nil, err
 	}
-	timers[timer] = cbdata
+	timers.Lock()
+	timers.m[timer] = cbdata
+	timers.Unlock()
 	return timer, nil
 }
 
@@ -622,7 +639,9 @@ func nursITimerRegister(ini uint, per uint, cb TimerCb, data interface{}) (*Time
 	if err != nil {
 		return nil, err
 	}
-	timers[timer] = cbdata
+	timers.Lock()
+	timers.m[timer] = cbdata
+	timers.Unlock()
 	return timer, nil
 }
 
@@ -634,6 +653,11 @@ func nursTimerGetData(timer *Timer) interface{} {
 
 func nursTimerUnregister(timer *Timer) error {
 	_, err := C.nurs_timer_unregister((*C.struct_nurs_timer)(timer))
+	if err == nil {
+		timers.Lock()
+		delete(timers.m, timer)
+		timers.Unlock()
+	}
 	return err
 }
 
