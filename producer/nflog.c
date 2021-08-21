@@ -422,9 +422,9 @@ static int nflog_mnl_cb(const struct nlmsghdr *nlh, void *data)
 		struct nfulnl_msg_packet_timestamp *ts
 			= mnl_attr_get_payload(attrs[NFULA_TIMESTAMP]);
 		nurs_output_set_u32(output, NFLOG_OUTPUT_OOB_TIME_SEC,
-				    ts->sec & 0xffffffff);
+				    be64toh(ts->sec) & 0xffffffff);
 		nurs_output_set_u32(output, NFLOG_OUTPUT_OOB_TIME_USEC,
-				    ts->usec & 0xffffffff);
+				    be64toh(ts->usec) & 0xffffffff);
 	}
 
 	if (attrs[NFULA_MARK])
