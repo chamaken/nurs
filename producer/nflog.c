@@ -33,8 +33,6 @@ struct nflog_priv {
 	struct mnl_socket	*nl;
 	uint32_t		portid;
 	struct nurs_fd		*fd;
-	struct mnl_ring		*nlr;
-	bool			skipped;
 };
 
 /* configuration entries */
