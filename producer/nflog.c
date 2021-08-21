@@ -453,7 +453,7 @@ static int nflog_mnl_cb(const struct nlmsghdr *nlh, void *data)
 			ntohl(mnl_attr_get_u32(attrs[NFULA_SEQ])));
 	if (attrs[NFULA_SEQ_GLOBAL])
 		nurs_output_set_u32(
-			output, NFLOG_OUTPUT_OOB_SEQ_LOCAL,
+			output, NFLOG_OUTPUT_OOB_SEQ_GLOBAL,
 			ntohl(mnl_attr_get_u32(attrs[NFULA_SEQ_GLOBAL])));
 	return MNL_CB_OK;
 }
