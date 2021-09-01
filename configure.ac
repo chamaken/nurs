@@ -24,14 +24,6 @@ AC_PROG_INSTALL
 AC_DISABLE_STATIC
 AC_PROG_LIBTOOL
 
-AC_CHECK_PROG(enable_go, [go], ["yes"], ["no"])
-AC_SUBST(HAVE_GO)
-AM_CONDITIONAL([HAVE_GO], [test "x$enable_go" = "xyes"])
-
-AC_CHECK_PROG(enable_rust, [cargo], ["yes"], ["no"])
-AC_SUBST(HAVE_RUST)
-AM_CONDITIONAL([HAVE_RUST], [test "x$enable_rust" = "xyes"])
-
 AC_CHECK_PROG(DOCBOOK2X_MAN, [docbook2x-man], [docbook2x-man], [no])
 AC_CHECK_PROG(DOCBOOK2MAN, [docbook2man], [docbook2man], [no])
 AC_CHECK_PROG(DB2X_DOCBOOK2MAN, [db2x_docbook2man], [db2x_docbook2man], [no])
@@ -102,8 +94,27 @@ AC_CHECK_HEADER(sys/signalfd.h,[],[AC_MSG_ERROR(unable to find signalfd header)]
 AC_CHECK_HEADER(sys/epoll.h,[],[AC_MSG_ERROR(unable to find epoll header)])
 
 dnl Check by pkg-config
-PKG_CHECK_MODULES([LIBMNL], [libmnl >= 1.0.3])
-PKG_CHECK_MODULES([JANSSON], [jansson >= 2.6])
+PKG_CHECK_MODULES([JANSSON], [jansson >= 2.6],
+    [AC_DEFINE([HAVE_JANSSON], [1], [have jansson])
+     have_jansson="yes"],
+    have_jansson="no")
+AM_CONDITIONAL([HAVE_JANSSON], [test "x$have_jansson" = "xyes"])
+
+PKG_CHECK_MODULES([LIBMNL], [libmnl >= 1.0.3],
+    [AC_DEFINE([HAVE_LMNL], [1], [have libmnl])
+     have_lmnl="yes"],
+    have_lmnl="no")
+AM_CONDITIONAL([HAVE_LMNL], [test "x$have_libmnl" = "xyes"])
+
+AC_CHECK_PROG(enable_go, [go], ["yes"], ["no"])
+AC_SUBST(HAVE_GO)
+AM_CONDITIONAL([HAVE_GO],
+               [test "x$enable_go" = "xyes" -a "x$have_jansson" = "xyes"])
+
+AC_CHECK_PROG(enable_rust, [cargo], ["yes"], ["no"])
+AC_SUBST(HAVE_RUST)
+AM_CONDITIONAL([HAVE_RUST],
+               [test "x$enable_rust" = "xyes" -a "x$have_jansson" = "xyes"])
 
 AC_ARG_ENABLE(nflog,
        AS_HELP_STRING([--enable-nflog], [enable nflog module [default=yes]]),[enable_nflog=$enableval],[enable_nflog=yes])
@@ -163,6 +174,10 @@ AS_IF([test "x$enable_nft" = "xyes"], [
 ])
 AM_CONDITIONAL([HAVE_LNFT], [test "x$enable_nft" = "xyes"])
 
+AC_ARG_ENABLE(nfctst,
+       AS_HELP_STRING([--enable-nfctst], [enable nfctst module [default=yes]]),[enable_nfctst=$enableval],[enable_nfctst=yes])
+AS_IF([test "x$have_lmnl" = "xyes"], enable_nfctst="yes", enable_nfctst="no")
+
 AC_ARG_ENABLE(python,
        AS_HELP_STRING([--enable-python], [enable python module [default=yes]]),[enable_python=$enableval],[enable_python=yes])
 AS_IF([test "x$enable_python" = "xyes"], [
@@ -184,7 +199,10 @@ AS_IF([test "x$enable_python" = "xyes"], [
             ], enable_python="no")
     ], enable_python="no")
 ])
-AM_CONDITIONAL([HAVE_PYTHON], [test "x$enable_python" = "xyes"])
+AM_CONDITIONAL([HAVE_PYTHON],
+               [test "x$enable_python" = "xyes" \
+                  -a "x$have_jansson" = "xyes" \
+                  -a "x$have_lmnl" = "xyes"])
 
 AC_DEFUN([REPLACE],
      [sed -e "s|$2|$3|g" $1 >  ${1%.in}])
@@ -242,7 +260,7 @@ nurs configuration:
   Coveter:
     NetFlow v9 plugin:			${enable_nfct}
     IPFIX plugin:			${enable_nfct}
-  PYTHON plugin:			${enable_python}
+  Python plugin:			${enable_python}
   Go plugin (experimental example)	${enable_go}
   Rust plugin (experimental example)	${enable_rust}
 "
