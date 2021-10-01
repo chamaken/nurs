@@ -22,6 +22,7 @@
 #include <pthread.h>
 #include <stdbool.h>
 #include <string.h>
+#include <sys/uio.h>
 #include <time.h>
 #include <unistd.h>
 
@@ -78,11 +79,11 @@ struct ipfix_template {
 	size_t tmplset_len, dataset_len;
 	struct ipfix_sethdr *template;
 
-	pthread_mutex_t sethdrs_mutex;
-	pthread_cond_t sethdrs_condv;
-	struct ipfix_sethdr *sethdrs;
-	int sethdrs_max;
-	int sethdrs_pos;
+	pthread_mutex_t datasets_mutex; /* protects datasets below */
+	pthread_cond_t datasets_condv;
+	struct ipfix_sethdr *datasets;  /* dataset buffers using this template */
+	int datasets_max;
+	int datasets_pos;
 };
 
 struct ipfix_priv {
@@ -159,9 +160,9 @@ alloc_template(struct ipfix_priv *priv,
 	if (!tmpl->template)
 		goto free_bitmask;
 
-	tmpl->sethdrs_max = priv->iovmax - 1;
-	tmpl->sethdrs = calloc((size_t)tmpl->sethdrs_max, tmpl->dataset_len);
-	if (!tmpl->sethdrs)
+	tmpl->datasets_max = priv->iovmax - 1;
+	tmpl->datasets = calloc((size_t)tmpl->datasets_max, tmpl->dataset_len);
+	if (!tmpl->datasets)
 		goto free_template;
 
 	return tmpl;
@@ -185,7 +186,7 @@ create_template(struct ipfix_priv *priv,
 	struct ipfix_template *tmpl;
 	struct ipfix_tmpl_hdr *tmpl_hdr;
 	uintptr_t tmpl_rec;
-	struct ipfix_sethdr *sethdr;
+	struct ipfix_sethdr *dataset;
 	uint16_t field_id, field_count = 0;
 	uint32_t vendor, input_size;
 	uint16_t i, input_len = nurs_input_len(input);
@@ -197,12 +198,12 @@ create_template(struct ipfix_priv *priv,
 
         pthread_mutexattr_init(&attr);
 	pthread_mutexattr_settype(&attr, NURS_MUTEX_ATTR);
-	if (pthread_mutex_init(&tmpl->sethdrs_mutex, &attr)) {
+	if (pthread_mutex_init(&tmpl->datasets_mutex, &attr)) {
 		nurs_log(NURS_FATAL, "pthread_mutex_init: %s\n",
 			 _sys_errlist[errno]);
 		return NULL;
 	}
-	if (pthread_cond_init(&tmpl->sethdrs_condv, NULL)) {
+	if (pthread_cond_init(&tmpl->datasets_condv, NULL)) {
 		nurs_log(NURS_FATAL, "pthread_cond_init: %s\n",
 			 _sys_errlist[errno]);
 		return NULL;
@@ -250,10 +251,10 @@ create_template(struct ipfix_priv *priv,
 
 	/* initialize data buffer */
 	for (i = 0; i < priv->iovmax - 1; i++) {
-		sethdr = (struct ipfix_sethdr *)((uintptr_t)tmpl->sethdrs
+		dataset = (struct ipfix_sethdr *)((uintptr_t)tmpl->datasets
 						 + i * tmpl->dataset_len);
-		sethdr->set_id = tmpl_hdr->template_id;
-		sethdr->length = htons(tmpl->dataset_len);
+		dataset->set_id = tmpl_hdr->template_id;
+		dataset->length = htons(tmpl->dataset_len);
 	}
 
 	return tmpl;
@@ -297,45 +298,45 @@ exit:
 	return tmpl;
 }
 
-static struct ipfix_sethdr *get_sethdr(struct ipfix_template *tmpl)
+static struct ipfix_sethdr *alloc_dataset(struct ipfix_template *tmpl)
 {
-	struct ipfix_sethdr *sethdr;
+	struct ipfix_sethdr *dataset;
 	void *data;
 
-	if (nurs_mutex_lock(&tmpl->sethdrs_mutex))
+	if (nurs_mutex_lock(&tmpl->datasets_mutex))
 		return NULL;
-	while (tmpl->sethdrs_pos >= tmpl->sethdrs_max) {
-		if (nurs_cond_wait(&tmpl->sethdrs_condv,
-				   &tmpl->sethdrs_mutex)) {
-			nurs_mutex_unlock(&tmpl->sethdrs_mutex);
+	while (tmpl->datasets_pos >= tmpl->datasets_max) {
+		if (nurs_cond_wait(&tmpl->datasets_condv,
+				   &tmpl->datasets_mutex)) {
+			nurs_mutex_unlock(&tmpl->datasets_mutex);
 			return NULL;
 		}
 	}
 
-	sethdr = (struct ipfix_sethdr *)
-		((uintptr_t)tmpl->sethdrs
-		 + (uintptr_t)(tmpl->sethdrs_pos * (int)tmpl->dataset_len));
-	data = ipfix_data(sethdr);
+	dataset = (struct ipfix_sethdr *)
+		((uintptr_t)tmpl->datasets
+		 + (uintptr_t)(tmpl->datasets_pos * (int)tmpl->dataset_len));
+	data = ipfix_data(dataset);
 	memset(data, 0, tmpl->dataset_len - sizeof(struct ipfix_sethdr));
-	tmpl->sethdrs_pos++;
+	tmpl->datasets_pos++;
 
-	if (nurs_mutex_unlock(&tmpl->sethdrs_mutex))
+	if (nurs_mutex_unlock(&tmpl->datasets_mutex))
 		return NULL;
 
-	return sethdr;
+	return dataset;
 }
 
 static struct ipfix_sethdr *
-build_sethdr(struct ipfix_priv *priv, const struct nurs_input *input,
-	     struct ipfix_template *tmpl)
+build_dataset(struct ipfix_priv *priv, const struct nurs_input *input,
+              struct ipfix_template *tmpl)
 {
-	struct ipfix_sethdr *sethdr = get_sethdr(tmpl);
-	void *buf = ipfix_data(sethdr);
+	struct ipfix_sethdr *dataset = alloc_dataset(tmpl);
+	void *buf = ipfix_data(dataset);
 	size_t buflen = tmpl->dataset_len;
 	uint16_t i, input_len = nurs_input_len(input);
 	int ret;
 
-	if (!sethdr) return NULL;
+	if (!dataset) return NULL;
 
 	for (i = 0; i < input_len; i++) {
 		if (!nfct_bitmask_test_bit(tmpl->bitmask, i))
@@ -348,13 +349,13 @@ build_sethdr(struct ipfix_priv *priv, const struct nurs_input *input,
 		buflen -= (size_t)ret;
 	}
 
-	return sethdr;
+	return dataset;
 }
 
 static int push_input(struct ipfix_priv *priv, const struct nurs_input *input,
 		      struct ipfix_template *tmpl)
 {
-	struct ipfix_sethdr *sethdr = build_sethdr(priv, input, tmpl);
+	struct ipfix_sethdr *dataset = build_dataset(priv, input, tmpl);
 	int ret = 0;
 
 	if ((ret = nurs_mutex_lock(&priv->vecs_mutex)))
@@ -374,7 +375,7 @@ static int push_input(struct ipfix_priv *priv, const struct nurs_input *input,
 	}
 	tmpl->until_template--;
 
-	priv->iovecs[priv->iovcnt].iov_base = sethdr;
+	priv->iovecs[priv->iovcnt].iov_base = dataset;
 	priv->iovecs[priv->iovcnt].iov_len = tmpl->dataset_len;
 	priv->msglen += tmpl->dataset_len;
 	priv->iovcnt++;
@@ -420,10 +421,10 @@ static ssize_t send_ipfix(struct ipfix_priv *priv, bool force)
 	if ((ret = nurs_mutex_lock(&priv->tmpls_mutex)))
 		goto unlock;
 	list_for_each_entry(tmpl, &priv->tmpls, list) {
-		nurs_mutex_lock(&tmpl->sethdrs_mutex);
-		tmpl->sethdrs_pos = 0;
-		nurs_cond_broadcast(&tmpl->sethdrs_condv);
-		nurs_mutex_unlock(&tmpl->sethdrs_mutex);
+		nurs_mutex_lock(&tmpl->datasets_mutex);
+		tmpl->datasets_pos = 0;
+		nurs_cond_broadcast(&tmpl->datasets_condv);
+		nurs_mutex_unlock(&tmpl->datasets_mutex);
 	}
 	if ((ret = nurs_mutex_unlock(&priv->tmpls_mutex)))
 		goto unlock;
@@ -603,9 +604,9 @@ static enum nurs_return_t ipfix_stop(const struct nurs_plugin *plugin)
 	list_for_each_entry_safe(tmpl, tmp, &priv->tmpls, list) {
 		nfct_bitmask_destroy(tmpl->bitmask);
 		free(tmpl->template);
-		free(tmpl->sethdrs);
-		pthread_mutex_destroy(&tmpl->sethdrs_mutex);
-		pthread_cond_destroy(&tmpl->sethdrs_condv);
+		free(tmpl->datasets);
+		pthread_mutex_destroy(&tmpl->datasets_mutex);
+		pthread_cond_destroy(&tmpl->datasets_condv);
 		list_del(&tmpl->list);
 		free(tmpl);
 	}
