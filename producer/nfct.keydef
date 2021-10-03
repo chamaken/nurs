@@ -26,7 +26,9 @@
 	NFCT_ORIG_IP6_SADDR,			\
 	NFCT_ORIG_IP6_DADDR,			\
 	NFCT_REPLY_IP6_SADDR,			\
-	NFCT_REPLY_IP6_DADDR
+	NFCT_REPLY_IP6_DADDR,			\
+	NFCT_ICMPV6_CODE,			\
+	NFCT_ICMPV6_TYPE
 
 #define NFCT_OUTPUT_KEYS_DEFAULT				\
 	[NFCT_ORIG_IP_SADDR]	= {				\
@@ -265,5 +267,23 @@
 		.ipfix	= {					\
 			.vendor	  = IPFIX_VENDOR_IETF,		\
 			.field_id = IPFIX_postNATSourceIPv6Address, \
+		},						\
+	},							\
+	[NFCT_ICMPV6_CODE]	= {				\
+		.type	= NURS_KEY_T_UINT8,			\
+		.flags	= NURS_OKEY_F_OPTIONAL,			\
+		.name	= "icmpv6.code",			\
+		.ipfix	= {					\
+			.vendor	  = IPFIX_VENDOR_IETF,		\
+			.field_id = IPFIX_icmpCodeIPv6,		\
+		},						\
+	},							\
+	[NFCT_ICMPV6_TYPE]	= {				\
+		.type	= NURS_KEY_T_UINT8,			\
+		.flags	= NURS_OKEY_F_OPTIONAL,			\
+		.name	= "icmpv6.type",			\
+		.ipfix	= {					\
+			.vendor	  = IPFIX_VENDOR_IETF,		\
+			.field_id = IPFIX_icmpTypeIPv6,		\
 		},						\
 	}

@@ -220,11 +220,25 @@ static int propagate_ct(struct nurs_producer *producer,
 			htons(nfct_get_attr_u16(ct, ATTR_ORIG_PORT_DST)));
 		break;
 	case IPPROTO_ICMP:
-		nurs_output_set_u8(output, NFCT_ICMP_CODE,
-				   nfct_get_attr_u8(ct, ATTR_ICMP_CODE));
-		nurs_output_set_u8(output, NFCT_ICMP_TYPE,
-				   nfct_get_attr_u8(ct, ATTR_ICMP_TYPE));
-		break;
+                switch (nfct_get_attr_u8(ct, ATTR_L3PROTO)) {
+                case AF_INET:
+                        nurs_output_set_u8(output, NFCT_ICMP_CODE,
+                                           nfct_get_attr_u8(ct,
+                                                            ATTR_ICMP_CODE));
+                        nurs_output_set_u8(output, NFCT_ICMP_TYPE,
+                                           nfct_get_attr_u8(ct,
+                                                            ATTR_ICMP_TYPE));
+                        break;
+                case AF_INET6:
+                        nurs_output_set_u8(output, NFCT_ICMPV6_CODE,
+                                           nfct_get_attr_u8(ct,
+                                                            ATTR_ICMP_CODE));
+                        nurs_output_set_u8(output, NFCT_ICMPV6_TYPE,
+                                           nfct_get_attr_u8(ct,
+                                                            ATTR_ICMP_TYPE));
+                        break;
+                }
+                break;
 	}
 
 	switch (nfct_get_attr_u8(ct, ATTR_REPL_L4PROTO)) {
