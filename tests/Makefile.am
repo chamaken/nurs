@@ -3,7 +3,7 @@ AUTOM4TE	= autom4te
 AUTOTEST	= $(AUTOM4TE) --language=autotest
 AM_CPPFLAGS	= -I$(top_srcdir)/include -I$(top_srcdir)/src
 AM_CFLAGS	= -g ${regular_CFLAGS}
-LDADD		= ${libdl_LIBS} ${JANSSON_LIBS} ../src/libnurs.la
+LDADD		= ../src/libnurs.la ${libdl_LIBS} ${JANSSON_LIBS}
 
 TESTSUITE = $(srcdir)/testsuite
 EXTRA_DIST = testsuite.at $(TESTSUITE) atlocal.in
