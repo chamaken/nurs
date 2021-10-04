@@ -269,6 +269,7 @@ int nurs_key_putn(const struct nurs_input *input, uint16_t idx,
 		if (buflen < ret)
 			return -1;
 		*(bool *)buf = nurs_input_bool(input, idx);
+                break;
 	case NURS_KEY_T_INT8:
 	case NURS_KEY_T_UINT8:
 		ret = sizeof(uint8_t);
