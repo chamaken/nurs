@@ -25,11 +25,6 @@
 #define NSEC_PER_SEC	((uint32_t)1000000000L)
 #endif
 
-struct timeconv_priv {
-	void (*setfunc)(struct nurs_output *,
-			uint32_t, uint32_t, uint32_t, uint32_t);
-};
-
 enum {
 	TIMECONV_CONFIG_USEC64,
 	TIMECONV_CONFIG_MAX,
@@ -89,12 +84,16 @@ enum {
 	TIMECONV_OUTPUT_MAX,
 };
 
+/* output value will already be BE encoded, so that
+ * .type is NURS_KEY_T_EMBED not to encode more.
+ */
 static struct nurs_output_def timeconv_output = {
 	.len	= TIMECONV_OUTPUT_MAX,
 	.keys	= {
 		[TIMECONV_OUTPUT_FLOW_START_USEC64] = {
 			.name	= "flow.start.useconds",
-			.type	= NURS_KEY_T_UINT64,
+			.type	= NURS_KEY_T_EMBED,
+                        .len	= sizeof(uint64_t),
 			.flags	= NURS_OKEY_F_OPTIONAL,
 			.ipfix	= {
 				.vendor		= IPFIX_VENDOR_IETF,
@@ -103,7 +102,8 @@ static struct nurs_output_def timeconv_output = {
 		},
 		[TIMECONV_OUTPUT_FLOW_END_USEC64] = {
 			.name	= "flow.end.useconds",
-			.type	= NURS_KEY_T_UINT64,
+			.type	= NURS_KEY_T_EMBED,
+                        .len	= sizeof(uint64_t),
 			.flags	= NURS_OKEY_F_OPTIONAL,
 			.ipfix	= {
 				.vendor		= IPFIX_VENDOR_IETF,
@@ -113,12 +113,42 @@ static struct nurs_output_def timeconv_output = {
 	},
 };
 
+struct tm MSB1BASE = {
+        .tm_year = 0,
+        .tm_mon = 0,
+        .tm_mday = 1,
+        .tm_hour = 0,
+        .tm_min = 0,
+        .tm_sec = 0,
+};
+struct tm MSB0BASE = {
+        .tm_year = 2036 - 1900,
+        .tm_mon = 1,
+        .tm_mday = 7,
+        .tm_hour = 6,
+        .tm_min = 28,
+        .tm_sec = 16,
+};
+static time_t msb1base_time, msb0base_time;
+const time_t MSB1BASE_TIME = -2209021200;
+const time_t MSB0BASE_TIME = 2085946096;
+
 static inline uint64_t conv_ntp_us(uint32_t sec, uint32_t usec)
 {
-	/* RFC7011 - 6.1.10. dateTimeMicroseconds */
-	return (((uint64_t) sec << 32)
-		+ ((uint64_t) usec << 32) / (NSEC_PER_SEC / 1000))
-		& (uint64_t)~0x07ff;
+        int use_base1 = sec < msb0base_time;
+        uint32_t fraction;
+
+        if (use_base1)
+                sec -= msb1base_time;
+        else
+                sec -= msb0base_time;
+
+        fraction = usec * 0x100000000 / 1000000;
+
+        if (use_base1)
+                sec |= 0x80000000;
+
+	return (uint64_t)htonl((uint32_t)sec) << 32 | htonl(fraction);
 }
 
 static void set_ntp(struct nurs_output *output,
@@ -134,8 +164,9 @@ static void set_ntp(struct nurs_output *output,
 static enum nurs_return_t
 timeconv_organize(const struct nurs_plugin *plugin)
 {
-	struct timeconv_priv *priv = nurs_plugin_context(plugin);
-        priv->setfunc = &set_ntp;
+        msb1base_time = mktime(&MSB1BASE);
+        msb0base_time = mktime(&MSB0BASE);
+
 	return NURS_RET_OK;
 }
 
@@ -144,7 +175,6 @@ timeconv_interp(const struct nurs_plugin *plugin,
 		const struct nurs_input *input,
 		struct nurs_output *output)
 {
-	struct timeconv_priv *priv = nurs_plugin_context(plugin);
 	char buf[4096];
 
 	if (!nurs_input_is_valid(input, TIMECONV_INPUT_FLOW_START_SEC)
@@ -169,11 +199,11 @@ timeconv_interp(const struct nurs_plugin *plugin,
 		return NURS_RET_OK;
 	}
 
-	priv->setfunc(output,
-		      nurs_input_u32(input, TIMECONV_INPUT_FLOW_START_SEC),
-		      nurs_input_u32(input, TIMECONV_INPUT_FLOW_START_USEC),
-		      nurs_input_u32(input, TIMECONV_INPUT_FLOW_END_SEC),
-		      nurs_input_u32(input, TIMECONV_INPUT_FLOW_END_USEC));
+	set_ntp(output,
+                nurs_input_u32(input, TIMECONV_INPUT_FLOW_START_SEC),
+                nurs_input_u32(input, TIMECONV_INPUT_FLOW_START_USEC),
+                nurs_input_u32(input, TIMECONV_INPUT_FLOW_END_SEC),
+                nurs_input_u32(input, TIMECONV_INPUT_FLOW_END_USEC));
 
 	return NURS_RET_OK;
 }
@@ -181,7 +211,6 @@ timeconv_interp(const struct nurs_plugin *plugin,
 static struct nurs_filter_def timeconv_filter = {
 	.name		= "TIMECONV",
 	.version	= VERSION,
-	.context_size	= sizeof(struct timeconv_priv),
 	.config_def	= &timeconv_config,
 	.input_def	= &timeconv_input,
 	.output_def	= &timeconv_output,
