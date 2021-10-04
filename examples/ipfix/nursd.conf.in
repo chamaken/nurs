@@ -1,0 +1,37 @@
+# example configuration for nursd. run at this dir as
+# ../../src/nursd -d -p nursd.pid -f nursd.log -l info nursd.conf
+
+[global]
+
+# number of workers
+workers	= 8
+
+# number of iosets per stack
+iosets	= 12
+
+# plugin:
+# 1. load the plugins _first_ from the global section
+# 2. options for each plugin in seperate section below
+plugin	= "@pkglibdir@/nurs_producer_NFCT2.so"
+plugin	= "@pkglibdir@/nurs_filter_TIMECONV.so"
+plugin	= "@pkglibdir@/nurs_coveter_IPFIX.so"
+
+# stack
+# each element represented id:name, separated by ,
+stack	= "nfct2:NFCT2, timeconv:TIMECONV, ipfix:IPFIX"
+
+
+# each pluginstance settings
+
+[nfct2]
+pollinterval = 4
+netlink_socket_buffer_size = 217088
+netlink_socket_buffer_maxsize = 1085440
+
+[timeconv]
+
+[ipfix]
+dest = file://@cwd@/ipfix.yaf
+domain_id = 1
+nth_template = 16
+corksets_max = 8
