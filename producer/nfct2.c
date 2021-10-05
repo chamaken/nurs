@@ -356,7 +356,8 @@ static int nfct_mnl_cb(const struct nlmsghdr *nlh, void *data)
 		return MNL_CB_ERROR;
 	}
 	if (!nfct_get_attr_u64(ct, ATTR_ORIG_COUNTER_BYTES) &&
-	    !nfct_get_attr_u64(ct, ATTR_REPL_COUNTER_BYTES)) {
+	    !nfct_get_attr_u64(ct, ATTR_REPL_COUNTER_BYTES) &&
+            !nfct_get_attr_u64(ct, ATTR_TIMESTAMP_STOP)) {
 		nfct_destroy(ct);
 		return MNL_CB_OK;
 	}
