@@ -34,18 +34,6 @@
 #define NSEC_PER_SEC    1000000000L
 #endif
 
-/* flowEndReason
- *   (none)		0x01: idle timeout
- *   NFCT_T_UPDATE	0x02: active timeout
- *   NFCT_T_DESTROY	0x03: end of Flow detected
- *   (none)		0x04: forced end
- *   (none)		0x05: lack of resources
- */
-static uint8_t flowReasons[] = {
-	[NFCT_T_UPDATE]		= 0x02,
-	[NFCT_T_DESTROY]	= 0x03,
-};
-
 struct nfct_priv {
 	struct mnl_socket	*event_nl;
 	struct nurs_fd		*event_fd;
@@ -57,7 +45,6 @@ struct nfct_priv {
 	struct nurs_fd		*dump_fd;
 	uint32_t		dump_pid;
 	struct nlmsghdr		*dump_request;
-	struct timeval		dump_prev;
 
 	struct nurs_timer	*timer;
 };
@@ -133,7 +120,6 @@ static struct nurs_config_def nfct_config = {
 enum nfct_output_keys {
 	NFCT_OUTPUT_ENUM_DEFAULT,
 	NFCT_CT,
-	NFCT_FLOW_END_REASON,
 	NFCT_OUTPUT_MAX,
 };
 
@@ -147,26 +133,14 @@ static struct nurs_output_def nfct_output = {
 			.name	= "nfct",
 			.destructor = (void (*)(void *))nfct_destroy,
 		},
-		[NFCT_FLOW_END_REASON]	= {
-			.type	= NURS_KEY_T_UINT8,
-			.flags	= NURS_OKEY_F_OPTIONAL,
-			.name	= "flow.end.reason",
-			.ipfix	= {
-				.vendor	  = IPFIX_VENDOR_IETF,
-				.field_id = IPFIX_flowEndReason,
-			},
-		},
 	},
 };
 
 static int propagate_ct(struct nurs_producer *producer,
-			uint32_t type, struct nf_conntrack *ct,
-			struct timeval *recent)
+			uint32_t type, struct nf_conntrack *ct)
 {
 	struct nurs_output *output = nurs_get_output(producer);
-	struct nfct_priv *priv = nurs_producer_context(producer);
 	uint64_t ts;
-	uint32_t start_sec;
 
 	nurs_output_set_u32(output, NFCT_CT_EVENT, type);
 	nurs_output_set_u8(output, NFCT_OOB_FAMILY,
@@ -270,18 +244,10 @@ static int propagate_ct(struct nurs_producer *producer,
 			    nfct_get_attr_u32(ct, ATTR_ID));
 
 	ts = nfct_get_attr_u64(ct, ATTR_TIMESTAMP_START);
-	start_sec = (uint32_t)(ts / NSEC_PER_SEC);
-	if (start_sec < priv->dump_prev.tv_sec) {
-		nurs_output_set_u32(output, NFCT_FLOW_START_SEC,
-				    (uint32_t)priv->dump_prev.tv_sec);
-		nurs_output_set_u32(output, NFCT_FLOW_START_USEC,
-				    (uint32_t)priv->dump_prev.tv_usec);
-	} else {
-		nurs_output_set_u32(output, NFCT_FLOW_START_SEC,
-				    start_sec);
-		nurs_output_set_u32(output, NFCT_FLOW_START_USEC,
-				    (uint32_t)(ts % NSEC_PER_SEC / 1000));
-	}
+        nurs_output_set_u32(output, NFCT_FLOW_START_SEC,
+                            (uint32_t)(ts / NSEC_PER_SEC));
+        nurs_output_set_u32(output, NFCT_FLOW_START_USEC,
+                            (uint32_t)(ts % NSEC_PER_SEC / 1000));
 
 	ts = nfct_get_attr_u64(ct, ATTR_TIMESTAMP_STOP);
 	if (ts) {
@@ -289,18 +255,8 @@ static int propagate_ct(struct nurs_producer *producer,
 				    (uint32_t)(ts / NSEC_PER_SEC));
 		nurs_output_set_u32(output, NFCT_FLOW_END_USEC,
 				    (uint32_t)(ts % NSEC_PER_SEC / 1000));
-	} else {
-		nurs_output_set_u32(output, NFCT_FLOW_END_SEC,
-				    (uint32_t)recent->tv_sec);
-		nurs_output_set_u32(output, NFCT_FLOW_END_USEC,
-				    (uint32_t)recent->tv_usec);
 	}
-
 	nurs_output_set_pointer(output, NFCT_CT, ct);
-
-	if (flowReasons[type])
-		nurs_output_set_u8(output, NFCT_FLOW_END_REASON,
-				   flowReasons[type]);
 
 	switch (nurs_publish(output)) {
 	case NURS_RET_OK:
@@ -333,14 +289,9 @@ static uint32_t nfct_type(const struct nlmsghdr *nlh)
 	return NFCT_T_UNKNOWN;
 }
 
-struct mnl_cbarg {
-	struct nurs_producer	*producer;
-	struct timeval		*recent;
-};
-
 static int nfct_mnl_cb(const struct nlmsghdr *nlh, void *data)
 {
-	struct mnl_cbarg *cbarg = data;
+        struct nurs_producer *producer = data;
 	struct nf_conntrack *ct = nfct_new();
 
 	if (!ct) {
@@ -362,8 +313,7 @@ static int nfct_mnl_cb(const struct nlmsghdr *nlh, void *data)
 		return MNL_CB_OK;
 	}
 
-	return propagate_ct(cbarg->producer,
-			    nfct_type(nlh), ct, cbarg->recent);
+	return propagate_ct(producer, nfct_type(nlh), ct);
 }
 
 static int setnlbufsiz(struct mnl_socket *nl, int size)
@@ -421,14 +371,11 @@ nfct_event_cb(struct nurs_fd *nfd, uint16_t when)
 	struct nfct_priv *priv = nurs_producer_context(producer);
 	char buf[MNL_SOCKET_BUFFER_SIZE];
 	ssize_t nrecv;
-	struct mnl_cbarg cbarg = {
-		.producer	= producer,
-		.recent		= NULL
-	};
 
 	if (!(when & NURS_FD_F_READ))
 		return NURS_RET_OK;
 
+        nurs_log(NURS_INFO, "recv - event\n");
 	/* recv(mnl_socket_get_fd(priv->event_nl), buf, len, MSG_DONTWAIT); */
 	nrecv = mnl_socket_recvfrom(priv->event_nl, buf, sizeof(buf));
 	if (nrecv == -1) {
@@ -443,7 +390,7 @@ nfct_event_cb(struct nurs_fd *nfd, uint16_t when)
 
         return nurs_ret_from_mnl(
 		mnl_cb_run(buf, (size_t)nrecv, 0,
-                           priv->event_pid, nfct_mnl_cb, &cbarg));
+                           priv->event_pid, nfct_mnl_cb, producer));
 }
 
 static enum nurs_return_t
@@ -454,16 +401,10 @@ nfct_dump_cb(struct nurs_fd *nfd, uint16_t when)
         char buf[MNL_SOCKET_BUFFER_SIZE];
         int ret, fd = nurs_fd_get_fd(nfd);
         ssize_t nrecv;
-	struct timeval tv;
-        struct mnl_cbarg cbarg = {
-                .producer	= producer,
-                .recent		= &tv,
-        };
 
 	if (!(when & NURS_FD_F_READ))
 		return NURS_RET_OK;
 
-	gettimeofday(&tv, NULL);
         do {
                 nrecv = recv(fd, buf, sizeof(buf), MSG_DONTWAIT);
                 if (nrecv == -1) {
@@ -474,10 +415,9 @@ nfct_dump_cb(struct nurs_fd *nfd, uint16_t when)
 
                 ret = mnl_cb_run(buf, (size_t)nrecv,
                                  priv->dump_request->nlmsg_seq, priv->dump_pid,
-                                 nfct_mnl_cb, &cbarg);
+                                 nfct_mnl_cb, producer);
         } while (ret == MNL_CB_OK);
 
-	priv->dump_prev = tv;
         return NURS_RET_OK;
 }
 
@@ -517,8 +457,6 @@ static int clear_counters(const struct nurs_producer *producer)
 		nurs_log(NURS_ERROR, "mnl_cb_run: %s\n", strerror(errno));
 		return -1;
 	}
-
-	gettimeofday(&priv->dump_prev, NULL);
 
 	return 0;
 }
